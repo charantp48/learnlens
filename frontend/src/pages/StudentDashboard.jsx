@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
@@ -16,12 +16,31 @@ import {
   KeyRound,
   Compass,
   Layers,
-  GraduationCap
+  GraduationCap,
+  Award
 } from 'lucide-react';
 
 export default function StudentDashboard() {
   const { currentUser } = useAuth();
   const { t, tName } = useTranslation();
+  const [rankData, setRankData] = useState(null);
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      fetch(`http://localhost:5000/api/quiz/ranks/student/${currentUser.id}`, {
+        headers: {
+          'x-user-role': currentUser.role || 'student',
+          'x-user-id': currentUser.id,
+          'x-user-email': currentUser.email || '',
+        },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.rank) setRankData(data.rank);
+        })
+        .catch(() => {});
+    }
+  }, [currentUser]);
 
   // Top weak topics identified by diagnostic
   const weakTopics = [
@@ -94,16 +113,16 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] shrink-0 text-left sm:text-right space-y-1">
+        <div className="p-4 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] shrink-0 text-left sm:text-right space-y-1 min-w-[170px]">
           <div className="text-[11px] font-bold uppercase tracking-wider text-[#6B6660] flex items-center sm:justify-end gap-1.5">
-            <Compass className="w-3.5 h-3.5 text-[#F26522]" />
-            <span>Current Track</span>
+            <Award className="w-3.5 h-3.5 text-[#F26522]" />
+            <span>Class Rank</span>
           </div>
-          <div className="font-heading font-extrabold text-base text-[#0D0D0D]">
-            Level 2: Intermediate
+          <div className="font-heading font-extrabold text-base sm:text-lg text-[#0D0D0D]">
+            {rankData ? `Rank ${rankData.class_rank} of ${rankData.class_total_students}` : 'Rank: Active'}
           </div>
           <div className="text-[11px] text-[#6B6660]">
-            Physics, Chemistry, Maths & CS
+            {rankData ? `School Rank: #${rankData.school_rank} (${rankData.overall_percentage}% avg)` : 'Level 2: Intermediate Track'}
           </div>
         </div>
       </Card>

@@ -2,7 +2,7 @@ import express from 'express';
 import { supabase } from '../config/supabase.js';
 import { MOCK_TOPICS, MOCK_PREREQUISITES_GRAPH } from '../config/mockData.js';
 import { findLearningGaps } from '../services/gapFinder.js';
-import { saveAttemptAndReport, getStudentRankSnapshot } from '../services/reportService.js';
+import { saveAttemptAndReport, getStudentRankSnapshot, computeStudentRankings } from '../services/reportService.js';
 import { getAllUsers } from './adminRoutes.js';
 
 const router = express.Router();
@@ -511,18 +511,179 @@ router.post('/submit', async (req, res) => {
   }
 });
 
+function getRequester(req) {
+  const role = req.headers['x-user-role'] || req.query.role || req.headers['role'] || 'student';
+  const id = req.headers['x-user-id'] || req.query.userId || req.headers['user-id'];
+  const email = req.headers['x-user-email'] || req.query.email || req.headers['user-email'];
+  return { role: String(role).toLowerCase(), id, email: email ? String(email).toLowerCase() : '' };
+}
+
 /**
- * 3. GET /api/quiz/ranks/:studentId
- * Get real-time rank snapshot for a student (role-isolated: only own rank returned)
+ * 3. GET /api/quiz/ranks/student/:studentId
+ * Role-isolated:
+ * - Student can ONLY view their own rank.
+ * - Parent can view only their linked children.
+ * - Teacher can view only students in their assigned class.
+ * - Admin can view any student.
+ * Never returns other students' names or scores.
  */
-router.get('/ranks/:studentId', (req, res) => {
+router.get('/ranks/student/:studentId', (req, res) => {
   try {
     const { studentId } = req.params;
-    const rankSnapshot = getStudentRankSnapshot(studentId);
-    res.json({ status: 'ok', rank: rankSnapshot });
+    const requester = getRequester(req);
+    const users = getAllUsers();
+    const targetStudent = users.find(
+      (u) => u.id === studentId || u.email?.toLowerCase() === studentId.toLowerCase()
+    );
+
+    if (!targetStudent) {
+      return res.status(404).json({ error: 'NotFound', message: 'Student not found.' });
+    }
+
+    // Role-based Access Control checks
+    if (requester.role === 'student') {
+      if (
+        (requester.id && requester.id !== targetStudent.id) ||
+        (requester.email && requester.email !== targetStudent.email.toLowerCase())
+      ) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Students are strictly prohibited from viewing other students\' ranks or scores.',
+        });
+      }
+    } else if (requester.role === 'parent') {
+      const parentUser = users.find(
+        (u) => u.id === requester.id || u.email?.toLowerCase() === requester.email
+      );
+      const linkedChildNames = (parentUser?.linkedChild || '').toLowerCase();
+      const isLinked =
+        linkedChildNames.includes(targetStudent.name.toLowerCase()) ||
+        parentUser?.linked_student_id === targetStudent.id;
+      if (!isLinked) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Parents can only view ranks for their linked children.',
+        });
+      }
+    } else if (requester.role === 'teacher') {
+      const teacherUser = users.find(
+        (u) => u.id === requester.id || u.email?.toLowerCase() === requester.email
+      );
+      const teacherClasses = (teacherUser?.className || '').toLowerCase();
+      const studentClass = (targetStudent.className || '').toLowerCase();
+      const canAccess = teacherClasses.includes(studentClass) || teacherClasses.includes('all');
+      if (!canAccess) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: `Teachers can only view students in their assigned classes (${teacherUser?.className || 'None'}).`,
+        });
+      }
+    }
+
+    const rankSnapshot = getStudentRankSnapshot(targetStudent.id);
+
+    // Return ONLY student's own rank data
+    res.json({
+      status: 'ok',
+      student_id: targetStudent.id,
+      student_name: targetStudent.name,
+      class_name: targetStudent.className,
+      rank: rankSnapshot,
+    });
   } catch (err) {
     res.status(500).json({ error: 'RankingError', message: err.message });
   }
+});
+
+/**
+ * 4. GET /api/quiz/ranks/class/:className
+ * Teachers and Admin view class leaderboard. Students are forbidden.
+ */
+router.get('/ranks/class/:className', (req, res) => {
+  try {
+    const { className } = req.params;
+    const requester = getRequester(req);
+    const users = getAllUsers();
+
+    if (requester.role === 'student') {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Students are not permitted to view class leaderboards.',
+      });
+    }
+
+    if (requester.role === 'teacher') {
+      const teacherUser = users.find(
+        (u) => u.id === requester.id || u.email?.toLowerCase() === requester.email
+      );
+      const teacherClasses = (teacherUser?.className || '').toLowerCase();
+      if (!teacherClasses.includes(className.toLowerCase())) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: `Access Denied: You are not assigned to teach class ${className}.`,
+        });
+      }
+    }
+
+    const includeDemo = req.query.include_demo === 'true';
+    const rankings = computeStudentRankings(includeDemo);
+    const classLeaderboard = rankings.classGroups[className] || [];
+
+    res.json({
+      status: 'ok',
+      class_name: className,
+      total_students: classLeaderboard.length,
+      students: classLeaderboard.map((st) => ({
+        student_id: st.student_id,
+        student_name: st.student_name,
+        overall_percentage: st.overall_percentage,
+        total_marks_earned: st.total_marks_earned,
+        total_marks_possible: st.total_marks_possible,
+        class_rank: st.class_rank,
+        school_rank: st.school_rank,
+        attempts_count: st.attempts_count,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'ClassRankingError', message: err.message });
+  }
+});
+
+/**
+ * 5. GET /api/quiz/ranks/school/leaderboard
+ * School-wide rankings (competition ties shared). Restricted to Admin and Teachers.
+ */
+router.get('/ranks/school/leaderboard', (req, res) => {
+  try {
+    const requester = getRequester(req);
+
+    if (requester.role === 'student' || requester.role === 'parent') {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Access to school-wide leaderboard is restricted to administrative and teaching staff.',
+      });
+    }
+
+    const includeDemo = req.query.include_demo === 'true';
+    const rankings = computeStudentRankings(includeDemo);
+
+    res.json({
+      status: 'ok',
+      totalRankedSchool: rankings.totalSchoolRanked,
+      students: rankings.rankedStudents,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'SchoolRankingError', message: err.message });
+  }
+});
+
+/**
+ * Backwards compatible alias: GET /api/quiz/ranks/:studentId
+ */
+router.get('/ranks/:studentId', (req, res) => {
+  const { studentId } = req.params;
+  const rankSnapshot = getStudentRankSnapshot(studentId);
+  res.json({ status: 'ok', rank: rankSnapshot });
 });
 
 export default router;
