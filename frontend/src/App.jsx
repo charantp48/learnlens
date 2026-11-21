@@ -6,8 +6,9 @@ import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
-// Role Dashboards
+// Role Dashboards & Pages
 import StudentDashboard from './pages/StudentDashboard';
+import EscapeTheLibrary from './pages/EscapeTheLibrary';
 import TeacherDashboard from './pages/TeacherDashboard';
 import ParentDashboard from './pages/ParentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -32,6 +33,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['student']}>
               <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="student/escape-library"
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <EscapeTheLibrary />
             </ProtectedRoute>
           }
         />

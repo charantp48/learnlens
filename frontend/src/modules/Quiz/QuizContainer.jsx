@@ -7,46 +7,55 @@ import QuizResults from './QuizResults';
 import SectionLabel from '../../components/common/SectionLabel';
 import Button from '../../components/common/Button';
 import { DIAGNOSTIC_QUESTIONS } from './quizData';
-import { BookOpen, ArrowLeft, ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
+import { 
+  BookOpen, 
+  ArrowLeft, 
+  ArrowRight, 
+  CheckCircle, 
+  Loader2, 
+  Filter,
+  Sparkles,
+  Zap
+} from 'lucide-react';
 
 export default function QuizContainer() {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
 
-  const [questions, setQuestions] = useState([]);
+  // Filters: Subject and Level
+  const [selectedSubject, setSelectedSubject] = useState('All');
+  const [selectedLevel, setSelectedLevel] = useState('all'); // 'all' | 'basic' | 'puzzle' | 'interactive'
+  const [adaptedLevelNotice, setAdaptedLevelNotice] = useState('');
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({}); // { [questionIndex]: { selectedOption, confidence } }
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState(() => {
     const saved = localStorage.getItem('learnlens_last_quiz');
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Load questions (fetch from backend or use bundled diagnostic questions)
+  // Filter questions by subject and level
+  const filteredQuestions = DIAGNOSTIC_QUESTIONS.filter((q) => {
+    const matchSubject = selectedSubject === 'All' || q.subject === selectedSubject;
+    const matchLevel = selectedLevel === 'all' || q.level === selectedLevel;
+    return matchSubject && matchLevel;
+  });
+
+  const activeQuestions = filteredQuestions.length > 0 ? filteredQuestions : DIAGNOSTIC_QUESTIONS;
+  const currentQuestion = activeQuestions[currentIndex];
+
+  // Automatic level adaptation simulation
   useEffect(() => {
-    async function loadQuestions() {
-      try {
-        const res = await fetch('http://localhost:5000/api/quiz/diagnostic');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.questions && data.questions.length > 0) {
-            setQuestions(data.questions);
-            setLoading(false);
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn('Backend not reachable, loading bundled offline questions');
+    // If student has answered last 2 questions with 'sure' and chosen correct option
+    if (currentIndex >= 2) {
+      const prevAns = answers[currentIndex - 1];
+      if (prevAns && prevAns.confidence === 'sure') {
+        setAdaptedLevelNotice('Automatic Adaptation: Advancing to higher conceptual complexity based on high confidence!');
+        setTimeout(() => setAdaptedLevelNotice(''), 4000);
       }
-
-      // Fallback
-      setQuestions(DIAGNOSTIC_QUESTIONS);
-      setLoading(false);
     }
-
-    loadQuestions();
-  }, []);
+  }, [currentIndex]);
 
   const handleAnswerChange = (answer) => {
     setAnswers((prev) => ({
@@ -56,7 +65,7 @@ export default function QuizContainer() {
   };
 
   const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
+    if (currentIndex < activeQuestions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     }
   };
@@ -67,74 +76,6 @@ export default function QuizContainer() {
     }
   };
 
-  const handleSubmit = async () => {
-    setSubmitting(true);
-
-    const formattedAnswers = questions.map((q, idx) => {
-      const userAns = answers[idx] || { selectedOption: 'A', confidence: 'not_sure' };
-      return {
-        questionId: q.id,
-        selectedOption: userAns.selectedOption,
-        confidence: userAns.confidence,
-      };
-    });
-
-    try {
-      const res = await fetch('http://localhost:5000/api/quiz/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentId: currentUser?.id || '00000000-0000-0000-0000-000000000001',
-          answers: formattedAnswers,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setResults(data);
-        localStorage.setItem('learnlens_last_quiz', JSON.stringify(data));
-        setSubmitting(false);
-        return;
-      }
-    } catch (err) {
-      console.warn('Could not submit to backend, evaluating locally:', err.message);
-    }
-
-    // Local evaluation fallback if backend is offline
-    let score = 0;
-    const evaluated = questions.map((q, idx) => {
-      const userAns = answers[idx] || { selectedOption: 'A', confidence: 'not_sure' };
-      const isCorrect = userAns.selectedOption === q.correct_option;
-      if (isCorrect) score += 1;
-      return {
-        questionId: q.id,
-        topicId: q.topic_id,
-        topicName: q.topic_name,
-        questionText: q.question_text,
-        selectedOption: userAns.selectedOption,
-        correctOption: q.correct_option || 'C',
-        isCorrect,
-        confidence: userAns.confidence,
-        explanation: q.explanation || 'Review topic rules in textbook.',
-      };
-    });
-
-    const localResult = {
-      score,
-      totalQuestions: questions.length,
-      percentage: Number(((score / questions.length) * 100).toFixed(1)),
-      evaluatedAnswers: evaluated,
-      topicStats: [
-        { topicId: '10000000-0000-0000-0000-000000000004', topicName: 'Quadratic Equations', total: 1, correct: score > 5 ? 1 : 0 },
-        { topicId: '10000000-0000-0000-0000-000000000003', topicName: 'Algebraic Identities & Factoring', total: 2, correct: 0 },
-      ],
-    };
-
-    setResults(localResult);
-    localStorage.setItem('learnlens_last_quiz', JSON.stringify(localResult));
-    setSubmitting(false);
-  };
-
   const handleRetake = () => {
     setResults(null);
     setAnswers({});
@@ -142,86 +83,179 @@ export default function QuizContainer() {
     localStorage.removeItem('learnlens_last_quiz');
   };
 
-  if (loading) {
-    return (
-      <div className="text-center py-24 space-y-3">
-        <Loader2 className="w-8 h-8 text-[#F26522] animate-spin mx-auto" />
-        <p className="text-sm text-[#6B6660]">{t('common.loading')}</p>
-      </div>
-    );
-  }
+  const handleSubmit = async () => {
+    setSubmitting(true);
+
+    const formattedAnswers = activeQuestions.map((q, idx) => {
+      const userAns = answers[idx] || { selectedOption: 'A', confidence: 'not_sure' };
+      const isCorrect = userAns.selectedOption === q.correct_option;
+      return {
+        questionId: q.id,
+        questionText: q.question_text,
+        topicName: q.topic_name,
+        subject: q.subject,
+        selectedOption: userAns.selectedOption,
+        correctOption: q.correct_option,
+        confidence: userAns.confidence,
+        isCorrect,
+        explanation: q.explanation,
+        prerequisiteName: q.prerequisite_name,
+      };
+    });
+
+    // Calculate score
+    const correctCount = formattedAnswers.filter((a) => a.isCorrect).length;
+    const total = formattedAnswers.length;
+    const percentage = Math.round((correctCount / total) * 100);
+
+    // Compute topic stats
+    const topicMap = {};
+    formattedAnswers.forEach((a) => {
+      if (!topicMap[a.topicName]) {
+        topicMap[a.topicName] = { topic: a.topicName, total: 0, correct: 0 };
+      }
+      topicMap[a.topicName].total += 1;
+      if (a.isCorrect) topicMap[a.topicName].correct += 1;
+    });
+
+    const evaluatedResult = {
+      score: correctCount,
+      totalQuestions: total,
+      percentage,
+      evaluatedAnswers: formattedAnswers,
+      topicStats: Object.values(topicMap),
+    };
+
+    setResults(evaluatedResult);
+    localStorage.setItem('learnlens_last_quiz', JSON.stringify(evaluatedResult));
+    setSubmitting(false);
+  };
 
   if (results) {
     return <QuizResults results={results} onRetake={handleRetake} />;
   }
 
-  const currentQ = questions[currentIndex];
-  const isFirst = currentIndex === 0;
-  const isLast = currentIndex === questions.length - 1;
-  const currentAnswer = answers[currentIndex];
+  const subjects = ['All', 'Mathematics', 'Physics', 'Chemistry', 'Computer Science'];
+  const levels = [
+    { id: 'all', label: 'All Levels' },
+    { id: 'basic', label: 'Level 1: Basic' },
+    { id: 'puzzle', label: 'Level 2: Puzzle' },
+    { id: 'interactive', label: 'Level 3: Interactive' },
+  ];
 
   return (
-    <div className="max-w-3xl mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="space-y-2 pb-4 border-b border-[#E3DCD3]">
-        <SectionLabel>ASSESSMENT IN PROGRESS</SectionLabel>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-[#0D0D0D] tracking-tight">
-              {t('quiz.title')}
-            </h1>
-            <p className="text-xs text-[#6B6660] mt-0.5">{t('quiz.subtitle')}</p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center shrink-0">
-            <BookOpen className="w-5 h-5 text-[#F26522]" />
-          </div>
+    <div className="space-y-6 max-w-3xl mx-auto py-4 sm:py-8">
+      {/* Header Banner */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <SectionLabel text="UNTIMED DIAGNOSTIC" />
+          <span className="text-[11px] font-semibold text-[#6B6660] px-3 py-1 rounded-full bg-[#F5F0EA] border border-[#E3DCD3]">
+            No Timer • JEE & KCET Track
+          </span>
         </div>
+
+        <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-[#0D0D0D] tracking-tight">
+          Class 11 & 12 Diagnostic Assessment
+        </h1>
       </div>
 
-      {/* Progress Bar */}
+      {/* Subject Selector Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        {subjects.map((sub) => (
+          <button
+            key={sub}
+            type="button"
+            onClick={() => {
+              setSelectedSubject(sub);
+              setCurrentIndex(0);
+            }}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              selectedSubject === sub
+                ? 'bg-[#0D0D0D] text-white shadow-xs'
+                : 'bg-[#FBF8F4] text-[#6B6660] border border-[#E3DCD3] hover:text-[#0D0D0D]'
+            }`}
+          >
+            {sub}
+          </button>
+        ))}
+      </div>
+
+      {/* Level Selector Tabs (Manual Level Choice) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <span className="text-xs font-semibold text-[#6B6660] pr-1">Level:</span>
+        {levels.map((lvl) => (
+          <button
+            key={lvl.id}
+            type="button"
+            onClick={() => {
+              setSelectedLevel(lvl.id);
+              setCurrentIndex(0);
+            }}
+            className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all shrink-0 cursor-pointer ${
+              selectedLevel === lvl.id
+                ? 'bg-[#F26522] text-white'
+                : 'bg-[#F5F0EA] text-[#6B6660] border border-[#E3DCD3] hover:text-[#0D0D0D]'
+            }`}
+          >
+            {lvl.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Automatic Level Adaptation Notice */}
+      {adaptedLevelNotice && (
+        <div className="p-3.5 rounded-2xl bg-[#FFF3EC] border border-[#F26522]/30 flex items-center gap-2.5 text-xs text-[#0D0D0D] transition-all">
+          <Zap className="w-4 h-4 text-[#F26522] shrink-0" />
+          <span>{adaptedLevelNotice}</span>
+        </div>
+      )}
+
+      {/* Progress Bar (Strictly untimed) */}
       <QuizProgressBar
-        total={questions.length}
-        current={currentIndex}
+        current={currentIndex + 1}
+        total={activeQuestions.length}
         answers={answers}
       />
 
-      {/* Active Question Card */}
-      <QuestionCard
-        question={currentQ}
-        currentAnswer={currentAnswer}
-        onAnswerChange={handleAnswerChange}
-      />
+      {/* Question Card */}
+      {currentQuestion && (
+        <QuestionCard
+          question={currentQuestion}
+          currentAnswer={answers[currentIndex]}
+          onAnswerChange={handleAnswerChange}
+        />
+      )}
 
-      {/* Navigation Buttons */}
-      <div className="flex items-center justify-between pt-2">
+      {/* Navigation Controls */}
+      <div className="flex items-center justify-between pt-4">
         <Button
-          onClick={handlePrev}
-          disabled={isFirst}
           variant="secondary"
-          size="sm"
-          icon={ArrowLeft}
+          size="md"
+          onClick={handlePrev}
+          disabled={currentIndex === 0}
+          icon={<ArrowLeft className="w-4 h-4" />}
         >
-          {t('quiz.prev')}
+          {t('quiz.prev') || 'Previous'}
         </Button>
 
-        {isLast ? (
+        {currentIndex === activeQuestions.length - 1 ? (
           <Button
-            onClick={handleSubmit}
-            disabled={submitting}
             variant="primary"
             size="md"
-            icon={submitting ? Loader2 : CheckCircle}
+            onClick={handleSubmit}
+            disabled={submitting}
+            icon={submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
           >
-            {submitting ? 'Evaluating...' : t('quiz.submit')}
+            {submitting ? 'Submitting...' : t('quiz.submit') || 'Submit Assessment'}
           </Button>
         ) : (
           <Button
-            onClick={handleNext}
             variant="primary"
             size="md"
-            showArrow
+            onClick={handleNext}
+            icon={<ArrowRight className="w-4 h-4" />}
           >
-            {t('quiz.next')}
+            {t('quiz.next') || 'Next'}
           </Button>
         )}
       </div>

@@ -12,184 +12,194 @@ import {
   Bot, 
   ArrowRight, 
   AlertTriangle, 
-  CheckCircle2, 
-  TrendingUp, 
-  Clock, 
-  Sparkles 
+  Sparkles,
+  KeyRound,
+  Compass,
+  Layers,
+  GraduationCap
 } from 'lucide-react';
 
 export default function StudentDashboard() {
   const { currentUser } = useAuth();
   const { t } = useTranslation();
 
-  const journeySteps = [
+  // Top weak topics identified by diagnostic
+  const weakTopics = [
+    { name: 'Rotational Dynamics & Torque', subject: 'Physics', accuracy: '42%', rootCause: 'Vector Cross Products (Cl. 11)' },
+    { name: 'Chemical Equilibrium & Le Chatelier', subject: 'Chemistry', accuracy: '48%', rootCause: 'Reaction Stoichiometry' },
+    { name: 'Algebraic Identities & Factoring', subject: 'Mathematics', accuracy: '45%', rootCause: 'Middle-Term Splitting' },
+    { name: 'Recursion & Stack Frames', subject: 'Computer Science', accuracy: '50%', rootCause: 'Function Call Scope' },
+  ];
+
+  const quickLinks = [
     {
-      step: '01',
-      title: 'Take Diagnostic Quiz',
-      desc: 'Test your knowledge with confidence tags (Sure / Not Sure / Guessing). Guessing is recognized and weighted.',
+      title: 'Diagnostic Assessment',
+      desc: 'Untimed multi-level evaluation across Physics, Chemistry, Maths & CS with confidence weighting.',
       icon: BookOpen,
       to: '/quiz',
-      cta: 'Start Assessment',
+      btnText: 'Start Assessment',
     },
     {
-      step: '02',
-      title: 'Prerequisite Gap Finder',
-      desc: 'View your prerequisite tree. See exactly which foundational topic is causing errors in current coursework.',
+      title: 'Prerequisite Gap Tree',
+      desc: 'Visualize your curriculum graph and inspect how foundational blocks cause current errors.',
       icon: GitFork,
       to: '/gaps',
-      cta: 'View Graph',
+      btnText: 'View Gap Graph',
     },
     {
-      step: '03',
       title: 'Adaptive Study Planner',
-      desc: 'Enter your free hours. The algorithm schedules bite-sized 25-minute sessions tackling root gaps first.',
+      desc: 'Generate 25–30 minute focused sessions scheduled strictly around your daily free hours.',
       icon: Calendar,
       to: '/planner',
-      cta: 'Generate Plan',
+      btnText: 'Open Planner',
     },
     {
-      step: '04',
-      title: 'AI Learning Assistant',
-      desc: 'Get step-by-step hints and practice questions from Gemini AI with offline fallback reliability.',
+      title: 'LearnLens AI Coach',
+      desc: 'Ask questions, get hints, and practice misconceptions with textbook-aligned safe AI.',
       icon: Bot,
       to: '/ai-tutor',
-      cta: 'Ask Assistant',
+      btnText: 'Ask Coach',
+    },
+    {
+      title: 'Escape the Library',
+      desc: '3-room diagnostic game: unlock rooms by solving core prerequisite and logic puzzles.',
+      icon: KeyRound,
+      to: '/student/escape-library',
+      btnText: 'Enter Escape Room',
     },
   ];
 
   return (
-    <div className="space-y-10 max-w-5xl mx-auto py-4 sm:py-8">
-      {/* Top Welcome Banner */}
-      <Card padding="lg" className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative overflow-hidden">
-        {/* Subtle Ambient Decorative Swoosh */}
-        <svg className="absolute right-0 top-0 w-80 h-full opacity-10 pointer-events-none text-[#F26522]" viewBox="0 0 300 200" fill="none">
-          <circle cx="200" cy="100" r="100" stroke="currentColor" strokeWidth="2" strokeDasharray="6 8" />
-        </svg>
-
-        <div className="flex items-center gap-5 relative z-10">
+    <div className="space-y-8 max-w-5xl mx-auto py-4 sm:py-8">
+      {/* Top Welcome Card with Current Level */}
+      <Card variant="surface" className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border border-[#E3DCD3]">
+        <div className="flex items-center gap-4 sm:gap-5">
           <img
             src={currentUser?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya'}
             alt={currentUser?.full_name}
-            className="w-16 h-16 rounded-full bg-[#E3DCD3] border-2 border-[#0D0D0D] p-0.5 shadow-sm shrink-0"
+            className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#F5F0EA] border-2 border-[#F26522]/40 p-1 shrink-0 object-cover"
           />
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D] font-bold">
-                {currentUser?.class_name || 'Class 9-A'}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-[#0D0D0D] text-white">
+                Student Portal
               </span>
-              <span className="text-xs text-[#6B6660]">Class 9 Mathematics</span>
+              <span className="text-xs font-semibold text-[#6B6660]">
+                {currentUser?.class_name || 'Class 11 / JEE-KCET Track'}
+              </span>
             </div>
-            <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-[#0D0D0D] tracking-tight">
-              Welcome back, {currentUser?.full_name}! 👋
+            <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-[#0D0D0D] tracking-tight">
+              Welcome back, {currentUser?.full_name || 'Priya Sharma'}!
             </h1>
-            <p className="text-xs sm:text-sm text-[#6B6660] max-w-lg leading-relaxed">
-              Your personalized learning roadmap is active. Ready to turn weak topics into strengths?
-            </p>
           </div>
         </div>
 
-        <div className="relative z-10 shrink-0">
-          <Button to="/quiz" variant="primary" size="md" showArrow>
-            {t('nav.quiz')}
-          </Button>
+        <div className="p-4 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] shrink-0 text-left sm:text-right space-y-1">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#6B6660] flex items-center sm:justify-end gap-1.5">
+            <Compass className="w-3.5 h-3.5 text-[#F26522]" />
+            <span>Current Track</span>
+          </div>
+          <div className="font-heading font-extrabold text-base text-[#0D0D0D]">
+            Level 2: Intermediate
+          </div>
+          <div className="text-[11px] text-[#6B6660]">
+            Physics, Chemistry, Maths & CS
+          </div>
         </div>
       </Card>
 
-      {/* 4 Snapshot KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card padding="sm" hoverLift className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-[#6B6660] font-semibold">
-            <span>Diagnostic Score</span>
-            <TrendingUp className="w-4 h-4 text-[#F26522]" />
+      {/* Coach Tip Banner */}
+      <div className="p-5 sm:p-6 rounded-[24px] bg-[#FFF3EC] border border-[#F26522]/30 flex items-start gap-4 shadow-sm">
+        <div className="w-10 h-10 rounded-full bg-[#F26522]/15 flex items-center justify-center shrink-0 mt-0.5">
+          <Sparkles className="w-5 h-5 text-[#F26522]" />
+        </div>
+        <div className="space-y-1 text-xs sm:text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#F26522] bg-[#F26522]/10 px-2 py-0.5 rounded-full">
+              Coach Tip of the Day
+            </span>
           </div>
-          <div className="font-heading text-2xl font-black text-[#0D0D0D]">
-            50% <span className="text-xs font-normal text-[#6B6660]">(5/10)</span>
-          </div>
-          <div className="text-[11px] text-[#F26522] font-semibold flex items-center gap-1 pt-1">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-            <span>1 prerequisite gap identified</span>
-          </div>
-        </Card>
-
-        <Card padding="sm" hoverLift className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-[#6B6660] font-semibold">
-            <span>Root Prerequisite Gap</span>
-            <GitFork className="w-4 h-4 text-[#F26522]" />
-          </div>
-          <div className="font-heading text-base font-bold text-[#0D0D0D] truncate">
-            Algebraic Factoring
-          </div>
-          <div className="text-[11px] text-[#6B6660] pt-1">
-            Blocking Quadratic Equations (Cl. 9)
-          </div>
-        </Card>
-
-        <Card padding="sm" hoverLift className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-[#6B6660] font-semibold">
-            <span>Adaptive Study Plan</span>
-            <Clock className="w-4 h-4 text-[#F26522]" />
-          </div>
-          <div className="font-heading text-2xl font-black text-[#0D0D0D]">
-            3 Sessions
-          </div>
-          <div className="text-[11px] text-[#0D0D0D] font-semibold flex items-center gap-1 pt-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#F26522] shrink-0" />
-            <span>25-30 mins per session</span>
-          </div>
-        </Card>
-
-        <Card padding="sm" hoverLift className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-[#6B6660] font-semibold">
-            <span>AI Practice Coach</span>
-            <Sparkles className="w-4 h-4 text-[#F26522]" />
-          </div>
-          <div className="font-heading text-base font-bold text-[#0D0D0D]">
-            Active & Ready
-          </div>
-          <div className="text-[11px] text-[#6B6660] pt-1">
-            Offline textbook fallback active
-          </div>
-        </Card>
+          <p className="text-[#0D0D0D] font-medium leading-relaxed">
+            Master your Class 11 vector resolution and algebraic factoring first. Over <strong>65% of test errors</strong> in 12th-grade rotational dynamics and calculus trace back directly to these two foundational concepts.
+          </p>
+        </div>
       </div>
 
-      {/* 4-Step Learning Journey Cards */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <SectionLabel>RECOMMENDED LEARNING ROADMAP</SectionLabel>
-          <span className="text-xs text-[#6B6660]">Step-by-step unblocking</span>
+      {/* Top Weak Topics Identified */}
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4 border border-[#E3DCD3]">
+        <div className="flex items-center justify-between border-b border-[#E3DCD3] pb-3">
+          <div>
+            <SectionLabel text="DIAGNOSTIC SUMMARY" />
+            <h2 className="font-heading font-extrabold text-lg sm:text-xl text-[#0D0D0D] flex items-center gap-2 mt-1">
+              <AlertTriangle className="w-5 h-5 text-[#F26522]" />
+              <span>Priority Focus Areas (Weak Topics)</span>
+            </h2>
+          </div>
+          <span className="text-xs text-[#6B6660] font-medium">
+            Threshold: &lt; 60% Mastery
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {journeySteps.map((item) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {weakTopics.map((item, idx) => (
+            <div
+              key={idx}
+              className="p-4 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] space-y-2 hover:border-[#F26522]/40 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white text-[#6B6660] border border-[#E3DCD3]">
+                  {item.subject}
+                </span>
+                <span className="font-mono font-bold text-xs text-[#F26522]">
+                  {item.accuracy}
+                </span>
+              </div>
+              <h3 className="font-heading font-bold text-sm text-[#0D0D0D]">
+                {item.name}
+              </h3>
+              <div className="text-[11px] text-[#6B6660]">
+                Root Prerequisite: <strong className="text-[#0D0D0D]">{item.rootCause}</strong>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Action Buttons to Student Sub-Modules */}
+      <div className="space-y-4">
+        <div>
+          <SectionLabel text="STUDENT MODULES" />
+          <h2 className="font-heading font-extrabold text-xl text-[#0D0D0D] mt-1">
+            Learning Pathways
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {quickLinks.map((item, idx) => {
             const Icon = item.icon;
             return (
-              <Card key={item.step} padding="lg" hoverLift className="flex flex-col justify-between group">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center font-bold">
-                      <Icon className="w-5 h-5 text-[#F26522]" />
-                    </div>
-                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D]">
-                      Step {item.step}
-                    </span>
+              <Card
+                key={idx}
+                variant="surface"
+                className="p-5 flex flex-col justify-between space-y-4 border border-[#E3DCD3] hover:border-[#F26522]/50 hover:shadow-md transition-all"
+              >
+                <div className="space-y-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-[#0D0D0D] text-white flex items-center justify-center">
+                    <Icon className="w-5 h-5 text-[#F26522]" />
                   </div>
-
-                  <h3 className="font-heading text-xl font-bold text-[#0D0D0D] group-hover:text-[#F26522] transition-colors">
+                  <h3 className="font-heading font-bold text-base text-[#0D0D0D]">
                     {item.title}
                   </h3>
-
-                  <p className="text-xs sm:text-sm text-[#6B6660] leading-relaxed">
+                  <p className="text-xs text-[#6B6660] leading-relaxed">
                     {item.desc}
                   </p>
                 </div>
 
-                <div className="pt-6 flex items-center justify-between border-t border-[#E3DCD3]">
-                  <span className="text-xs font-bold text-[#0D0D0D]">{item.cta}</span>
-                  <Link
-                    to={item.to}
-                    className="w-9 h-9 rounded-full bg-[#0D0D0D] text-white group-hover:bg-[#F26522] flex items-center justify-center transition-colors shadow-xs"
-                  >
-                    <ArrowRight className="w-4 h-4" />
+                <div className="pt-2 border-t border-[#E3DCD3]/60">
+                  <Link to={item.to}>
+                    <Button variant="secondary" size="sm" className="w-full justify-center" icon={<ArrowRight className="w-3.5 h-3.5" />}>
+                      {item.btnText}
+                    </Button>
                   </Link>
                 </div>
               </Card>
