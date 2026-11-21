@@ -8,11 +8,15 @@ const router = express.Router();
 const DEMO_CREDENTIALS = {
   'priya.student@learnlens.demo': { role: 'student', password: 'Student@123', profile: MOCK_USERS.student },
   'student@learnlens.demo': { role: 'student', password: 'Student@123', profile: MOCK_USERS.student },
+  'priya.sharma@learnlens.edu': { role: 'student', password: 'Student@123', profile: MOCK_USERS.student },
   'rajesh.teacher@learnlens.demo': { role: 'teacher', password: 'Teacher@123', profile: MOCK_USERS.teacher },
   'teacher@learnlens.demo': { role: 'teacher', password: 'Teacher@123', profile: MOCK_USERS.teacher },
+  'rajesh.rao@learnlens.edu': { role: 'teacher', password: 'Teacher@123', profile: MOCK_USERS.teacher },
   'sunita.parent@learnlens.demo': { role: 'parent', password: 'Parent@123', profile: MOCK_USERS.parent },
   'parent@learnlens.demo': { role: 'parent', password: 'Parent@123', profile: MOCK_USERS.parent },
+  'sunita.sharma@learnlens.edu': { role: 'parent', password: 'Parent@123', profile: MOCK_USERS.parent },
   'admin@learnlens.demo': { role: 'admin', password: 'Admin@123', profile: MOCK_USERS.admin },
+  'admin@learnlens.edu': { role: 'admin', password: 'Admin@123', profile: MOCK_USERS.admin },
 };
 
 // 1. Interactive Server-Side Login

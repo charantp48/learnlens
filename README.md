@@ -72,12 +72,14 @@ npm test
 
 ## 👥 Role Portals & Demo Accounts
 
-| Role | Demo Identity | Route | Scope & Features |
+LearnLens features an interactive login screen at `/login` with 4 instant demo autofill buttons:
+
+| Role | Demo Credentials | Route | Scope & Features |
 | :--- | :--- | :--- | :--- |
-| **Student** | Priya Sharma | `/student` | Summary dashboard, untimed multi-level diagnostic quiz, confidence ratings, root-cause prerequisite display, 25-30 min study planner, AI Coach with report & fallback, and 3-room Escape the Library game. |
-| **Teacher** | Mr. Rajesh Rao | `/teacher` | Class overview, filterable roster, detailed student modal/report with feedback, live 15s incoming quiz submissions feed, question review queue. |
-| **Parent** | Sunita Sharma | `/parent` | Child selector, jargon-free summaries, subject levels, progress chart, teacher note reply. |
-| **Admin** | Dr. Vikram Malhotra | `/admin` | Single-page console (Logout only, no Home button), student/teacher/parent counts, user table, forms for cohort and user assignments. |
+| **Student** | `student@learnlens.demo`<br>pw: `Student@123` | `/student` | Summary dashboard, untimed multi-level diagnostic quiz, confidence ratings, root-cause prerequisite display, 25-30 min study planner, AI Coach with report & fallback, and 3-room Escape the Library game. |
+| **Teacher** | `teacher@learnlens.demo`<br>pw: `Teacher@123` | `/teacher` | Class overview, filterable roster, detailed student modal/report with feedback, live 15s incoming quiz submissions feed, question review queue. |
+| **Parent** | `parent@learnlens.demo`<br>pw: `Parent@123` | `/parent` | Child selector, jargon-free summaries, subject levels, progress chart, teacher note reply. |
+| **Admin** | `admin@learnlens.demo`<br>pw: `Admin@123` | `/admin` | Single-page console (Logout only, no Home button), student/teacher/parent counts, user table with enable/disable toggle, forms for creating users, cohorts, and parent-child links. |
 
 ---
 

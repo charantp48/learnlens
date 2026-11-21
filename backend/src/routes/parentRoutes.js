@@ -5,9 +5,10 @@ const router = express.Router();
 
 /**
  * GET /api/parent/child/:studentId
+ * GET /api/parent/children/:studentId/summary
  * Fetches comprehensive child diagnostic summary, study sessions, and teacher notes for parent view
  */
-router.get('/child/:studentId', async (req, res) => {
+router.get(['/child/:studentId', '/children/:studentId/summary', '/child/:studentId/summary'], async (req, res) => {
   const { studentId } = req.params;
 
   try {
