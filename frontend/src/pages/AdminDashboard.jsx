@@ -21,7 +21,7 @@ import Button from '../components/common/Button';
 import SectionLabel from '../components/common/SectionLabel';
 
 export default function AdminDashboard() {
-  const { t } = useTranslation();
+  const { t, tName } = useTranslation();
 
   const [metrics, setMetrics] = useState({
     counts: { students: 4, teachers: 2, parents: 2, classes: 2, totalUsers: 9 },
@@ -410,7 +410,7 @@ export default function AdminDashboard() {
                     const isActive = u.status === 'active';
                     return (
                       <tr key={u.id} className="hover:bg-[#FBF8F4]/80 transition-colors">
-                        <td className="py-3 px-3 font-semibold text-[#0D0D0D]">{u.name}</td>
+                        <td className="py-3 px-3 font-semibold text-[#0D0D0D]">{tName(u.name)}</td>
                         <td className="py-3 px-3 text-[#736B63] font-mono text-[11px]">{u.email}</td>
                         <td className="py-3 px-3">
                           <span
@@ -424,11 +424,11 @@ export default function AdminDashboard() {
                                 : 'bg-orange-50 text-[#F26522] border border-orange-200'
                             }`}
                           >
-                            {u.role}
+                            {tName(u.role)}
                           </span>
                         </td>
                         <td className="py-3 px-3 text-[#0D0D0D]">
-                          {u.className || u.linkedChild || '—'}
+                          {u.className || (u.linkedChild ? tName(u.linkedChild) : '—')}
                         </td>
                         <td className="py-3 px-3">
                           <span
@@ -631,7 +631,7 @@ export default function AdminDashboard() {
                   <option value="">Select teacher (optional)...</option>
                   {teachersList.map((t) => (
                     <option key={t.id} value={t.name}>
-                      {t.name}
+                      {tName(t.name)}
                     </option>
                   ))}
                 </select>
@@ -689,14 +689,14 @@ export default function AdminDashboard() {
                   <optgroup label="Teachers">
                     {teachersList.map((t) => (
                       <option key={t.id} value={t.id}>
-                        {t.name} (Teacher)
+                        {tName(t.name)} ({t('roles.teacher_title') || 'Teacher'})
                       </option>
                     ))}
                   </optgroup>
                   <optgroup label="Students">
                     {studentsList.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.name} (Student)
+                        {tName(s.name)} ({t('roles.student_title') || 'Student'})
                       </option>
                     ))}
                   </optgroup>
@@ -736,7 +736,7 @@ export default function AdminDashboard() {
                   <option value="">Select parent...</option>
                   {parentsList.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.email})
+                      {tName(p.name)} ({p.email})
                     </option>
                   ))}
                 </select>
@@ -754,7 +754,7 @@ export default function AdminDashboard() {
                   <option value="">Select student...</option>
                   {studentsList.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.className || 'Unassigned'})
+                      {tName(s.name)} ({s.className || 'Unassigned'})
                     </option>
                   ))}
                 </select>

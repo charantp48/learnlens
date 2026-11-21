@@ -36,10 +36,10 @@ export function LanguageProvider({ children }) {
   }, [language]);
 
   /**
-   * Helper function to translate keys with fallback to English.
-   * Usage: t('nav.home') or t('features.gapFinder_title')
+   * Helper function to translate keys with fallback to English and parameter replacement.
+   * Usage: t('nav.home') or t('student.welcome', { name: tName('Priya Sharma') })
    */
-  const t = (keyPath) => {
+  const t = (keyPath, params = {}) => {
     if (!keyPath) return '';
     const keys = keyPath.split('.');
 
@@ -56,19 +56,63 @@ export function LanguageProvider({ children }) {
     };
 
     // 1. Try selected language
-    const primary = resolveKey(translationsMap[language]);
-    if (primary !== undefined) return primary;
-
+    let result = resolveKey(translationsMap[language]);
+    
     // 2. Fallback to English
-    const fallback = resolveKey(translationsMap.en);
-    if (fallback !== undefined) return fallback;
+    if (result === undefined) {
+      result = resolveKey(translationsMap.en);
+    }
 
     // 3. Fallback to key itself if not found anywhere
-    return keyPath;
+    if (result === undefined) {
+      result = keyPath;
+    }
+
+    // Replace {placeholder} parameters
+    if (typeof result === 'string' && params && typeof params === 'object') {
+      Object.entries(params).forEach(([k, v]) => {
+        result = result.replace(new RegExp(`\\{${k}\\}`, 'g'), v !== undefined && v !== null ? v : '');
+      });
+    }
+
+    return result;
+  };
+
+  /**
+   * Helper function to translate people's names into the active language (English, Hindi, Kannada).
+   * Supports comma-separated lists and single names.
+   * Example: tName('Priya Sharma') -> 'प्रिया शर्मा' in Hindi, 'ಪ್ರಿಯಾ ಶರ್ಮಾ' in Kannada
+   */
+  const tName = (name) => {
+    if (!name || typeof name !== 'string') return name || '';
+
+    // Handle comma-separated lists (e.g. linkedChild: "Priya Sharma, Arjun Sharma")
+    if (name.includes(',')) {
+      return name
+        .split(',')
+        .map((n) => tName(n.trim()))
+        .join(', ');
+    }
+
+    const trimmed = name.trim();
+
+    // 1. Look up in active language names
+    const activeNames = translationsMap[language]?.names;
+    if (activeNames && activeNames[trimmed]) {
+      return activeNames[trimmed];
+    }
+
+    // 2. Look up in English names fallback
+    const enNames = translationsMap.en?.names;
+    if (enNames && enNames[trimmed]) {
+      return enNames[trimmed];
+    }
+
+    return name;
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, availableLanguages }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, tName, availableLanguages }}>
       {children}
     </LanguageContext.Provider>
   );

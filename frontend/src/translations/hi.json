@@ -203,5 +203,36 @@
     "changeLanguage": "भाषा बदलें",
     "aiDisclaimer": "एआई-जनित, कृपया अपनी पाठ्यपुस्तक से पुष्टि करें।",
     "copyright": "हैकाथॉन के लिए निर्मित। लर्नलेन्स - स्मार्ट, समावेशी शिक्षा।"
+  },
+  "student": {
+    "welcome": "वापसी पर स्वागत है, {name}!"
+  },
+  "names": {
+    "Priya Sharma": "प्रिया शर्मा",
+    "Rahul Verma": "राहुल वर्मा",
+    "Ananya Sen": "अनन्या सेन",
+    "Arjun Sharma": "अर्जुन शर्मा",
+    "Mr. Rajesh Rao": "श्री राजेश राव",
+    "Rajesh Rao": "राजेश राव",
+    "Ms. Sunita Patil": "सुश्री सुनीता पाटिल",
+    "Sunita Patil": "सुनीता पाटिल",
+    "Sunita Sharma": "सुनीता शर्मा",
+    "Amit Verma": "अमित वर्मा",
+    "Subhash Sen": "सुभाष सेन",
+    "Dr. Vikram Malhotra": "डॉ. विक्रम मल्होत्रा",
+    "Vikram Malhotra": "विक्रम मल्होत्रा",
+    "School Administrator": "विद्यालय प्रशासक",
+    "Admin Coordinator": "प्रशासन समन्वयक",
+    "Ramesh Kumar": "रमेश कुमार",
+    "Deepak Patel": "दीपक पटेल",
+    "Kavita Singh": "कविता सिंह",
+    "Priya": "प्रिया",
+    "Rahul": "राहुल",
+    "Ananya": "अनन्या",
+    "Arjun": "अर्जुन",
+    "Student": "छात्र",
+    "Teacher": "शिक्षक",
+    "Parent": "अभिभावक",
+    "Admin": "प्रशासक"
   }
 }

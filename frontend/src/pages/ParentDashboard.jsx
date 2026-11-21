@@ -33,7 +33,7 @@ import SectionLabel from '../components/common/SectionLabel';
 
 export default function ParentDashboard() {
   const { currentUser } = useAuth();
-  const { t } = useTranslation();
+  const { t, tName } = useTranslation();
 
   // Multi-child support
   const childrenList = [
@@ -158,7 +158,7 @@ export default function ParentDashboard() {
               </span>
             </div>
             <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-[#0D0D0D] tracking-tight">
-              {activeChild.name}'s Academic Progress
+              {tName(activeChild.name)}'s Academic Progress
             </h1>
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function ParentDashboard() {
                     : 'bg-white text-[#6B6660] border border-[#E3DCD3] hover:text-[#0D0D0D]'
                 }`}
               >
-                {child.name.split(' ')[0]} ({child.grade.split('-')[0]})
+                {tName(child.name.split(' ')[0])} ({child.grade.split('-')[0]})
               </button>
             ))}
           </div>
@@ -306,7 +306,7 @@ export default function ParentDashboard() {
         <div className="flex items-center justify-between border-b border-[#E3DCD3] pb-3">
           <div className="flex items-center gap-2 font-heading font-extrabold text-base text-[#0D0D0D]">
             <MessageSquare className="w-5 h-5 text-[#F26522]" />
-            <span>Note from Teacher: {activeChild.teacherFeedback.teacherName} ({activeChild.teacherFeedback.subject})</span>
+            <span>Note from Teacher: {tName(activeChild.teacherFeedback.teacherName)} ({activeChild.teacherFeedback.subject})</span>
           </div>
           <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F5F0EA] text-[#6B6660] border border-[#E3DCD3]">
             {activeChild.teacherFeedback.date}

@@ -21,7 +21,7 @@ import {
 
 export default function StudentDashboard() {
   const { currentUser } = useAuth();
-  const { t } = useTranslation();
+  const { t, tName } = useTranslation();
 
   // Top weak topics identified by diagnostic
   const weakTopics = [
@@ -89,7 +89,7 @@ export default function StudentDashboard() {
               </span>
             </div>
             <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-[#0D0D0D] tracking-tight">
-              Welcome back, {currentUser?.full_name || 'Priya Sharma'}!
+              {t('student.welcome', { name: tName(currentUser?.full_name || 'Priya Sharma') })}
             </h1>
           </div>
         </div>

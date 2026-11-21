@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export default function Navbar() {
-  const { t } = useTranslation();
+  const { t, tName } = useTranslation();
   const { currentUser, logout, isAuthenticated, getDashboardPath } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -59,7 +59,7 @@ export default function Navbar() {
                 {/* Dashboard Shortcut */}
                 <Link to={getDashboardPath(role)}>
                   <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[#FBF8F4] border border-[#E3DCD3] text-[#0D0D0D] hover:border-[#F26522] transition-colors">
-                    {currentUser?.full_name || 'My Portal'}
+                    {currentUser?.full_name ? tName(currentUser.full_name) : (t('nav.portal') || 'My Portal')}
                   </span>
                 </Link>
 
@@ -118,7 +118,7 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-[#0D0D0D] bg-[#F5F0EA] border border-[#E3DCD3]"
                 >
-                  <span>Portal: {currentUser?.full_name}</span>
+                  <span>Portal: {currentUser?.full_name ? tName(currentUser.full_name) : ''}</span>
                 </Link>
                 <div className="pt-2">
                   <Button

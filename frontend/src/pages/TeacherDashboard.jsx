@@ -37,7 +37,7 @@ import SectionLabel from '../components/common/SectionLabel';
 
 export default function TeacherDashboard() {
   const { currentUser } = useAuth();
-  const { t } = useTranslation();
+  const { t, tName } = useTranslation();
 
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -309,7 +309,7 @@ export default function TeacherDashboard() {
               </span>
             </div>
             <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-[#0D0D0D] tracking-tight">
-              {currentUser?.full_name || 'Mr. Rajesh Rao'}
+              {currentUser?.full_name ? tName(currentUser.full_name) : tName('Mr. Rajesh Rao')}
             </h1>
           </div>
         </div>
@@ -347,7 +347,7 @@ export default function TeacherDashboard() {
             Class-Wide Foundational Bottleneck: Algebraic Factoring (48% Mastery)
           </h3>
           <p className="text-[#6B6660] leading-relaxed">
-            Data across Class 11-A reveals that 66% of errors in Quadratic Equations and rotational torque calculations trace back to <strong>factoring middle terms</strong>. A 20-minute targeted review will unblock both Priya and Rahul.
+            Data across Class 11-A reveals that 66% of errors in Quadratic Equations and rotational torque calculations trace back to <strong>factoring middle terms</strong>. A 20-minute targeted review will unblock both {tName('Priya')} and {tName('Rahul')}.
           </p>
         </div>
       </div>
@@ -424,12 +424,12 @@ export default function TeacherDashboard() {
                   className="hover:bg-white transition-colors cursor-pointer"
                 >
                   <td className="py-3.5 px-4">
-                    <div className="font-bold text-[#0D0D0D]">{s.name}</div>
+                    <div className="font-bold text-[#0D0D0D]">{tName(s.name)}</div>
                     <div className="text-[11px] text-[#6B6660]">{s.class}</div>
                   </td>
                   {/* Linked parent's NAME ONLY (no phone or email) */}
                   <td className="py-3.5 px-4 font-medium text-[#0D0D0D]">
-                    {s.parentName}
+                    {tName(s.parentName)}
                   </td>
                   <td className="py-3.5 px-4">
                     <span className="text-xs font-semibold text-[#0D0D0D] block">{s.subject}</span>
@@ -496,7 +496,7 @@ export default function TeacherDashboard() {
               <div className="flex items-center gap-3">
                 <FileText className="w-4 h-4 text-[#F26522]" />
                 <div>
-                  <span className="font-bold text-[#0D0D0D]">{sub.studentName}</span>
+                  <span className="font-bold text-[#0D0D0D]">{tName(sub.studentName)}</span>
                   <span className="text-[#6B6660] ml-2">submitted <strong>{sub.subject}</strong></span>
                 </div>
               </div>
@@ -598,10 +598,10 @@ export default function TeacherDashboard() {
                 Student Diagnostic Report
               </span>
               <h2 className="font-heading font-extrabold text-2xl text-[#0D0D0D]">
-                {activeStudent.name} ({activeStudent.class})
+                {tName(activeStudent.name)} ({activeStudent.class})
               </h2>
               <div className="text-xs text-[#6B6660]">
-                Linked Parent: <strong className="text-[#0D0D0D]">{activeStudent.parentName}</strong> • Track: {activeStudent.level}
+                Linked Parent: <strong className="text-[#0D0D0D]">{tName(activeStudent.parentName)}</strong> • Track: {activeStudent.level}
               </div>
             </div>
 
@@ -644,7 +644,7 @@ export default function TeacherDashboard() {
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#0D0D0D] flex items-center gap-1.5">
                   <MessageSquare className="w-4 h-4 text-[#F26522]" />
-                  <span>Send Teacher Guidance (Delivered to Student & {activeStudent.parentName})</span>
+                  <span>Send Teacher Guidance (Delivered to Student & {tName(activeStudent.parentName)})</span>
                 </label>
                 <textarea
                   rows={3}

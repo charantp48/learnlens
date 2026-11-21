@@ -203,5 +203,36 @@
     "changeLanguage": "ಭಾಷೆ ಬದಲಾಯಿಸಿ",
     "aiDisclaimer": "ಎಐ ರಚಿತ ಮಾಹಿತಿ, ದಯವಿಟ್ಟು ಪಠ್ಯಪುಸ್ತಕದೊಂದಿಗೆ ದೃಢೀಕರಿಸಿ.",
     "copyright": "ಹ್ಯಾಕಥಾನ್‌ಗಾಗಿ ನಿರ್ಮಿಸಲಾಗಿದೆ. ಲರ್ನ್‌ಲೆನ್ಸ್ - ಸ್ಮಾರ್ಟ್, ಸಮಗ್ರ ಶಿಕ್ಷಣ."
+  },
+  "student": {
+    "welcome": "ಮತ್ತೆ ಸುಸ್ವಾಗತ, {name}!"
+  },
+  "names": {
+    "Priya Sharma": "ಪ್ರಿಯಾ ಶರ್ಮಾ",
+    "Rahul Verma": "ರಾಹುಲ್ ವರ್ಮಾ",
+    "Ananya Sen": "ಅನನ್ಯಾ ಸೇನ್",
+    "Arjun Sharma": "ಅರ್ಜುನ್ ಶರ್ಮಾ",
+    "Mr. Rajesh Rao": "ಶ್ರೀ ರಾಜೇಶ್ ರಾವ್",
+    "Rajesh Rao": "ರಾಜೇಶ್ ರಾವ್",
+    "Ms. Sunita Patil": "ಸುಶ್ರೀ ಸುನೀತಾ ಪಾಟೀಲ್",
+    "Sunita Patil": "ಸುನೀತಾ ಪಾಟೀಲ್",
+    "Sunita Sharma": "ಸುನೀತಾ ಶರ್ಮಾ",
+    "Amit Verma": "ಅಮಿತ್ ವರ್ಮಾ",
+    "Subhash Sen": "ಸುಭಾಷ್ ಸೇನ್",
+    "Dr. Vikram Malhotra": "ಡಾ. ವಿಕ್ರಮ್ ಮಲ್ಹೋತ್ರಾ",
+    "Vikram Malhotra": "ವಿಕ್ರಮ್ ಮಲ್ಹೋತ್ರಾ",
+    "School Administrator": "ಶಾಲಾ ಆಡಳಿತಾಧಿಕಾರಿ",
+    "Admin Coordinator": "ಆಡಳಿತ ಸಂಯೋಜಕರು",
+    "Ramesh Kumar": "ರಮೇಶ್ ಕುಮಾರ್",
+    "Deepak Patel": "ದೀಪಕ್ ಪಟೇಲ್",
+    "Kavita Singh": "ಕವಿತಾ ಸಿಂಗ್",
+    "Priya": "ಪ್ರಿಯಾ",
+    "Rahul": "ರಾಹುಲ್",
+    "Ananya": "ಅನನ್ಯಾ",
+    "Arjun": "ಅರ್ಜುನ್",
+    "Student": "ವಿದ್ಯಾರ್ಥಿ",
+    "Teacher": "ಶಿಕ್ಷಕರು",
+    "Parent": "ಪೋಷಕರು",
+    "Admin": "ನಿರ್ವಾಹಕರು"
   }
 }

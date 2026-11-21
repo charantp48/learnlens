@@ -202,5 +202,36 @@
     "changeLanguage": "Change Language",
     "aiDisclaimer": "AI-generated, please verify with your textbook.",
     "copyright": "Built for Hackathon. LearnLens - Smart, Inclusive Education."
+  },
+  "student": {
+    "welcome": "Welcome back, {name}!"
+  },
+  "names": {
+    "Priya Sharma": "Priya Sharma",
+    "Rahul Verma": "Rahul Verma",
+    "Ananya Sen": "Ananya Sen",
+    "Arjun Sharma": "Arjun Sharma",
+    "Mr. Rajesh Rao": "Mr. Rajesh Rao",
+    "Rajesh Rao": "Rajesh Rao",
+    "Ms. Sunita Patil": "Ms. Sunita Patil",
+    "Sunita Patil": "Sunita Patil",
+    "Sunita Sharma": "Sunita Sharma",
+    "Amit Verma": "Amit Verma",
+    "Subhash Sen": "Subhash Sen",
+    "Dr. Vikram Malhotra": "Dr. Vikram Malhotra",
+    "Vikram Malhotra": "Vikram Malhotra",
+    "School Administrator": "School Administrator",
+    "Admin Coordinator": "Admin Coordinator",
+    "Ramesh Kumar": "Ramesh Kumar",
+    "Deepak Patel": "Deepak Patel",
+    "Kavita Singh": "Kavita Singh",
+    "Priya": "Priya",
+    "Rahul": "Rahul",
+    "Ananya": "Ananya",
+    "Arjun": "Arjun",
+    "Student": "Student",
+    "Teacher": "Teacher",
+    "Parent": "Parent",
+    "Admin": "Admin"
   }
 }

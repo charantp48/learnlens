@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export default function Login() {
-  const { t } = useTranslation();
+  const { t, tName } = useTranslation();
   const { loginWithCredentials, loginDemo, currentUser, getDashboardPath } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -56,7 +56,8 @@ export default function Login() {
       title: 'Student',
       email: 'priya.student@learnlens.demo',
       password: 'Student@123',
-      name: 'Priya Sharma (Class 9-A)',
+      name: 'Priya Sharma',
+      detail: 'Class 11 / JEE Track',
       icon: GraduationCap,
     },
     {
@@ -64,7 +65,8 @@ export default function Login() {
       title: 'Teacher',
       email: 'rajesh.teacher@learnlens.demo',
       password: 'Teacher@123',
-      name: 'Mr. Rajesh Rao (Maths)',
+      name: 'Mr. Rajesh Rao',
+      detail: 'Mathematics',
       icon: Users,
     },
     {
@@ -72,7 +74,8 @@ export default function Login() {
       title: 'Parent',
       email: 'sunita.parent@learnlens.demo',
       password: 'Parent@123',
-      name: 'Sunita Sharma (Parent of Priya)',
+      name: 'Sunita Sharma',
+      detail: 'Parent of Priya',
       icon: HeartHandshake,
     },
     {
@@ -80,7 +83,8 @@ export default function Login() {
       title: 'Admin',
       email: 'admin@learnlens.demo',
       password: 'Admin@123',
-      name: 'Dr. Vikram Malhotra (Principal)',
+      name: 'Dr. Vikram Malhotra',
+      detail: 'Central Admin',
       icon: ShieldAlert,
     },
   ];
@@ -280,10 +284,10 @@ export default function Login() {
                       </div>
                       <div className="truncate">
                         <div className="font-heading font-bold text-xs text-[#0D0D0D] group-hover:text-[#F26522] transition-colors truncate">
-                          {account.title}
+                          {tName(account.title)}: {tName(account.name)}
                         </div>
                         <div className="text-[10px] text-[#6B6660] truncate">
-                          {account.role}
+                          {tName(account.detail)}
                         </div>
                       </div>
                     </div>
