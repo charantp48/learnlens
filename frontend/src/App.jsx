@@ -14,8 +14,9 @@ import AdminDashboard from './pages/AdminDashboard';
 
 // Interactive Modules
 import QuizContainer from './modules/Quiz/QuizContainer';
+import LearningGapView from './modules/LearningGap/LearningGapView';
 
-// Placeholder for remaining phases (Gaps, Planner, AI Tutor)
+// Placeholder for remaining phases (Planner, AI Tutor)
 function PhasePlaceholder({ title, phaseNumber }) {
   return (
     <div className="p-8 rounded-2xl bg-slate-800/40 border border-slate-700/60 text-center space-y-3">
@@ -59,7 +60,7 @@ export default function App() {
           path="gaps"
           element={
             <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
-              <PhasePlaceholder title="Prerequisite Gap Finder" phaseNumber={5} />
+              <LearningGapView />
             </ProtectedRoute>
           }
         />
