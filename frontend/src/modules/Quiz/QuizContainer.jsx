@@ -86,49 +86,38 @@ export default function QuizContainer() {
   const handleSubmit = async () => {
     setSubmitting(true);
 
-    const formattedAnswers = activeQuestions.map((q, idx) => {
-      const userAns = answers[idx] || { selectedOption: 'A', confidence: 'not_sure' };
-      const isCorrect = userAns.selectedOption === q.correct_option;
-      return {
-        questionId: q.id,
-        questionText: q.question_text,
-        topicName: q.topic_name,
-        subject: q.subject,
-        selectedOption: userAns.selectedOption,
-        correctOption: q.correct_option,
-        confidence: userAns.confidence,
-        isCorrect,
-        explanation: q.explanation,
-        prerequisiteName: q.prerequisite_name,
-      };
-    });
+    const submissionAnswers = activeQuestions.map((q, idx) => ({
+      questionId: q.id,
+      selectedOption: answers[idx]?.selectedOption || null,
+      confidence: answers[idx]?.confidence || 'not_sure',
+    }));
 
-    // Calculate score
-    const correctCount = formattedAnswers.filter((a) => a.isCorrect).length;
-    const total = formattedAnswers.length;
-    const percentage = Math.round((correctCount / total) * 100);
+    try {
+      const res = await fetch('http://localhost:5000/api/quiz/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: currentUser?.id || '00000000-0000-0000-0000-000000000001',
+          studentName: currentUser?.full_name || 'Student',
+          studentEmail: currentUser?.email || '',
+          className: currentUser?.class_name || 'Class 11-A',
+          subject: selectedSubject !== 'All' ? selectedSubject : 'Mathematics',
+          answers: submissionAnswers,
+        }),
+      });
 
-    // Compute topic stats
-    const topicMap = {};
-    formattedAnswers.forEach((a) => {
-      if (!topicMap[a.topicName]) {
-        topicMap[a.topicName] = { topic: a.topicName, total: 0, correct: 0 };
+      const data = await res.json();
+      if (res.ok) {
+        setResults(data);
+        localStorage.setItem('learnlens_last_quiz', JSON.stringify(data));
+      } else {
+        console.error('Quiz submit failed:', data.message);
       }
-      topicMap[a.topicName].total += 1;
-      if (a.isCorrect) topicMap[a.topicName].correct += 1;
-    });
-
-    const evaluatedResult = {
-      score: correctCount,
-      totalQuestions: total,
-      percentage,
-      evaluatedAnswers: formattedAnswers,
-      topicStats: Object.values(topicMap),
-    };
-
-    setResults(evaluatedResult);
-    localStorage.setItem('learnlens_last_quiz', JSON.stringify(evaluatedResult));
-    setSubmitting(false);
+    } catch (err) {
+      console.error('Network error during quiz submit:', err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (results) {

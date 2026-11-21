@@ -1,13 +1,209 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
-import { MOCK_TOPICS } from '../config/mockData.js';
+import { MOCK_TOPICS, MOCK_PREREQUISITES_GRAPH } from '../config/mockData.js';
+import { findLearningGaps } from '../services/gapFinder.js';
+import { saveAttemptAndReport, getStudentRankSnapshot } from '../services/reportService.js';
+import { getAllUsers } from './adminRoutes.js';
 
 const router = express.Router();
 
-// Class 9 Diagnostic Questions (Used for live quiz & offline fallback)
-export const DIAGNOSTIC_QUESTIONS = [
+/**
+ * Authoritative Master Question Bank
+ * Every question has an explicit level:
+ * Level 1 = 1 mark
+ * Level 2 = 2 marks
+ * Level 3 = 3 marks
+ * Wrong or skipped = 0 marks. No negative marking.
+ */
+export const AUTHORITATIVE_QUESTIONS = [
+  // Class 11 & 12 / JEE & KCET Track Questions
+  {
+    id: 'math-01',
+    subject: 'Mathematics',
+    level: 1,
+    marks: 1,
+    topic_id: '10000000-0000-0000-0000-000000000003',
+    topic_name: 'Algebraic Identities & Factoring',
+    question_text: 'What are the factors of x² - 9y²?',
+    option_a: '(x - 3y)(x - 3y)',
+    option_b: '(x + 3y)(x + 3y)',
+    option_c: '(x - 3y)(x + 3y)',
+    option_d: '(x - 9y)(x + y)',
+    correct_option: 'C',
+    explanation: 'Using identity a² - b² = (a - b)(a + b) with a = x and b = 3y: x² - 9y² = (x - 3y)(x + 3y).',
+  },
+  {
+    id: 'math-02',
+    subject: 'Mathematics',
+    level: 2,
+    marks: 2,
+    topic_id: '10000000-0000-0000-0000-000000000004',
+    topic_name: 'Quadratic Equations & Roots',
+    question_text: 'Puzzle: If the sum of the roots of 2x² - kx + 8 = 0 equals the product of its roots, what is the value of k?',
+    option_a: 'k = 4',
+    option_b: 'k = 8',
+    option_c: 'k = 16',
+    option_d: 'k = -8',
+    correct_option: 'B',
+    explanation: 'Sum of roots = k/2. Product of roots = 8/2 = 4. Setting k/2 = 4 yields k = 8.',
+  },
+  {
+    id: 'math-03',
+    subject: 'Mathematics',
+    level: 3,
+    marks: 3,
+    topic_id: '10000000-0000-0000-0000-000000000011',
+    topic_name: 'Differential Calculus & Derivatives',
+    question_text: 'Interactive: A particle moves such that s(t) = t³ - 6t² + 9t. At which timestamp(s) does the particle momentarily stop (v = 0)?',
+    option_a: 't = 0 and t = 3',
+    option_b: 't = 1 and t = 3',
+    option_c: 't = 2 and t = 4',
+    option_d: 't = 3 only',
+    correct_option: 'B',
+    explanation: 'v(t) = ds/dt = 3t² - 12t + 9 = 3(t - 1)(t - 3). v(t) = 0 gives t = 1 and t = 3.',
+  },
+  {
+    id: 'phy-01',
+    subject: 'Physics',
+    level: 1,
+    marks: 1,
+    topic_id: '20000000-0000-0000-0000-000000000001',
+    topic_name: 'Kinematics & Vector Resolution',
+    question_text: 'A force vector of 50 N acts at 30° to the horizontal ground. What is its horizontal component?',
+    option_a: '25 N',
+    option_b: '25√3 N (≈ 43.3 N)',
+    option_c: '50√3 N',
+    option_d: '100 N',
+    correct_option: 'B',
+    explanation: 'F_x = F · cos(30°) = 50 · (√3/2) = 25√3 N.',
+  },
+  {
+    id: 'phy-02',
+    subject: 'Physics',
+    level: 2,
+    marks: 2,
+    topic_id: '20000000-0000-0000-0000-000000000002',
+    topic_name: 'Rotational Dynamics & Moment of Inertia',
+    question_text: 'Puzzle: A solid cylinder and a thin hollow hoop of equal mass M and radius R roll down an incline without slipping. Which reaches the bottom first?',
+    option_a: 'The hollow hoop',
+    option_b: 'The solid cylinder',
+    option_c: 'Both arrive at the exact same instant',
+    option_d: 'Depends on the angle of inclination',
+    correct_option: 'B',
+    explanation: 'The solid cylinder has smaller moment of inertia (1/2 MR² vs MR²), providing greater translational acceleration.',
+  },
+  {
+    id: 'phy-03',
+    subject: 'Physics',
+    level: 3,
+    marks: 3,
+    topic_id: '20000000-0000-0000-0000-000000000003',
+    topic_name: 'Electrostatics & Coulomb Law',
+    question_text: 'Interactive: Two point charges +q and +4q are fixed distance L apart. At what distance x from +q along the line joining them is net force zero?',
+    option_a: 'x = L / 2',
+    option_b: 'x = L / 3',
+    option_c: 'x = L / 4',
+    option_d: 'x = 2L / 3',
+    correct_option: 'B',
+    explanation: 'Equating electrostatic forces gives 1/x = 2/(L - x) => 3x = L => x = L/3.',
+  },
+  {
+    id: 'chem-01',
+    subject: 'Chemistry',
+    level: 1,
+    marks: 1,
+    topic_id: '30000000-0000-0000-0000-000000000001',
+    topic_name: 'Chemical Bonding & Hybridization',
+    question_text: 'What is the hybridization and geometric shape of the central carbon in Methane (CH₄)?',
+    option_a: 'sp², Trigonal Planar',
+    option_b: 'sp³, Tetrahedral',
+    option_c: 'sp, Linear',
+    option_d: 'dsp², Square Planar',
+    correct_option: 'B',
+    explanation: 'Carbon has 4 bond pairs and 0 lone pairs; steric number 4 corresponds to sp³ hybridization with tetrahedral geometry.',
+  },
+  {
+    id: 'chem-02',
+    subject: 'Chemistry',
+    level: 2,
+    marks: 2,
+    topic_id: '30000000-0000-0000-0000-000000000002',
+    topic_name: 'Chemical Equilibrium & Le Chatelier',
+    question_text: 'Puzzle: For exothermic reaction N₂(g) + 3H₂(g) ⇌ 2NH₃(g) + Heat, which adjustment increases equilibrium yield of Ammonia?',
+    option_a: 'Increasing the temperature',
+    option_b: 'Increasing the pressure (reducing volume)',
+    option_c: 'Adding an inert gas at constant volume',
+    option_d: 'Adding a catalyst',
+    correct_option: 'B',
+    explanation: 'Increasing pressure shifts equilibrium toward fewer gas moles (4 moles -> 2 moles).',
+  },
+  {
+    id: 'chem-03',
+    subject: 'Chemistry',
+    level: 3,
+    marks: 3,
+    topic_id: '30000000-0000-0000-0000-000000000003',
+    topic_name: 'Electrochemistry & Nernst Equation',
+    question_text: 'Interactive: In Daniel cell Zn | Zn²⁺(0.1M) || Cu²⁺(1.0M) | Cu, what happens to cell potential if Zn²⁺ solution is diluted?',
+    option_a: 'E_cell decreases',
+    option_b: 'E_cell increases',
+    option_c: 'E_cell drops to zero',
+    option_d: 'No change in E_cell',
+    correct_option: 'B',
+    explanation: 'By Nernst Equation: E = E° - (0.059/2) log([Zn²⁺]/[Cu²⁺]). Lowering [Zn²⁺] reduces reaction quotient Q and increases E_cell.',
+  },
+  {
+    id: 'cs-01',
+    subject: 'Computer Science',
+    level: 1,
+    marks: 1,
+    topic_id: '40000000-0000-0000-0000-000000000001',
+    topic_name: 'Functions & Stack Frames',
+    question_text: 'When a function calls another function in programming, where is the return address and local state stored?',
+    option_a: 'Heap Memory',
+    option_b: 'Call Stack',
+    option_c: 'Hard Drive Cache',
+    option_d: 'Instruction Register',
+    correct_option: 'B',
+    explanation: 'Execution frames and local variables are pushed onto the Call Stack in LIFO order.',
+  },
+  {
+    id: 'cs-02',
+    subject: 'Computer Science',
+    level: 2,
+    marks: 2,
+    topic_id: '40000000-0000-0000-0000-000000000002',
+    topic_name: 'Recursion & Base Cases',
+    question_text: 'Puzzle: What is the output of recursive function solve(4)? \nfunction solve(n) { if (n <= 1) return 1; return n + solve(n - 1); }',
+    option_a: '10',
+    option_b: '24',
+    option_c: '8',
+    option_d: 'Infinite recursion / Stack Overflow',
+    correct_option: 'A',
+    explanation: 'solve(4) = 4 + 3 + 2 + 1 = 10.',
+  },
+  {
+    id: 'cs-03',
+    subject: 'Computer Science',
+    level: 3,
+    marks: 3,
+    topic_id: '40000000-0000-0000-0000-000000000003',
+    topic_name: 'Binary Trees & Search Time Complexity',
+    question_text: 'Interactive: A balanced Binary Search Tree contains 1,024 elements. What is the maximum number of node comparisons to locate an element?',
+    option_a: '1,024 comparisons',
+    option_b: '10 comparisons',
+    option_c: '512 comparisons',
+    option_d: '20 comparisons',
+    correct_option: 'B',
+    explanation: 'Lookup in balanced BST is O(log₂ N). Since 1,024 = 2¹⁰, log₂(1024) = 10 comparisons.',
+  },
+
+  // Class 9 Foundation Questions
   {
     id: '20000000-0000-0000-0000-000000000001',
+    subject: 'Mathematics',
+    level: 1,
+    marks: 1,
     topic_id: '10000000-0000-0000-0000-000000000001',
     topic_name: 'Number Systems & Rationals',
     question_text: 'Which of the following is an irrational number?',
@@ -17,10 +213,12 @@ export const DIAGNOSTIC_QUESTIONS = [
     option_d: '0.333...',
     correct_option: 'C',
     explanation: '√2 cannot be expressed as a ratio p/q of two integers, hence it is an irrational number.',
-    difficulty: 'easy',
   },
   {
     id: '20000000-0000-0000-0000-000000000004',
+    subject: 'Mathematics',
+    level: 2,
+    marks: 2,
     topic_id: '10000000-0000-0000-0000-000000000002',
     topic_name: 'Real Numbers & Radicals',
     question_text: 'What is the rationalized form of 1 / (√5 + √2)?',
@@ -29,11 +227,13 @@ export const DIAGNOSTIC_QUESTIONS = [
     option_c: '(√5 - √2) / 7',
     option_d: '√5 - √2',
     correct_option: 'A',
-    explanation: 'Multiply numerator and denominator by the conjugate (√5 - √2): (√5 - √2)/(5 - 2) = (√5 - √2)/3.',
-    difficulty: 'medium',
+    explanation: 'Multiply numerator and denominator by (√5 - √2): (√5 - √2)/(5 - 2) = (√5 - √2)/3.',
   },
   {
     id: '20000000-0000-0000-0000-000000000007',
+    subject: 'Mathematics',
+    level: 1,
+    marks: 1,
     topic_id: '10000000-0000-0000-0000-000000000003',
     topic_name: 'Algebraic Identities & Factoring',
     question_text: 'What are the factors of x² - 9?',
@@ -42,11 +242,13 @@ export const DIAGNOSTIC_QUESTIONS = [
     option_c: '(x - 3)(x + 3)',
     option_d: '(x - 9)(x + 1)',
     correct_option: 'C',
-    explanation: 'Difference of squares formula: a² - b² = (a - b)(a + b). Since 9 = 3², x² - 9 = (x - 3)(x + 3).',
-    difficulty: 'easy',
+    explanation: 'Difference of squares: a² - b² = (a - b)(a + b). x² - 9 = (x - 3)(x + 3).',
   },
   {
     id: '20000000-0000-0000-0000-000000000008',
+    subject: 'Mathematics',
+    level: 2,
+    marks: 2,
     topic_id: '10000000-0000-0000-0000-000000000003',
     topic_name: 'Algebraic Identities & Factoring',
     question_text: 'Factorize x² + 5x + 6 completely:',
@@ -55,11 +257,13 @@ export const DIAGNOSTIC_QUESTIONS = [
     option_c: '(x - 2)(x - 3)',
     option_d: '(x + 5)(x + 1)',
     correct_option: 'B',
-    explanation: 'Find two numbers that multiply to 6 and add to 5: 2 and 3. Thus x² + 5x + 6 = (x + 2)(x + 3).',
-    difficulty: 'medium',
+    explanation: 'Numbers multiplying to 6 and adding to 5 are 2 and 3: (x + 2)(x + 3).',
   },
   {
     id: '20000000-0000-0000-0000-000000000010',
+    subject: 'Mathematics',
+    level: 2,
+    marks: 2,
     topic_id: '10000000-0000-0000-0000-000000000004',
     topic_name: 'Quadratic Equations',
     question_text: 'What are the roots of the equation x² - 5x + 6 = 0?',
@@ -69,10 +273,12 @@ export const DIAGNOSTIC_QUESTIONS = [
     option_d: 'x = -1, -6',
     correct_option: 'A',
     explanation: 'Factoring gives (x - 2)(x - 3) = 0. Therefore x = 2 or x = 3.',
-    difficulty: 'medium',
   },
   {
     id: '20000000-0000-0000-0000-000000000013',
+    subject: 'Mathematics',
+    level: 1,
+    marks: 1,
     topic_id: '10000000-0000-0000-0000-000000000005',
     topic_name: 'Linear Equations in 1 Variable',
     question_text: 'Solve for x: 3x - 7 = 14',
@@ -82,10 +288,12 @@ export const DIAGNOSTIC_QUESTIONS = [
     option_d: 'x = 3',
     correct_option: 'B',
     explanation: '3x = 14 + 7 = 21 => x = 21 / 3 = 7.',
-    difficulty: 'easy',
   },
   {
     id: '20000000-0000-0000-0000-000000000016',
+    subject: 'Mathematics',
+    level: 1,
+    marks: 1,
     topic_id: '10000000-0000-0000-0000-000000000006',
     topic_name: 'Linear Equations in 2 Variables',
     question_text: 'A linear equation in two variables ax + by + c = 0 has:',
@@ -94,11 +302,13 @@ export const DIAGNOSTIC_QUESTIONS = [
     option_c: 'Infinitely many solutions',
     option_d: 'No solution',
     correct_option: 'C',
-    explanation: 'Every geometric point on the line represented by ax + by + c = 0 is a valid solution.',
-    difficulty: 'easy',
+    explanation: 'Every point on the line represented by ax + by + c = 0 is a solution.',
   },
   {
     id: '20000000-0000-0000-0000-000000000019',
+    subject: 'Mathematics',
+    level: 1,
+    marks: 1,
     topic_id: '10000000-0000-0000-0000-000000000007',
     topic_name: 'Lines and Angles',
     question_text: 'Two angles whose sum is 180° are called:',
@@ -107,11 +317,13 @@ export const DIAGNOSTIC_QUESTIONS = [
     option_c: 'Adjacent angles',
     option_d: 'Vertically opposite angles',
     correct_option: 'B',
-    explanation: 'By definition, supplementary angles sum up to exactly 180 degrees.',
-    difficulty: 'easy',
+    explanation: 'Supplementary angles sum to exactly 180 degrees.',
   },
   {
     id: '20000000-0000-0000-0000-000000000022',
+    subject: 'Mathematics',
+    level: 1,
+    marks: 1,
     topic_id: '10000000-0000-0000-0000-000000000008',
     topic_name: 'Triangles & Congruence',
     question_text: 'Which of the following is NOT a criterion for congruence of triangles?',
@@ -120,11 +332,13 @@ export const DIAGNOSTIC_QUESTIONS = [
     option_c: 'AAA',
     option_d: 'SSS',
     correct_option: 'C',
-    explanation: 'AAA (Angle-Angle-Angle) guarantees that two triangles are similar, but does not guarantee congruence.',
-    difficulty: 'easy',
+    explanation: 'AAA proves similarity, not congruence.',
   },
   {
     id: '20000000-0000-0000-0000-000000000028',
+    subject: 'Mathematics',
+    level: 1,
+    marks: 1,
     topic_id: '10000000-0000-0000-0000-000000000010',
     topic_name: 'Coordinate Geometry',
     question_text: 'The coordinates of the origin are:',
@@ -133,123 +347,181 @@ export const DIAGNOSTIC_QUESTIONS = [
     option_c: '(0, 0)',
     option_d: '(1, 1)',
     correct_option: 'C',
-    explanation: 'The origin is the intersection point of the horizontal x-axis and vertical y-axis: (0, 0).',
-    difficulty: 'easy',
+    explanation: 'The origin is the intersection of x-axis and y-axis: (0, 0).',
   },
 ];
 
-// 1. Get Diagnostic Questions
+export const DIAGNOSTIC_QUESTIONS = AUTHORITATIVE_QUESTIONS;
+
+/**
+ * 1. GET /api/quiz/diagnostic
+ * Fetch diagnostic questions (sanitized without correct answers or explanations)
+ */
 router.get('/diagnostic', async (req, res) => {
   try {
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('questions')
-        .select('id, topic_id, question_text, option_a, option_b, option_c, option_d, difficulty')
-        .limit(10);
-
-      if (!error && data && data.length > 0) {
-        // Attach topic names
-        const enriched = data.map((q) => {
-          const match = MOCK_TOPICS.find((t) => t.id === q.topic_id);
-          return { ...q, topic_name: match ? match.name : 'Mathematics' };
-        });
-        return res.json({ status: 'ok', questions: enriched });
-      }
-    }
-
-    // Fallback to offline questions
-    const sanitized = DIAGNOSTIC_QUESTIONS.map(({ correct_option, explanation, ...rest }) => rest);
+    const sanitized = AUTHORITATIVE_QUESTIONS.map(({ correct_option, explanation, ...rest }) => rest);
     res.json({ status: 'ok', questions: sanitized });
   } catch (err) {
-    console.error('Error fetching questions:', err);
-    const sanitized = DIAGNOSTIC_QUESTIONS.map(({ correct_option, explanation, ...rest }) => rest);
-    res.json({ status: 'ok', questions: sanitized });
+    res.status(500).json({ error: 'QuizFetchError', message: err.message });
   }
 });
 
-// 2. Submit Diagnostic Quiz & Evaluate Answers
+/**
+ * 2. POST /api/quiz/submit
+ * Server evaluates submitted answers against saved answer key:
+ * - Level 1 = 1 mark, Level 2 = 2 marks, Level 3 = 3 marks
+ * - Wrong or skipped = 0 marks. No negative marking.
+ * - Confidence rating does NOT change marks; only used for prerequisite diagnosis.
+ * - Saves attempt in ONE safe database step with duplicate submission prevention.
+ * - Automatically creates the student_report.
+ * - Returns only the student's marks, percentage, weak topics, class rank, and school rank.
+ */
 router.post('/submit', async (req, res) => {
   try {
-    const { studentId = '00000000-0000-0000-0000-000000000001', answers = [] } = req.body;
+    const {
+      attemptId,
+      studentId = '00000000-0000-0000-0000-000000000001',
+      studentName,
+      studentEmail,
+      className,
+      subject = 'Mathematics',
+      answers = [],
+    } = req.body;
 
-    let score = 0;
-    const totalQuestions = DIAGNOSTIC_QUESTIONS.length;
+    if (!Array.isArray(answers) || answers.length === 0) {
+      return res.status(400).json({ error: 'ValidationError', message: 'No answers submitted.' });
+    }
+
+    let marksEarned = 0;
+    let marksPossible = 0;
     const evaluatedAnswers = [];
-    const topicStats = {};
 
-    // Evaluate each submitted answer
-    DIAGNOSTIC_QUESTIONS.forEach((q) => {
-      const userSubmission = answers.find((a) => a.questionId === q.id);
-      const selectedOption = userSubmission ? userSubmission.selectedOption : null;
-      const confidence = userSubmission ? userSubmission.confidence : 'not_sure'; // 'sure' | 'not_sure' | 'guessing'
+    // Evaluate each answer against server-authoritative key
+    for (const userAns of answers) {
+      const q = AUTHORITATIVE_QUESTIONS.find((item) => item.id === userAns.questionId);
+      if (!q) continue;
+
+      const questionLevel = q.level || 1;
+      const questionMarks = q.marks || questionLevel; // Level 1 = 1, Level 2 = 2, Level 3 = 3
+      marksPossible += questionMarks;
+
+      const selectedOption = userAns.selectedOption ? String(userAns.selectedOption).trim().toUpperCase() : null;
+      const confidence = userAns.confidence || 'not_sure'; // 'sure' | 'not_sure' | 'guessing'
       const isCorrect = selectedOption === q.correct_option;
 
-      if (isCorrect) score += 1;
-
-      // Group per topic for gap finder
-      if (!topicStats[q.topic_id]) {
-        topicStats[q.topic_id] = {
-          topicId: q.topic_id,
-          topicName: q.topic_name,
-          total: 0,
-          correct: 0,
-          guessing: 0,
-          notSure: 0,
-          sure: 0,
-        };
+      if (isCorrect) {
+        marksEarned += questionMarks;
       }
-      topicStats[q.topic_id].total += 1;
-      if (isCorrect) topicStats[q.topic_id].correct += 1;
-      if (confidence === 'guessing') topicStats[q.topic_id].guessing += 1;
-      else if (confidence === 'not_sure') topicStats[q.topic_id].notSure += 1;
-      else topicStats[q.topic_id].sure += 1;
 
       evaluatedAnswers.push({
         questionId: q.id,
         topicId: q.topic_id,
         topicName: q.topic_name,
-        questionText: q.question_text,
+        subject: q.subject,
+        level: questionLevel,
+        marksPossible: questionMarks,
+        marksEarned: isCorrect ? questionMarks : 0,
         selectedOption,
         correctOption: q.correct_option,
         isCorrect,
         confidence,
         explanation: q.explanation,
       });
-    });
-
-    const percentage = Number(((score / totalQuestions) * 100).toFixed(1));
-
-    // Try saving attempt to Supabase if connected
-    let attemptId = `d0000000-0000-0000-0000-${Date.now().toString().slice(-12).padStart(12, '0')}`;
-    if (supabase) {
-      try {
-        const { data: attemptData } = await supabase.from('quiz_attempts').insert({
-          quiz_id: 'e0000000-0000-0000-0000-000000000001',
-          student_id: studentId,
-          score,
-          total_score: totalQuestions,
-          percentage,
-        }).select().single();
-
-        if (attemptData) attemptId = attemptData.id;
-      } catch (err) {
-        console.warn('Could not persist attempt to Supabase, continuing with in-memory result:', err.message);
-      }
     }
 
+    const percentage =
+      marksPossible > 0 ? Number(((marksEarned / marksPossible) * 100).toFixed(1)) : 0;
+
+    // Determine level achieved based on server evaluation
+    const levelAchieved =
+      percentage >= 75
+        ? 'Level 3: Advanced Mastery'
+        : percentage >= 50
+        ? 'Level 2: Intermediate Progress'
+        : 'Level 1: Foundational Review';
+
+    // Run prerequisite gap finder for cognitive diagnosis
+    const gapAnalysis = findLearningGaps(
+      evaluatedAnswers,
+      MOCK_PREREQUISITES_GRAPH,
+      MOCK_TOPICS
+    );
+
+    const weakTopics = (gapAnalysis.learningGaps || []).map((gap) => ({
+      topicId: gap.topicId,
+      topicName: gap.topicName,
+      accuracyPercentage: gap.accuracyPercentage,
+      rootPrerequisite: gap.rootPrerequisite,
+      evidence: gap.evidence,
+    }));
+
+    // Safe Atomic Persistence & Duplicate Attempt Check
+    let saveResult;
+    try {
+      saveResult = await saveAttemptAndReport({
+        attemptId,
+        studentId,
+        studentName,
+        studentEmail,
+        className,
+        subject,
+        marksEarned,
+        marksPossible,
+        percentage,
+        levelAchieved,
+        weakTopics,
+        evaluatedAnswers,
+      });
+    } catch (saveErr) {
+      if (saveErr.code === 'DUPLICATE_SUBMISSION') {
+        return res.status(409).json({
+          error: 'DuplicateSubmission',
+          message: 'This quiz attempt has already been submitted and graded.',
+        });
+      }
+      throw saveErr;
+    }
+
+    const { report, rankSnapshot } = saveResult;
+
+    // Return student-facing result (Never show other students' names or scores)
     res.json({
       status: 'ok',
-      attemptId,
-      score,
-      totalQuestions,
+      reportId: report.id,
+      attemptId: report.attempt_id,
+      marks_earned: marksEarned,
+      marks_possible: marksPossible,
+      score: marksEarned,
+      total_score: marksPossible,
       percentage,
-      topicStats: Object.values(topicStats),
+      level_achieved: levelAchieved,
+      class_rank: rankSnapshot.class_rank,
+      class_total_students: rankSnapshot.class_total_students,
+      school_rank: rankSnapshot.school_rank,
+      school_total_students: rankSnapshot.school_total_students,
+      class_name: rankSnapshot.class_name,
+      weak_topics: weakTopics,
+      topicStats: Object.values(gapAnalysis.topicStats || {}),
       evaluatedAnswers,
-      submittedAt: new Date().toISOString(),
+      submittedAt: report.created_at,
     });
   } catch (err) {
-    console.error('Error evaluating quiz submission:', err);
+    console.error('Quiz Evaluation Error:', err);
     res.status(500).json({ error: 'QuizEvaluationError', message: err.message });
+  }
+});
+
+/**
+ * 3. GET /api/quiz/ranks/:studentId
+ * Get real-time rank snapshot for a student (role-isolated: only own rank returned)
+ */
+router.get('/ranks/:studentId', (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const rankSnapshot = getStudentRankSnapshot(studentId);
+    res.json({ status: 'ok', rank: rankSnapshot });
+  } catch (err) {
+    res.status(500).json({ error: 'RankingError', message: err.message });
   }
 });
 

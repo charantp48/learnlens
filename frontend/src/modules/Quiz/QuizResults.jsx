@@ -20,13 +20,25 @@ export default function QuizResults({ results, onRetake }) {
   const { t } = useTranslation();
   const [expandedId, setExpandedId] = useState(null);
 
-  const { score, totalQuestions, percentage, evaluatedAnswers = [], topicStats = [] } = results;
+  const {
+    marks_earned,
+    marks_possible,
+    score,
+    totalQuestions,
+    percentage,
+    level_achieved = 'Level 1: Foundational Review',
+    class_rank,
+    class_total_students,
+    school_rank,
+    school_total_students,
+    class_name = 'Class 11-A',
+    evaluatedAnswers = [],
+    topicStats = [],
+    weak_topics = [],
+  } = results;
 
-  // Identify weak topics (< 60%)
-  const weakTopics = topicStats.filter((ts) => {
-    const accuracy = ts.total > 0 ? (ts.correct / ts.total) * 100 : 0;
-    return accuracy < 60;
-  });
+  const displayScore = marks_earned !== undefined ? marks_earned : score || 0;
+  const displayTotal = marks_possible !== undefined ? marks_possible : totalQuestions || 0;
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto py-6">
@@ -42,20 +54,49 @@ export default function QuizResults({ results, onRetake }) {
         </p>
 
         {/* Score & Percentage Display */}
-        <div className="flex flex-wrap items-center justify-center gap-6 pt-2">
-          <div className="p-4 rounded-[18px] bg-[#F5F0EA] border border-[#E3DCD3] min-w-[140px]">
-            <div className="text-xs text-[#6B6660] font-semibold">{t('quiz.score')}</div>
+        <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+          <div className="p-4 rounded-[18px] bg-[#F5F0EA] border border-[#E3DCD3] min-w-[130px]">
+            <div className="text-xs text-[#6B6660] font-semibold">Marks Earned</div>
             <div className="font-heading text-3xl font-black text-[#0D0D0D] mt-1">
-              {score} <span className="text-base font-normal text-[#6B6660]">/ {totalQuestions}</span>
+              {displayScore} <span className="text-base font-normal text-[#6B6660]">/ {displayTotal}</span>
             </div>
+            <div className="text-[10px] text-[#6B6660] mt-0.5">L1=1m, L2=2m, L3=3m</div>
           </div>
 
-          <div className="p-4 rounded-[18px] bg-[#F5F0EA] border border-[#E3DCD3] min-w-[140px]">
-            <div className="text-xs text-[#6B6660] font-semibold">{t('quiz.accuracy')}</div>
+          <div className="p-4 rounded-[18px] bg-[#F5F0EA] border border-[#E3DCD3] min-w-[130px]">
+            <div className="text-xs text-[#6B6660] font-semibold">{t('quiz.accuracy') || 'Percentage'}</div>
             <div className={`font-heading text-3xl font-black mt-1 ${percentage >= 60 ? 'text-[#0D0D0D]' : 'text-[#F26522]'}`}>
               {percentage}%
             </div>
+            <div className="text-[10px] text-[#6B6660] mt-0.5">Score / Possible</div>
           </div>
+
+          {class_rank !== undefined && (
+            <div className="p-4 rounded-[18px] bg-[#F5F0EA] border border-[#E3DCD3] min-w-[140px]">
+              <div className="text-xs text-[#6B6660] font-semibold">Class Rank</div>
+              <div className="font-heading text-2xl font-black text-[#0D0D0D] mt-1">
+                Rank {class_rank} <span className="text-xs font-normal text-[#6B6660]">of {class_total_students}</span>
+              </div>
+              <div className="text-[10px] text-[#6B6660] mt-0.5">{class_name}</div>
+            </div>
+          )}
+
+          {school_rank !== undefined && (
+            <div className="p-4 rounded-[18px] bg-[#F5F0EA] border border-[#E3DCD3] min-w-[140px]">
+              <div className="text-xs text-[#6B6660] font-semibold">School Rank</div>
+              <div className="font-heading text-2xl font-black text-[#0D0D0D] mt-1">
+                Rank {school_rank} <span className="text-xs font-normal text-[#6B6660]">of {school_total_students}</span>
+              </div>
+              <div className="text-[10px] text-[#6B6660] mt-0.5">Overall Real Rank</div>
+            </div>
+          )}
+        </div>
+
+        {/* Level Achieved Pill */}
+        <div className="flex items-center justify-center">
+          <span className="text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full bg-[#0D0D0D] text-white">
+            {level_achieved}
+          </span>
         </div>
 
         {/* Action Buttons */}
@@ -70,18 +111,36 @@ export default function QuizResults({ results, onRetake }) {
         </div>
       </Card>
 
-      {/* Diagnosed Prerequisite Alert Card */}
-      <Card padding="md" className="border-[#F26522] bg-[#F26522]/5 space-y-3">
-        <div className="flex items-center gap-2.5 text-[#F26522]">
-          <AlertTriangle className="w-5 h-5 shrink-0" />
-          <h3 className="font-heading font-bold text-base text-[#0D0D0D]">
-            Prerequisite Bottleneck Diagnosed: Algebraic Factoring (Class 8)
-          </h3>
+      {/* Diagnosed Prerequisite Alert Card(s) */}
+      {weak_topics && weak_topics.length > 0 ? (
+        <div className="space-y-3">
+          {weak_topics.map((wt, idx) => (
+            <Card key={idx} padding="md" className="border-[#F26522] bg-[#F26522]/5 space-y-2">
+              <div className="flex items-center gap-2.5 text-[#F26522]">
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+                <h3 className="font-heading font-bold text-base text-[#0D0D0D]">
+                  Priority Weak Topic: {wt.topicName} ({wt.accuracyPercentage || 0}% Accuracy)
+                </h3>
+              </div>
+              <p className="text-xs sm:text-sm text-[#6B6660] leading-relaxed">
+                Diagnosed Root Cause: <strong className="text-[#0D0D0D]">{wt.rootPrerequisite}</strong>. {wt.evidence || 'Difficulty in this topic traces directly back to prerequisite foundational concepts.'}
+              </p>
+            </Card>
+          ))}
         </div>
-        <p className="text-xs sm:text-sm text-[#6B6660] leading-relaxed">
-          Your diagnostic answers show that difficulty in 9th-grade <strong>Quadratic Equations (33%)</strong> is not due to advanced concepts; it stems from an unresolved foundation in 8th-grade <strong>middle-term splitting and algebraic identities</strong>.
-        </p>
-      </Card>
+      ) : (
+        <Card padding="md" className="border-emerald-500 bg-emerald-50/50 space-y-2">
+          <div className="flex items-center gap-2.5 text-emerald-700">
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
+            <h3 className="font-heading font-bold text-base text-[#0D0D0D]">
+              Strong Diagnostic Performance
+            </h3>
+          </div>
+          <p className="text-xs sm:text-sm text-[#6B6660] leading-relaxed">
+            All evaluated topic accuracies are at or above the 60% mastery threshold. Continue with advanced practice problems!
+          </p>
+        </Card>
+      )}
 
       {/* Evaluated Answers Breakdown */}
       <div className="space-y-4">
