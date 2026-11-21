@@ -12,7 +12,10 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import ParentDashboard from './pages/ParentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 
-// Placeholder for remaining phases (Quiz, Gaps, Planner, AI Tutor)
+// Interactive Modules
+import QuizContainer from './modules/Quiz/QuizContainer';
+
+// Placeholder for remaining phases (Gaps, Planner, AI Tutor)
 function PhasePlaceholder({ title, phaseNumber }) {
   return (
     <div className="p-8 rounded-2xl bg-slate-800/40 border border-slate-700/60 text-center space-y-3">
@@ -48,7 +51,7 @@ export default function App() {
           path="quiz"
           element={
             <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
-              <PhasePlaceholder title="Student Diagnostic Quiz Flow" phaseNumber={4} />
+              <QuizContainer />
             </ProtectedRoute>
           }
         />

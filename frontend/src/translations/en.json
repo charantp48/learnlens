@@ -56,6 +56,26 @@
     "adminBtn": "Continue as Administrator (Principal)",
     "demoNotice": "Hackathon Demo Mode: One-click sign-in for instant evaluation across all 4 roles."
   },
+  "quiz": {
+    "title": "Class 9 Maths Diagnostic Assessment",
+    "subtitle": "Answer honestly and select your confidence rating. There are no negative marks!",
+    "selectConfidence": "How sure are you about your answer?",
+    "sure": "Sure",
+    "sureDesc": "I know the exact concept",
+    "notSure": "Not Sure",
+    "notSureDesc": "I have some doubts",
+    "guessing": "Guessing",
+    "guessingDesc": "I am mostly guessing",
+    "next": "Next Question",
+    "prev": "Previous",
+    "submit": "Finish & Submit Quiz",
+    "resultsTitle": "Diagnostic Assessment Results",
+    "resultsSubtitle": "Here is your performance breakdown across topics",
+    "score": "Final Score",
+    "accuracy": "Accuracy",
+    "viewGapsBtn": "Analyze Learning Gaps & Root Prerequisites",
+    "retakeBtn": "Retake Quiz"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Something went wrong",

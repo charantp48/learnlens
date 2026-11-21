@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config/index.js';
 import authRoutes from './routes/authRoutes.js';
+import quizRoutes from './routes/quizRoutes.js';
 
 const app = express();
 
@@ -27,8 +28,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Auth & Role routes
+// Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/quiz', quizRoutes);
 
 // 404 handler for unknown endpoints
 app.use((req, res) => {
