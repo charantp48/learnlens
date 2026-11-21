@@ -15,8 +15,9 @@ import AdminDashboard from './pages/AdminDashboard';
 // Interactive Modules
 import QuizContainer from './modules/Quiz/QuizContainer';
 import LearningGapView from './modules/LearningGap/LearningGapView';
+import StudyPlannerView from './modules/StudyPlanner/StudyPlannerView';
 
-// Placeholder for remaining phases (Planner, AI Tutor)
+// Placeholder for remaining phase (AI Tutor)
 function PhasePlaceholder({ title, phaseNumber }) {
   return (
     <div className="p-8 rounded-2xl bg-slate-800/40 border border-slate-700/60 text-center space-y-3">
@@ -68,7 +69,7 @@ export default function App() {
           path="planner"
           element={
             <ProtectedRoute allowedRoles={['student', 'parent', 'teacher', 'admin']}>
-              <PhasePlaceholder title="Adaptive Study Planner" phaseNumber={6} />
+              <StudyPlannerView />
             </ProtectedRoute>
           }
         />

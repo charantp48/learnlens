@@ -4,6 +4,7 @@ import { config } from './config/index.js';
 import authRoutes from './routes/authRoutes.js';
 import quizRoutes from './routes/quizRoutes.js';
 import gapRoutes from './routes/gapRoutes.js';
+import plannerRoutes from './routes/plannerRoutes.js';
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/gaps', gapRoutes);
+app.use('/api/planner', plannerRoutes);
 
 // 404 handler for unknown endpoints
 app.use((req, res) => {
