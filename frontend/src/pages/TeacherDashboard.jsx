@@ -12,7 +12,9 @@ import {
   Send, 
   Sparkles,
   GitFork,
-  Check
+  Check,
+  X,
+  ArrowRight
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -24,6 +26,9 @@ import {
   ReferenceLine, 
   Cell 
 } from 'recharts';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
+import SectionLabel from '../components/common/SectionLabel';
 
 export default function TeacherDashboard() {
   const { currentUser } = useAuth();
@@ -176,197 +181,246 @@ export default function TeacherDashboard() {
   return (
     <div className="space-y-8 max-w-5xl mx-auto py-2">
       {/* Header Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-800/60 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-4">
+      <Card variant="surface" className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="flex items-center gap-4 sm:gap-5">
           <img
             src={currentUser?.avatar_url}
             alt={currentUser?.full_name}
-            className="w-16 h-16 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 p-1 shrink-0"
+            className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-bg-base border-2 border-accent/40 p-1 shrink-0 object-cover"
           />
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-                Teacher Portal
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-dark-banner text-white">
+                {t('teacher.portalBadge')}
               </span>
-              <span className="text-xs text-slate-400">Class 9-A Mathematics</span>
+              <span className="text-xs font-medium text-text-muted">
+                {analytics?.className || 'Class 9-A Mathematics'}
+              </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
-              Welcome, {currentUser?.full_name}
+            <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-text-main tracking-tight mt-1">
+              {t('teacher.welcome', { name: currentUser?.full_name || 'Mr. Rajesh Rao' })}
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
+        <div className="shrink-0">
+          <Button
+            variant="primary"
             onClick={() => setQuizModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/20 cursor-pointer"
+            icon={<PlusCircle className="w-4 h-4" />}
           >
-            <PlusCircle className="w-4 h-4" />
-            <span>Assign Quiz</span>
-          </button>
+            {t('teacher.assignQuiz')}
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Class Diagnostic Bottleneck Alert */}
-      <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3.5">
-        <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-        <div className="text-xs space-y-1">
-          <h3 className="font-bold text-amber-300">
-            Class-Wide Foundational Bottleneck: Algebraic Factoring (48% Avg Accuracy)
-          </h3>
-          <p className="text-slate-300 leading-relaxed">
-            Data across Class 9-A reveals that students are not failing Quadratic Equations due to advanced quadratic concepts; <strong>66% of student errors originate in Class 8 middle-term splitting</strong>. A 20-minute targeted review will unblock both Priya and Rahul.
+      <div className="p-5 sm:p-6 rounded-card bg-[#FFF3EC] border border-accent/30 flex items-start gap-4 shadow-sm">
+        <div className="w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+          <AlertTriangle className="w-5 h-5 text-accent" />
+        </div>
+        <div className="text-xs sm:text-sm space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+              Critical Root Gap
+            </span>
+            <h3 className="font-heading font-extrabold text-text-main text-sm sm:text-base">
+              {t('teacher.bottleneckTitle')}
+            </h3>
+          </div>
+          <p className="text-text-muted leading-relaxed">
+            {t('teacher.bottleneckDesc')}
           </p>
         </div>
       </div>
 
       {/* Topic Accuracy Bar Chart (Recharts) */}
-      <div className="p-6 rounded-3xl bg-slate-800/40 border border-slate-700/60 shadow-lg space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-warm pb-4">
           <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-indigo-400" />
-              <span>Class 9-A Topic Performance Breakdown</span>
+            <SectionLabel text="CURRICULUM BREAKDOWN" />
+            <h2 className="font-heading font-extrabold text-lg sm:text-xl text-text-main flex items-center gap-2 mt-1">
+              <TrendingUp className="w-5 h-5 text-accent" />
+              <span>{t('teacher.breakdownTitle')}</span>
             </h2>
-            <p className="text-xs text-slate-400">
-              Red & Amber bars identify concepts below the 60% mastery threshold.
+            <p className="text-xs text-text-muted mt-0.5">
+              {t('teacher.breakdownSubtitle')}
             </p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            Class Average: {analytics?.classAverageScore}%
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-bg-base text-text-main border border-border-warm">
+              {t('teacher.classAverage')}: <strong className="text-accent">{analytics?.classAverageScore}%</strong>
+            </span>
+          </div>
         </div>
 
-        <div className="h-64 w-full pt-4">
+        <div className="h-64 sm:h-72 w-full pt-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={analytics?.topicPerformance || []} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
               <XAxis
                 dataKey="topic"
-                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                tick={{ fill: '#6B6660', fontSize: 10, fontFamily: 'Inter' }}
                 interval={0}
                 angle={-30}
                 textAnchor="end"
+                stroke="#E3DCD3"
               />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} domain={[0, 100]} />
+              <YAxis tick={{ fill: '#6B6660', fontSize: 10, fontFamily: 'Inter' }} domain={[0, 100]} stroke="#E3DCD3" />
               <Tooltip
-                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }}
+                contentStyle={{
+                  backgroundColor: '#FBF8F4',
+                  borderColor: '#E3DCD3',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  color: '#0D0D0D',
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08)'
+                }}
                 formatter={(val) => [`${val}%`, 'Accuracy']}
               />
-              <ReferenceLine y={60} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: '60% Mastery', fill: '#f59e0b', fontSize: 10, position: 'right' }} />
+              <ReferenceLine
+                y={60}
+                stroke="#F26522"
+                strokeDasharray="4 4"
+                label={{ value: t('teacher.masteryThreshold'), fill: '#F26522', fontSize: 10, position: 'right' }}
+              />
               <Bar dataKey="accuracy" radius={[6, 6, 0, 0]}>
                 {(analytics?.topicPerformance || []).map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={entry.accuracy < 50 ? '#f43f5e' : entry.accuracy < 60 ? '#f59e0b' : '#10b981'}
+                    fill={entry.accuracy < 60 ? '#F26522' : '#0D0D0D'}
                   />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </Card>
 
       {/* Student Diagnostic Roster */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-          <Users className="w-5 h-5 text-indigo-400" />
-          <span>Individual Student Diagnostic Roster</span>
-        </h2>
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
+        <div className="flex items-center justify-between border-b border-border-warm pb-4">
+          <div>
+            <SectionLabel text="INDIVIDUAL DIAGNOSTICS" />
+            <h2 className="font-heading font-extrabold text-lg sm:text-xl text-text-main flex items-center gap-2 mt-1">
+              <Users className="w-5 h-5 text-accent" />
+              <span>{t('teacher.rosterTitle')}</span>
+            </h2>
+          </div>
+          <span className="text-xs text-text-muted font-medium">
+            {analytics?.students?.length || 3} Students Evaluated
+          </span>
+        </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-slate-700/60 bg-slate-800/40">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/60 text-slate-400 uppercase tracking-wider border-b border-slate-700/60">
+        <div className="overflow-x-auto rounded-2xl border border-border-warm bg-bg-base/40">
+          <table className="w-full text-left text-xs sm:text-sm">
+            <thead className="bg-surface text-text-muted uppercase text-[10px] tracking-wider font-semibold border-b border-border-warm">
               <tr>
-                <th className="py-3.5 px-4">Student</th>
-                <th className="py-3.5 px-4">Diagnostic Score</th>
-                <th className="py-3.5 px-4">Primary Weakness</th>
-                <th className="py-3.5 px-4">Diagnosed Prerequisite Cause</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Teacher Action</th>
+                <th className="py-3.5 px-4">{t('teacher.student')}</th>
+                <th className="py-3.5 px-4">{t('teacher.diagnosticScore')}</th>
+                <th className="py-3.5 px-4">{t('teacher.primaryWeakness')}</th>
+                <th className="py-3.5 px-4">{t('teacher.prerequisiteCause')}</th>
+                <th className="py-3.5 px-4">{t('teacher.status')}</th>
+                <th className="py-3.5 px-4 text-right">{t('teacher.action')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 text-slate-300">
+            <tbody className="divide-y divide-border-warm/60 text-text-muted">
               {(analytics?.students || []).map((s) => (
-                <tr key={s.id} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="py-3.5 px-4 font-semibold text-white">{s.name}</td>
-                  <td className="py-3.5 px-4 font-mono font-bold text-indigo-300">{s.diagnosticScore}</td>
-                  <td className="py-3.5 px-4">{s.weakTopic}</td>
-                  <td className="py-3.5 px-4 text-amber-300 font-medium">
-                    <span className="flex items-center gap-1">
-                      <GitFork className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <tr key={s.id} className="hover:bg-surface/80 transition-colors">
+                  <td className="py-3.5 px-4 font-bold text-text-main">{s.name}</td>
+                  <td className="py-3.5 px-4 font-mono font-extrabold text-text-main">
+                    <span className="px-2 py-0.5 rounded-full bg-surface border border-border-warm text-accent">
+                      {s.diagnosticScore}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-text-main">{s.weakTopic}</td>
+                  <td className="py-3.5 px-4 font-medium text-accent">
+                    <span className="flex items-center gap-1.5">
+                      <GitFork className="w-3.5 h-3.5 text-accent shrink-0" />
                       {s.rootPrerequisite}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${
                       s.statusColor === 'emerald'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        ? 'bg-[#EBF7EE] text-[#1E7E34] border border-[#C3E6CB]'
+                        : 'bg-[#FFF3EC] text-accent border border-accent/20'
                     }`}>
                       {s.status}
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-right">
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => {
                         setSelectedStudent(s);
                         setFeedbackModalOpen(true);
                       }}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-semibold transition-all cursor-pointer"
                     >
-                      Leave Feedback
-                    </button>
+                      {t('teacher.leaveFeedback')}
+                    </Button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {/* Recent Feedback Given Log */}
-      <div className="p-6 rounded-3xl bg-slate-800/40 border border-slate-700/60 shadow-lg space-y-4">
-        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-indigo-400" />
-          <span>Recent Feedback Given to Students & Parents</span>
-        </h3>
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
+        <div className="flex items-center gap-2 border-b border-border-warm pb-3">
+          <MessageSquare className="w-4 h-4 text-accent" />
+          <h3 className="font-heading font-extrabold text-base text-text-main">
+            {t('teacher.recentFeedback')}
+          </h3>
+        </div>
         <div className="space-y-3">
           {(analytics?.recentFeedback || []).map((fb, idx) => (
-            <div key={fb.id || idx} className="p-4 rounded-xl bg-slate-900/60 border border-slate-700/40 text-xs space-y-1">
+            <div key={fb.id || idx} className="p-4 sm:p-5 rounded-2xl bg-bg-base border border-border-warm text-xs sm:text-sm space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-white">To: {fb.studentName}</span>
-                <span className="text-[10px] text-indigo-300 uppercase font-semibold">{fb.feedbackType}</span>
+                <span className="font-heading font-bold text-text-main">To: {fb.studentName}</span>
+                <span className="text-[10px] text-accent uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20">
+                  {fb.feedbackType?.replace('_', ' ')}
+                </span>
               </div>
-              <p className="text-slate-300 leading-relaxed italic">"{fb.message}"</p>
+              <p className="text-text-muted leading-relaxed italic">"{fb.message}"</p>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Leave Feedback Modal */}
       {feedbackModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="max-w-md w-full p-6 rounded-3xl bg-slate-900 border border-slate-700 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-2 text-indigo-400">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Card variant="surface" className="max-w-md w-full p-6 sm:p-8 border border-border-warm space-y-5 shadow-2xl relative">
+            <button
+              onClick={() => setFeedbackModalOpen(false)}
+              className="absolute top-5 right-5 text-text-muted hover:text-text-main transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-accent">
               <MessageSquare className="w-5 h-5" />
-              <h3 className="text-base font-bold text-white">
-                Leave Feedback for {selectedStudent?.name}
+              <h3 className="font-heading font-extrabold text-lg text-text-main">
+                Feedback for {selectedStudent?.name}
               </h3>
             </div>
 
-            <form onSubmit={handleSendFeedback} className="space-y-4 text-xs">
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Feedback Type</label>
+            <form onSubmit={handleSendFeedback} className="space-y-4 text-xs sm:text-sm">
+              <div className="space-y-1.5">
+                <label className="font-bold text-text-main">Feedback Focus</label>
                 <div className="flex gap-2">
                   {['revision_focus', 'encouragement', 'milestone'].map((type) => (
                     <button
                       key={type}
                       type="button"
                       onClick={() => setFeedbackType(type)}
-                      className={`flex-1 py-1.5 rounded-lg border capitalize ${
+                      className={`flex-1 py-2 rounded-full border text-xs capitalize font-medium transition-all cursor-pointer ${
                         feedbackType === type
-                          ? 'bg-indigo-600 text-white border-indigo-500 font-bold'
-                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                          ? 'bg-dark-banner text-white border-dark-banner font-bold'
+                          : 'bg-bg-base text-text-muted border-border-warm hover:text-text-main'
                       }`}
                     >
                       {type.replace('_', ' ')}
@@ -375,98 +429,108 @@ export default function TeacherDashboard() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Your Guidance Message</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-text-main">Your Guidance Message</label>
                 <textarea
                   rows={4}
                   value={feedbackMessage}
                   onChange={(e) => setFeedbackMessage(e.target.value)}
                   placeholder="e.g. Focus on factoring middle terms before our Wednesday test..."
-                  className="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full p-3.5 rounded-2xl bg-bg-base border border-border-warm text-text-main focus:outline-none focus:border-accent"
                   required
                 />
               </div>
 
               {feedbackSuccess ? (
-                <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 flex items-center gap-2">
-                  <Check className="w-4 h-4" />
+                <div className="p-3.5 rounded-2xl bg-[#EBF7EE] border border-[#C3E6CB] text-[#1E7E34] flex items-center gap-2 text-xs font-semibold">
+                  <Check className="w-4 h-4 shrink-0" />
                   <span>Feedback sent directly to student and parent!</span>
                 </div>
               ) : (
                 <div className="flex items-center justify-end gap-3 pt-2">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => setFeedbackModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold cursor-pointer"
+                    variant="primary"
+                    icon={<Send className="w-4 h-4" />}
                   >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Send Feedback</span>
-                  </button>
+                    Send Feedback
+                  </Button>
                 </div>
               )}
             </form>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Assign Quiz Modal */}
       {quizModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="max-w-md w-full p-6 rounded-3xl bg-slate-900 border border-slate-700 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-2 text-emerald-400">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Card variant="surface" className="max-w-md w-full p-6 sm:p-8 border border-border-warm space-y-5 shadow-2xl relative">
+            <button
+              onClick={() => setQuizModalOpen(false)}
+              className="absolute top-5 right-5 text-text-muted hover:text-text-main transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-accent">
               <PlusCircle className="w-5 h-5" />
-              <h3 className="text-base font-bold text-white">Assign Quiz to Class 9-A</h3>
+              <h3 className="font-heading font-extrabold text-lg text-text-main">
+                Assign Remedial Assessment
+              </h3>
             </div>
 
-            <form onSubmit={handleAssignQuiz} className="space-y-4 text-xs">
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Quiz Title</label>
+            <form onSubmit={handleAssignQuiz} className="space-y-4 text-xs sm:text-sm">
+              <div className="space-y-1.5">
+                <label className="font-bold text-text-main">Quiz Title</label>
                 <input
                   type="text"
                   value={quizTitle}
                   onChange={(e) => setQuizTitle(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full p-3 rounded-2xl bg-bg-base border border-border-warm text-text-main focus:outline-none focus:border-accent"
                   required
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Target Concept</label>
-                <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700 text-slate-300">
-                  Algebraic Identities & Factoring (Prerequisite Focus)
+              <div className="space-y-1.5">
+                <label className="font-bold text-text-main">Targeted Concept</label>
+                <div className="p-3 rounded-2xl bg-bg-base border border-border-warm text-text-muted font-medium">
+                  Algebraic Identities & Factoring (Class 8 Prerequisite Focus)
                 </div>
               </div>
 
               {quizSuccess ? (
-                <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 flex items-center gap-2">
-                  <Check className="w-4 h-4" />
+                <div className="p-3.5 rounded-2xl bg-[#EBF7EE] border border-[#C3E6CB] text-[#1E7E34] flex items-center gap-2 text-xs font-semibold">
+                  <Check className="w-4 h-4 shrink-0" />
                   <span>Quiz successfully assigned to Class 9-A students!</span>
                 </div>
               ) : (
                 <div className="flex items-center justify-end gap-3 pt-2">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => setQuizModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer"
+                    variant="primary"
+                    icon={<ArrowRight className="w-4 h-4" />}
                   >
                     Confirm Assignment
-                  </button>
+                  </Button>
                 </div>
               )}
             </form>
-          </div>
+          </Card>
         </div>
       )}
     </div>

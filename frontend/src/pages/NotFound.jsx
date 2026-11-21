@@ -1,24 +1,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Home } from 'lucide-react';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 
 export default function NotFound() {
   return (
-    <div className="text-center py-20 space-y-4">
-      <h1 className="text-6xl font-black text-indigo-400">404</h1>
-      <h2 className="text-2xl font-bold text-white">Page Not Found</h2>
-      <p className="text-slate-400 max-w-md mx-auto text-sm">
-        The page you are looking for does not exist or has been moved.
-      </p>
-      <div className="pt-4">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all"
-        >
-          <Home className="w-4 h-4" />
-          <span>Return to Home</span>
-        </Link>
-      </div>
+    <div className="min-h-[60vh] flex items-center justify-center py-12 px-4">
+      <Card variant="surface" className="max-w-md w-full p-8 sm:p-10 text-center space-y-5 border border-border-warm shadow-lg">
+        <span className="font-heading font-black text-6xl sm:text-7xl text-accent tracking-tighter">
+          404
+        </span>
+        <h2 className="font-heading font-extrabold text-2xl text-text-main">
+          Page Not Found
+        </h2>
+        <p className="text-text-muted text-sm leading-relaxed">
+          The page or module you are looking for does not exist or has been relocated within the learning portal.
+        </p>
+        <div className="pt-2">
+          <Link to="/">
+            <Button variant="primary" icon={<Home className="w-4 h-4" />}>
+              Return to Home
+            </Button>
+          </Link>
+        </div>
+      </Card>
     </div>
   );
 }

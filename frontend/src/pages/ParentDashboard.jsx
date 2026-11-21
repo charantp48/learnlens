@@ -12,7 +12,8 @@ import {
   Check,
   TrendingUp,
   Clock,
-  Sparkles
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -24,6 +25,9 @@ import {
   Cell,
   ReferenceLine
 } from 'recharts';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
+import SectionLabel from '../components/common/SectionLabel';
 
 export default function ParentDashboard() {
   const { currentUser } = useAuth();
@@ -142,99 +146,119 @@ export default function ParentDashboard() {
   return (
     <div className="space-y-8 max-w-4xl mx-auto py-2">
       {/* Header Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-800/60 border border-pink-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-4">
+      <Card variant="surface" className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="flex items-center gap-4 sm:gap-5">
           <img
             src={currentUser?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sunita'}
             alt={currentUser?.full_name}
-            className="w-16 h-16 rounded-2xl bg-pink-500/20 border-2 border-pink-400 p-1 shrink-0"
+            className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-bg-base border-2 border-accent/40 p-1 shrink-0 object-cover"
           />
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-semibold border border-pink-500/30">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-dark-banner text-white">
                 {t('parent.viewBadge')}
               </span>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs font-medium text-text-muted">
                 {t('parent.child', { childName })} ({data?.profile?.grade || 'Class 9-A'})
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+            <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-text-main tracking-tight mt-1">
               {t('parent.greeting', { name: currentUser?.full_name || 'Sunita Sharma' })}
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/60 border border-slate-700 text-xs text-slate-300">
-          <Sparkles className="w-4 h-4 text-pink-400" />
+        <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-bg-base border border-border-warm text-xs font-semibold text-text-muted shrink-0">
+          <Sparkles className="w-4 h-4 text-accent" />
           <span>Kendriya Vidyalaya No. 1</span>
         </div>
-      </div>
+      </Card>
 
       {/* Jargon-Free Summary Card */}
-      <div className="p-6 rounded-3xl bg-slate-800/50 border border-slate-700/60 shadow-lg space-y-3">
-        <div className="flex items-center gap-2 text-pink-400">
-          <Lightbulb className="w-5 h-5" />
-          <h2 className="text-base font-bold text-white">
-            {t('parent.summaryTitle')}
-          </h2>
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
+        <div className="flex items-center justify-between border-b border-border-warm pb-3">
+          <div>
+            <SectionLabel text="PARENT INSIGHT" />
+            <h2 className="font-heading font-extrabold text-lg sm:text-xl text-text-main flex items-center gap-2 mt-1">
+              <Lightbulb className="w-5 h-5 text-accent" />
+              <span>{t('parent.summaryTitle')}</span>
+            </h2>
+          </div>
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FFF3EC] text-accent border border-accent/20">
+            Jargon-Free
+          </span>
         </div>
-        <p className="text-sm text-slate-200 leading-relaxed bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+        <div className="bg-bg-base p-5 sm:p-6 rounded-2xl border border-border-warm text-sm text-text-main leading-relaxed">
           {t('parent.plainEnglish')}
-        </p>
-      </div>
+        </div>
+      </Card>
 
       {/* Progress Chart: Topic Mastery at a Glance */}
-      <div className="p-6 rounded-3xl bg-slate-800/40 border border-slate-700/60 shadow-lg space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-pink-400" />
-            <h3 className="text-sm font-bold text-white">{childName}'s Subject Strengths</h3>
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-warm pb-4">
+          <div>
+            <SectionLabel text="PROGRESS AT A GLANCE" />
+            <h3 className="font-heading font-extrabold text-base sm:text-lg text-text-main flex items-center gap-2 mt-1">
+              <TrendingUp className="w-5 h-5 text-accent" />
+              <span>{childName}'s Subject Strengths</span>
+            </h3>
           </div>
-          <span className="text-xs text-slate-400">Passing Threshold: 60%</span>
+          <span className="text-xs text-text-muted font-medium">
+            Passing Threshold: <strong className="text-accent">60%</strong>
+          </span>
         </div>
 
-        <div className="h-48 w-full pt-2">
+        <div className="h-48 sm:h-56 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data?.topicScores || []} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
-              <XAxis dataKey="topic" tick={{ fill: '#94a3b8', fontSize: 10 }} interval={0} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} domain={[0, 100]} />
+              <XAxis dataKey="topic" tick={{ fill: '#6B6660', fontSize: 11, fontFamily: 'Inter' }} interval={0} stroke="#E3DCD3" />
+              <YAxis tick={{ fill: '#6B6660', fontSize: 11, fontFamily: 'Inter' }} domain={[0, 100]} stroke="#E3DCD3" />
               <Tooltip
-                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }}
+                contentStyle={{
+                  backgroundColor: '#FBF8F4',
+                  borderColor: '#E3DCD3',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  color: '#0D0D0D',
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08)'
+                }}
                 formatter={(val) => [`${val}%`, 'Score']}
               />
-              <ReferenceLine y={60} stroke="#f59e0b" strokeDasharray="3 3" />
+              <ReferenceLine y={60} stroke="#F26522" strokeDasharray="4 4" />
               <Bar dataKey="score" radius={[6, 6, 0, 0]}>
                 {(data?.topicScores || []).map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={entry.score < 50 ? '#f43f5e' : entry.score < 60 ? '#f59e0b' : '#10b981'}
+                    fill={entry.score < 60 ? '#F26522' : '#0D0D0D'}
                   />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </Card>
 
       {/* Teacher's Note & Quick Acknowledgment */}
-      <div className="p-6 rounded-3xl bg-indigo-500/10 border border-indigo-500/30 shadow-lg space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-indigo-400 font-semibold text-sm">
-            <MessageSquare className="w-5 h-5" />
+      <Card variant="surface" className="p-6 sm:p-8 space-y-5 border-l-4 border-l-accent">
+        <div className="flex items-center justify-between border-b border-border-warm pb-3">
+          <div className="flex items-center gap-2 font-heading font-extrabold text-base text-text-main">
+            <MessageSquare className="w-5 h-5 text-accent" />
             <span>{t('parent.teacherNoteTitle')}: Mr. Rajesh Rao (Maths)</span>
           </div>
-          <span className="text-xs text-indigo-300 font-mono">Today</span>
+          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-bg-base text-text-muted border border-border-warm">
+            Today
+          </span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-700/50 text-xs text-slate-200 italic leading-relaxed">
+        <div className="p-4 sm:p-5 rounded-2xl bg-bg-base border border-border-warm text-xs sm:text-sm text-text-main italic leading-relaxed">
           "{data?.feedback?.[0]?.message || 'Priya has good logical thinking. She just needs 25 minutes of practice on middle-term splitting this week. Please encourage her to complete her scheduled sessions on LearnLens.'}"
         </div>
 
         {/* Parent Reply / Acknowledgment */}
         <form onSubmit={handleAcknowledge} className="space-y-3 pt-2">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <HeartHandshake className="w-4 h-4 text-pink-400" />
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-text-main flex items-center gap-1.5">
+              <HeartHandshake className="w-4 h-4 text-accent" />
               <span>{t('parent.acknowledgeBtn')}</span>
             </label>
             <input
@@ -242,38 +266,39 @@ export default function ParentDashboard() {
               value={ackMessage}
               onChange={(e) => setAckMessage(e.target.value)}
               placeholder={t('parent.replyPlaceholder')}
-              className="w-full p-3 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400"
+              className="w-full p-3.5 rounded-2xl bg-bg-base border border-border-warm text-xs sm:text-sm text-text-main placeholder:text-text-muted focus:outline-none focus:border-accent"
               required
             />
           </div>
 
           {ackSubmitted ? (
-            <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-              <Check className="w-4 h-4" />
+            <div className="p-3.5 rounded-2xl bg-[#EBF7EE] border border-[#C3E6CB] text-[#1E7E34] text-xs font-semibold flex items-center gap-2">
+              <Check className="w-4 h-4 shrink-0" />
               <span>{t('parent.ackSuccess')}</span>
             </div>
           ) : (
-            <button
+            <Button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/20 cursor-pointer"
+              variant="primary"
+              icon={<Send className="w-4 h-4" />}
             >
-              <Send className="w-3.5 h-3.5" />
-              <span>{t('parent.sendAck')}</span>
-            </button>
+              {t('parent.sendAck')}
+            </Button>
           )}
         </form>
-      </div>
+      </Card>
 
       {/* Active 25-30 Min Study Schedule */}
-      <div className="p-6 rounded-3xl bg-slate-800/50 border border-slate-700/60 shadow-lg space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-emerald-400">
-            <Calendar className="w-5 h-5" />
-            <h3 className="text-base font-bold text-white">
-              {t('parent.studyScheduleTitle')}
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
+        <div className="flex items-center justify-between border-b border-border-warm pb-3">
+          <div>
+            <SectionLabel text="FOCUSED SCHEDULE" />
+            <h3 className="font-heading font-extrabold text-base sm:text-lg text-text-main flex items-center gap-2 mt-1">
+              <Calendar className="w-5 h-5 text-accent" />
+              <span>{t('parent.studyScheduleTitle')}</span>
             </h3>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-dark-banner text-white">
             {t('parent.sessionsPlanned', { count: data?.studySchedule?.length || 3 })}
           </span>
         </div>
@@ -282,31 +307,31 @@ export default function ParentDashboard() {
           {(data?.studySchedule || []).map((sess) => (
             <div
               key={sess.id}
-              className="p-4 rounded-2xl bg-slate-900/60 border border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:border-slate-600 transition-colors"
+              className="p-4 sm:p-5 rounded-2xl bg-bg-base border border-border-warm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm hover:border-accent/40 transition-colors"
             >
               <div className="space-y-1">
-                <div className="font-semibold text-white flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <div className="font-bold text-text-main flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-accent" />
                   {sess.title}
                 </div>
-                <div className="text-slate-400 flex items-center gap-2 text-[11px]">
-                  <Clock className="w-3 h-3 text-slate-500" />
+                <div className="text-text-muted flex items-center gap-2 text-xs">
+                  <Clock className="w-3.5 h-3.5 text-text-muted" />
                   <span>{sess.day} • {sess.time}</span>
-                  <span>({sess.duration})</span>
+                  <span className="font-semibold text-text-main">({sess.duration})</span>
                 </div>
               </div>
 
-              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold self-start sm:self-auto ${
+              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider self-start sm:self-auto ${
                 sess.statusColor === 'amber'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                  : 'bg-slate-700 text-slate-300 border border-slate-600'
+                  ? 'bg-[#FFF3EC] text-accent border border-accent/20'
+                  : 'bg-surface text-text-muted border border-border-warm'
               }`}>
                 {sess.status}
               </span>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
