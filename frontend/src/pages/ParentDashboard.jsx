@@ -120,7 +120,7 @@ export default function ParentDashboard() {
   useEffect(() => {
     // 1. Fetch parent's linked children from server
     if (currentUser?.id) {
-      fetch('http://localhost:5000/api/parent/children', {
+      fetch('/api/parent/children', {
         headers: {
           'x-user-role': currentUser.role || 'parent',
           'x-user-id': currentUser.id,
@@ -143,7 +143,7 @@ export default function ParentDashboard() {
   useEffect(() => {
     if (selectedChildId) {
       // 2. Fetch live rank for selected child
-      fetch(`http://localhost:5000/api/quiz/ranks/student/${selectedChildId}`, {
+      fetch(`/api/quiz/ranks/student/${selectedChildId}`, {
         headers: {
           'x-user-role': currentUser?.role || 'parent',
           'x-user-id': currentUser?.id || '',
@@ -157,7 +157,7 @@ export default function ParentDashboard() {
         .catch(() => {});
 
       // 3. Fetch active teacher clarification for selected child
-      fetch(`http://localhost:5000/api/teacher/clarifications/student/${selectedChildId}`, {
+      fetch(`/api/teacher/clarifications/student/${selectedChildId}`, {
         headers: {
           'x-user-role': currentUser?.role || 'parent',
           'x-user-id': currentUser?.id || '',
@@ -179,7 +179,7 @@ export default function ParentDashboard() {
   const handleAcknowledge = async (e) => {
     e.preventDefault();
     try {
-      await fetch('http://localhost:5000/api/parent/acknowledge', {
+      await fetch('/api/parent/acknowledge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

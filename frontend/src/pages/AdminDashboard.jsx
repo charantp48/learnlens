@@ -39,13 +39,15 @@ export default function AdminDashboard() {
 
   const [metrics, setMetrics] = useState({
     counts: {
-      real: { students: 2, teachers: 1, parents: 1, admins: 0, total: 4 },
-      all: { students: 4, teachers: 2, parents: 2, total: 9 },
+      real: { students: 2, teachers: 1, parents: 1, admins: 0, total: 4, classes: 2, reportsSubmitted: 1, reportsNotReviewed: 1 },
+      all: { students: 4, teachers: 2, parents: 2, total: 9, classes: 2, reportsSubmitted: 2, reportsNotReviewed: 1 },
       classes: 2,
     },
     users: [],
     classes: [],
+    reportsAndRanks: [],
     recentActivity: [],
+    isDemoMode: true,
   });
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -102,10 +104,21 @@ export default function AdminDashboard() {
   // Fetch admin metrics & data
   const fetchMetrics = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/admin/metrics');
+      const res = await fetch('/api/admin/metrics');
       if (res.ok) {
         const data = await res.json();
-        setMetrics(data);
+        setMetrics((prev) => ({
+          ...prev,
+          ...data,
+          counts: {
+            ...prev.counts,
+            ...(data.counts || {}),
+          },
+          users: data.users || [],
+          classes: data.classes || [],
+          reportsAndRanks: data.reportsAndRanks || [],
+          recentActivity: data.recentActivity || [],
+        }));
         if (data.classes?.length > 0 && !assignment.classId) {
           setAssignment((prev) => ({ ...prev, classId: data.classes[0].id }));
         }
@@ -147,7 +160,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/admin/users/create-single', {
+      const res = await fetch('/api/admin/users/create-single', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(singleUser),
@@ -217,7 +230,7 @@ export default function AdminDashboard() {
 
         setCsvLoading(true);
 
-        const res = await fetch('http://localhost:5000/api/admin/users/csv-preview', {
+        const res = await fetch('/api/admin/users/csv-preview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ rows }),
@@ -247,7 +260,7 @@ export default function AdminDashboard() {
     const validRows = csvPreview.previewRows.filter((r) => r.isValid);
 
     try {
-      const res = await fetch('http://localhost:5000/api/admin/users/csv-import', {
+      const res = await fetch('/api/admin/users/csv-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ validRows }),
@@ -295,7 +308,7 @@ export default function AdminDashboard() {
     if (!window.confirm(`Generate a new temporary password for ${user.name}?`)) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${user.id}/reset-password`, {
+      const res = await fetch(`/api/admin/users/${user.id}/reset-password`, {
         method: 'POST',
       });
       const data = await res.json();
@@ -325,7 +338,7 @@ export default function AdminDashboard() {
   // Toggle user status (Enable / Disable)
   const handleToggleStatus = async (userId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/toggle-status`, {
+      const res = await fetch(`/api/admin/users/${userId}/toggle-status`, {
         method: 'PATCH',
       });
       const data = await res.json();
@@ -349,7 +362,7 @@ export default function AdminDashboard() {
     if (!editModalUser) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${editModalUser.id}/edit`, {
+      const res = await fetch(`/api/admin/users/${editModalUser.id}/edit`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -376,30 +389,39 @@ export default function AdminDashboard() {
 
   // Filtered users for table
   const filteredUsers = (metrics.users || []).filter((user) => {
+    if (!user) return false;
     if (metrics.isDemoMode === false && user.is_demo) return false;
     const matchesFilter = activeFilter === 'all' || user.role === activeFilter;
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    const q = searchQuery.toLowerCase().trim();
+    const q = (searchQuery || '').toLowerCase().trim();
+    const nameStr = (user.name || user.full_name || '').toLowerCase();
+    const emailStr = (user.email || '').toLowerCase();
+    const classStr = (user.className || user.class_name || '').toLowerCase();
+    const statusStr = (user.status || '').toLowerCase();
     const matchesSearch =
       !q ||
-      user.name.toLowerCase().includes(q) ||
-      user.email.toLowerCase().includes(q) ||
-      (user.className && user.className.toLowerCase().includes(q)) ||
-      (user.status && user.status.toLowerCase().includes(q));
+      nameStr.includes(q) ||
+      emailStr.includes(q) ||
+      classStr.includes(q) ||
+      statusStr.includes(q);
     return matchesFilter && matchesStatus && matchesSearch;
   });
 
   // Filtered reports & ranks for school-wide reports table
   const filteredReports = (metrics.reportsAndRanks || []).filter((r) => {
+    if (!r) return false;
     if (metrics.isDemoMode === false && r.isDemo) return false;
     const matchesClass =
       reportsClassFilter === 'all' || (r.className || '').toLowerCase() === reportsClassFilter.toLowerCase();
-    const q = reportsSearchQuery.toLowerCase().trim();
+    const q = (reportsSearchQuery || '').toLowerCase().trim();
+    const studentNameStr = (r.studentName || r.name || '').toLowerCase();
+    const studentEmailStr = (r.studentEmail || r.email || '').toLowerCase();
+    const classStr = (r.className || '').toLowerCase();
     const matchesSearch =
       !q ||
-      r.studentName.toLowerCase().includes(q) ||
-      r.studentEmail.toLowerCase().includes(q) ||
-      (r.className && r.className.toLowerCase().includes(q));
+      studentNameStr.includes(q) ||
+      studentEmailStr.includes(q) ||
+      classStr.includes(q);
     return matchesClass && matchesSearch;
   });
 
@@ -791,7 +813,7 @@ export default function AdminDashboard() {
 
               {/* Download CSV Template */}
               <a
-                href="http://localhost:5000/api/admin/users/csv-template"
+                href="/api/admin/users/csv-template"
                 download="learnlens_users_template.csv"
               >
                 <Button variant="ghost" size="sm" icon={<Download className="w-3.5 h-3.5" />}>
@@ -1279,7 +1301,7 @@ export default function AdminDashboard() {
                 e.preventDefault();
                 if (!newClass.name) return;
                 try {
-                  const res = await fetch('http://localhost:5000/api/admin/classes', {
+                  const res = await fetch('/api/admin/classes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newClass),
@@ -1380,7 +1402,7 @@ export default function AdminDashboard() {
                 e.preventDefault();
                 if (!assignment.classId || !assignment.userId) return;
                 try {
-                  const res = await fetch('http://localhost:5000/api/admin/assign', {
+                  const res = await fetch('/api/admin/assign', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(assignment),

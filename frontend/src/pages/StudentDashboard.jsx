@@ -31,7 +31,7 @@ export default function StudentDashboard() {
   useEffect(() => {
     if (currentUser?.id) {
       // 1. Fetch live rank snapshot
-      fetch(`http://localhost:5000/api/quiz/ranks/student/${currentUser.id}`, {
+      fetch(`/api/quiz/ranks/student/${currentUser.id}`, {
         headers: {
           'x-user-role': currentUser.role || 'student',
           'x-user-id': currentUser.id,
@@ -45,7 +45,7 @@ export default function StudentDashboard() {
         .catch(() => {});
 
       // 2. Fetch latest teacher clarification note
-      fetch(`http://localhost:5000/api/teacher/clarifications/student/${currentUser.id}`, {
+      fetch(`/api/teacher/clarifications/student/${currentUser.id}`, {
         headers: {
           'x-user-role': currentUser.role || 'student',
           'x-user-id': currentUser.id,

@@ -96,8 +96,8 @@ export default function TeacherDashboard() {
 
       try {
         const [analyticsRes, incomingRes] = await Promise.all([
-          fetch('http://localhost:5000/api/teacher/class/c0000000-0000-0000-0000-000000000001/analytics', { headers }),
-          fetch('http://localhost:5000/api/teacher/reports/incoming', { headers }),
+          fetch('/api/teacher/class/c0000000-0000-0000-0000-000000000001/analytics', { headers }),
+          fetch('/api/teacher/reports/incoming', { headers }),
         ]);
 
         if (analyticsRes.ok) {
@@ -126,7 +126,7 @@ export default function TeacherDashboard() {
     // 15-second polling interval for incoming reports
     const interval = setInterval(async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/teacher/reports/incoming', {
+        const res = await fetch('/api/teacher/reports/incoming', {
           headers: {
             'x-user-role': currentUser?.role || 'teacher',
             'x-user-id': currentUser?.id || '00000000-0000-0000-0000-000000000002',
@@ -203,7 +203,7 @@ export default function TeacherDashboard() {
 
     setSavingClarification(true);
     try {
-      const res = await fetch('http://localhost:5000/api/teacher/clarifications', {
+      const res = await fetch('/api/teacher/clarifications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -262,13 +262,13 @@ export default function TeacherDashboard() {
 
   // Approve AI Question
   const handleApproveQuestion = (id) => {
-    fetch(`http://localhost:5000/api/teacher/question-review/${id}/approve`, { method: 'POST' }).catch(() => {});
+    fetch(`/api/teacher/question-review/${id}/approve`, { method: 'POST' }).catch(() => {});
     setReviewQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
   // Reject AI Question
   const handleRejectQuestion = (id) => {
-    fetch(`http://localhost:5000/api/teacher/question-review/${id}/reject`, { method: 'POST' }).catch(() => {});
+    fetch(`/api/teacher/question-review/${id}/reject`, { method: 'POST' }).catch(() => {});
     setReviewQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
