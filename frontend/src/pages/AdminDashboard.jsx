@@ -1,521 +1,774 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import { 
-  ShieldAlert, 
-  School, 
   Users, 
+  GraduationCap, 
+  UserCheck, 
   BookOpen, 
-  AlertTriangle,
-  Building2,
-  PlusCircle,
-  Link as LinkIcon,
-  Check,
-  TrendingUp,
-  UserCheck,
-  GraduationCap,
-  X,
-  ArrowRight
+  PlusCircle, 
+  Link as LinkIcon, 
+  UserPlus, 
+  Layers, 
+  CheckCircle2, 
+  AlertCircle,
+  ToggleLeft,
+  ToggleRight,
+  Search,
+  Filter
 } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import SectionLabel from '../components/common/SectionLabel';
 
 export default function AdminDashboard() {
-  const { currentUser } = useAuth();
   const { t } = useTranslation();
 
-  const [metrics, setMetrics] = useState(null);
+  const [metrics, setMetrics] = useState({
+    counts: { students: 4, teachers: 2, parents: 2, classes: 2, totalUsers: 9 },
+    users: [],
+    classes: [],
+  });
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [feedback, setFeedback] = useState(null);
 
-  // Add Class Modal State
-  const [addClassModalOpen, setAddClassModalOpen] = useState(false);
-  const [newClassName, setNewClassName] = useState('Class 9-B');
-  const [newClassSection, setNewClassSection] = useState('B');
-  const [newClassTeacher, setNewClassTeacher] = useState('Ms. Sunita Patil');
-  const [classSuccess, setClassSuccess] = useState(false);
+  // Form states
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    role: 'student',
+    password: '',
+    className: 'Class 11-A',
+  });
 
-  // Link Parent Modal State
-  const [linkModalOpen, setLinkModalOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [parentNameInput, setParentNameInput] = useState('');
-  const [linkSuccess, setLinkSuccess] = useState(false);
+  const [newClass, setNewClass] = useState({
+    name: '',
+    section: 'A',
+    subject: 'Mathematics',
+    teacher: '',
+  });
 
-  useEffect(() => {
-    async function fetchMetrics() {
-      try {
-        const res = await fetch('http://localhost:5000/api/admin/metrics');
-        if (res.ok) {
-          const data = await res.json();
-          setMetrics(data);
-          setLoading(false);
-          return;
+  const [assignment, setAssignment] = useState({
+    classId: '',
+    userId: '',
+  });
+
+  const [parentLink, setParentLink] = useState({
+    parentId: '',
+    studentId: '',
+  });
+
+  // Fetch admin metrics from server
+  const fetchMetrics = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/admin/metrics');
+      if (res.ok) {
+        const data = await res.json();
+        setMetrics(data);
+        if (data.classes?.length > 0 && !assignment.classId) {
+          setAssignment((prev) => ({ ...prev, classId: data.classes[0].id }));
         }
-      } catch (err) {
-        console.warn('Admin API unreachable, falling back to local state');
-      }
-
-      setMetrics({
-        schoolName: 'Kendriya Vidyalaya No. 1, Bengaluru',
-        totalClasses: 2,
-        totalStudents: 3,
-        totalTeachers: 2,
-        schoolAverageScore: 62.3,
-        prerequisiteBottlenecks: [
-          {
-            targetTopic: 'Quadratic Equations (Class 9)',
-            bottleneckPrerequisite: 'Algebraic Identities & Factoring (Class 8)',
-            affectedStudentsPercentage: 66,
-            severity: 'High',
-            actionRecommended: 'Conduct 20-min remedial session on middle-term splitting before term exam.'
-          },
-          {
-            targetTopic: 'Triangles & Congruence (Class 9)',
-            bottleneckPrerequisite: 'Lines & Angles (Class 7)',
-            affectedStudentsPercentage: 20,
-            severity: 'Low',
-            actionRecommended: 'Review supplementary exercise 6.1 in NCERT text.'
+        if (data.users?.length > 0) {
+          const firstTeacher = data.users.find((u) => u.role === 'teacher');
+          if (firstTeacher && !newClass.teacher) {
+            setNewClass((prev) => ({ ...prev, teacher: firstTeacher.name }));
           }
-        ],
-        classes: [
-          { id: 'c1', name: 'Class 9-A', section: 'A', subject: 'Mathematics', teacher: 'Mr. Rajesh Rao', studentsCount: 3, averageScore: 62.3 },
-          { id: 'c2', name: 'Class 9-B', section: 'B', subject: 'Mathematics', teacher: 'Ms. Sunita Patil', studentsCount: 0, averageScore: 0 }
-        ],
-        students: [
-          { id: '00000000-0000-0000-0000-000000000001', name: 'Priya Sharma', class: 'Class 9-A', score: '50%', parent: 'Sunita Sharma', teacher: 'Mr. Rajesh Rao', status: 'Needs Support' },
-          { id: '00000000-0000-0000-0000-000000000005', name: 'Rahul Verma', class: 'Class 9-A', score: '55%', parent: 'Amit Verma', teacher: 'Mr. Rajesh Rao', status: 'Needs Support' },
-          { id: '00000000-0000-0000-0000-000000000006', name: 'Ananya Sen', class: 'Class 9-A', score: '82%', parent: 'Subhash Sen', teacher: 'Mr. Rajesh Rao', status: 'On Track' },
-        ]
-      });
+        }
+      }
+    } catch (err) {
+      console.warn('Using local metrics fallback', err);
+    } finally {
       setLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchMetrics();
   }, []);
 
-  const handleAddClass = async (e) => {
-    e.preventDefault();
+  const showFeedback = (type, message) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback(null), 5000);
+  };
+
+  // 1. Toggle user status (Enable / Disable)
+  const handleToggleStatus = async (userId) => {
     try {
-      const res = await fetch('http://localhost:5000/api/admin/classes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newClassName,
-          section: newClassSection,
-          teacher: newClassTeacher,
-        }),
+      const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/toggle-status`, {
+        method: 'PATCH',
       });
+      const data = await res.json();
       if (res.ok) {
-        const json = await res.json();
         setMetrics((prev) => ({
           ...prev,
-          totalClasses: prev.totalClasses + 1,
-          classes: [...prev.classes, json.class],
+          users: prev.users.map((u) => (u.id === userId ? data.user : u)),
         }));
+        showFeedback('success', data.message);
+      } else {
+        showFeedback('error', data.message || 'Failed to toggle status');
       }
     } catch (err) {
       // Local fallback
       setMetrics((prev) => ({
         ...prev,
-        totalClasses: prev.totalClasses + 1,
-        classes: [
-          ...prev.classes,
-          {
-            id: `c-local-${Date.now()}`,
-            name: newClassName,
-            section: newClassSection,
-            teacher: newClassTeacher,
-            studentsCount: 0,
-            averageScore: 0,
-          },
-        ],
+        users: prev.users.map((u) =>
+          u.id === userId
+            ? { ...u, status: u.status === 'active' ? 'disabled' : 'active' }
+            : u
+        ),
       }));
+      showFeedback('success', 'User status updated');
     }
-
-    setClassSuccess(true);
-    setTimeout(() => {
-      setClassSuccess(false);
-      setAddClassModalOpen(false);
-    }, 1500);
   };
 
-  const handleLinkParent = async (e) => {
+  // 2. Create User
+  const handleCreateUser = async (e) => {
     e.preventDefault();
-    if (!selectedStudent || !parentNameInput) return;
+    if (!newUser.name || !newUser.email) {
+      showFeedback('error', 'Name and email are required');
+      return;
+    }
 
     try {
-      await fetch('http://localhost:5000/api/admin/link-parent', {
+      const res = await fetch('http://localhost:5000/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentId: selectedStudent.id,
-          parentName: parentNameInput,
-        }),
+        body: JSON.stringify(newUser),
       });
+      const data = await res.json();
+      if (res.ok) {
+        showFeedback('success', t('admin.successUserCreated') || 'User created successfully!');
+        setNewUser({ name: '', email: '', role: 'student', password: '', className: 'Class 11-A' });
+        fetchMetrics();
+      } else {
+        showFeedback('error', data.message || 'Failed to create user');
+      }
     } catch (err) {
-      console.warn('Linked parent locally');
+      showFeedback('error', 'Network error creating user');
     }
-
-    setMetrics((prev) => ({
-      ...prev,
-      students: prev.students.map((s) =>
-        s.id === selectedStudent.id ? { ...s, parent: parentNameInput } : s
-      ),
-    }));
-
-    setLinkSuccess(true);
-    setTimeout(() => {
-      setLinkSuccess(false);
-      setLinkModalOpen(false);
-      setParentNameInput('');
-    }, 1500);
   };
 
-  return (
-    <div className="space-y-8 max-w-5xl mx-auto py-2">
-      {/* Header Banner */}
-      <Card variant="surface" className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div className="flex items-center gap-4 sm:gap-5">
-          <img
-            src={currentUser?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin'}
-            alt={currentUser?.full_name}
-            className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-bg-base border-2 border-accent/40 p-1 shrink-0 object-cover"
-          />
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-dark-banner text-white">
-                {t('admin.consoleBadge')}
-              </span>
-              <span className="text-xs font-medium text-text-muted">{metrics?.schoolName || 'Kendriya Vidyalaya No. 1'}</span>
-            </div>
-            <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-text-main tracking-tight mt-1">
-              {currentUser?.full_name || 'Dr. K. S. Sharma'} (Principal)
-            </h1>
-          </div>
+  // 3. Create Class
+  const handleCreateClass = async (e) => {
+    e.preventDefault();
+    if (!newClass.name) {
+      showFeedback('error', 'Class name is required');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/admin/classes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newClass),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showFeedback('success', t('admin.successClassCreated') || 'Class created successfully!');
+        setNewClass({ name: '', section: 'A', subject: 'Mathematics', teacher: '' });
+        fetchMetrics();
+      } else {
+        showFeedback('error', data.message || 'Failed to create class');
+      }
+    } catch (err) {
+      showFeedback('error', 'Network error creating class');
+    }
+  };
+
+  // 4. Assign Teacher or Student to Class
+  const handleAssign = async (e) => {
+    e.preventDefault();
+    if (!assignment.classId || !assignment.userId) {
+      showFeedback('error', 'Select both a class and a user');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/admin/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(assignment),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showFeedback('success', t('admin.successAssigned') || 'Assignment saved successfully!');
+        fetchMetrics();
+      } else {
+        showFeedback('error', data.message || 'Failed to assign to class');
+      }
+    } catch (err) {
+      showFeedback('error', 'Network error saving assignment');
+    }
+  };
+
+  // 5. Link Parent to Child
+  const handleLinkParent = async (e) => {
+    e.preventDefault();
+    if (!parentLink.parentId || !parentLink.studentId) {
+      showFeedback('error', 'Select both a parent and a student');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/admin/link-parent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parentLink),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showFeedback('success', t('admin.successParentLinked') || 'Parent linked to student successfully!');
+        fetchMetrics();
+      } else {
+        showFeedback('error', data.message || 'Failed to link parent');
+      }
+    } catch (err) {
+      showFeedback('error', 'Network error linking parent');
+    }
+  };
+
+  // Filtered users for table
+  const filteredUsers = metrics.users.filter((user) => {
+    const matchesFilter = activeFilter === 'all' || user.role === activeFilter;
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.className && user.className.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesFilter && matchesSearch;
+  });
+
+  const studentsList = metrics.users.filter((u) => u.role === 'student');
+  const teachersList = metrics.users.filter((u) => u.role === 'teacher');
+  const parentsList = metrics.users.filter((u) => u.role === 'parent');
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F5F0EA] flex items-center justify-center p-6">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-3 border-[#F26522] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-medium text-[#736B63]">{t('common.loading') || 'Loading console...'}</p>
         </div>
-
-        <div className="shrink-0">
-          <Button
-            variant="primary"
-            onClick={() => setAddClassModalOpen(true)}
-            icon={<PlusCircle className="w-4 h-4" />}
-          >
-            {t('admin.addClass')}
-          </Button>
-        </div>
-      </Card>
-
-      {/* School-Wide KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card variant="surface" className="p-5 space-y-2">
-          <div className="text-text-muted text-xs font-bold uppercase tracking-wider flex items-center justify-between">
-            <span>{t('admin.totalClasses')}</span>
-            <School className="w-4 h-4 text-accent" />
-          </div>
-          <div className="font-heading font-extrabold text-2xl sm:text-3xl text-text-main">
-            {metrics?.totalClasses || 2} <span className="text-xs font-normal text-text-muted">Cohorts</span>
-          </div>
-        </Card>
-
-        <Card variant="surface" className="p-5 space-y-2">
-          <div className="text-text-muted text-xs font-bold uppercase tracking-wider flex items-center justify-between">
-            <span>{t('admin.enrolledStudents')}</span>
-            <GraduationCap className="w-4 h-4 text-accent" />
-          </div>
-          <div className="font-heading font-extrabold text-2xl sm:text-3xl text-text-main">
-            {metrics?.totalStudents || 3} <span className="text-xs font-normal text-text-muted">Students</span>
-          </div>
-        </Card>
-
-        <Card variant="surface" className="p-5 space-y-2">
-          <div className="text-text-muted text-xs font-bold uppercase tracking-wider flex items-center justify-between">
-            <span>{t('admin.faculty')}</span>
-            <Users className="w-4 h-4 text-accent" />
-          </div>
-          <div className="font-heading font-extrabold text-2xl sm:text-3xl text-text-main">
-            {metrics?.totalTeachers || 2} <span className="text-xs font-normal text-text-muted">Teachers</span>
-          </div>
-        </Card>
-
-        <Card variant="surface" className="p-5 space-y-2">
-          <div className="text-text-muted text-xs font-bold uppercase tracking-wider flex items-center justify-between">
-            <span>{t('admin.schoolAverage')}</span>
-            <TrendingUp className="w-4 h-4 text-accent" />
-          </div>
-          <div className="font-heading font-extrabold text-2xl sm:text-3xl text-accent">
-            {metrics?.schoolAverageScore || 62.3}%
-          </div>
-        </Card>
       </div>
+    );
+  }
 
-      {/* Curriculum Health Bottlenecks */}
-      <Card variant="surface" className="p-6 sm:p-8 space-y-5">
-        <div className="flex items-center justify-between border-b border-border-warm pb-3">
-          <div>
-            <SectionLabel text="CURRICULUM HEALTH" />
-            <h2 className="font-heading font-extrabold text-lg sm:text-xl text-text-main flex items-center gap-2 mt-1">
-              <AlertTriangle className="w-5 h-5 text-accent" />
-              <span>{t('admin.bottlenecksTitle')}</span>
-            </h2>
-          </div>
+  return (
+    <div className="min-h-screen bg-[#F5F0EA] py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* Header (ONE SINGLE PAGE - strictly NO Home button) */}
+        <div>
+          <SectionLabel text={t('admin.consoleBadge') || 'Administrator Console'} />
+          <h1 className="text-3xl font-extrabold text-[#0D0D0D] tracking-tight mt-1">
+            {t('admin.title') || 'School Administration Console'}
+          </h1>
+          <p className="text-sm text-[#736B63] mt-1 max-w-2xl">
+            {t('admin.subtitle') || 'Manage users, classes, assignments, and permissions on one single page.'}
+          </p>
         </div>
 
-        <div className="space-y-3">
-          {(metrics?.prerequisiteBottlenecks || []).map((b, idx) => (
-            <div
-              key={idx}
-              className="p-4 sm:p-5 rounded-2xl bg-bg-base border border-border-warm text-xs sm:text-sm space-y-3"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="font-heading font-extrabold text-text-main text-sm sm:text-base">
-                  {b.targetTopic}
-                </span>
-                <span className="px-3 py-1 rounded-full bg-[#FFF3EC] text-accent font-bold border border-accent/20 text-xs self-start sm:self-auto">
-                  {b.affectedStudentsPercentage}% Students Blocked
-                </span>
-              </div>
+        {/* Feedback Alert Toast */}
+        {feedback && (
+          <div
+            className={`p-4 rounded-2xl flex items-center gap-3 border shadow-xs transition-all ${
+              feedback.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : 'bg-red-50 border-red-200 text-red-900'
+            }`}
+          >
+            {feedback.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+            )}
+            <p className="text-sm font-medium">{feedback.message}</p>
+          </div>
+        )}
 
-              <div className="text-text-muted">
-                <strong className="text-text-main">Identified Prerequisite Bottleneck:</strong>{' '}
-                <span className="text-accent font-semibold">{b.bottleneckPrerequisite}</span>
-              </div>
-
-              <div className="p-3 sm:p-3.5 rounded-xl bg-surface border border-border-warm text-text-main text-xs font-medium">
-                <strong className="text-text-main">Recommended Administrative Action:</strong> {b.actionRecommended}
-              </div>
+        {/* 1. Counts of Students, Teachers, Parents, and Cohorts */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+              <GraduationCap className="w-6 h-6" />
             </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Class List & Cohort Management */}
-      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
-        <div className="flex items-center justify-between border-b border-border-warm pb-3">
-          <div>
-            <SectionLabel text="COHORTS & FACULTY" />
-            <h3 className="font-heading font-extrabold text-base sm:text-lg text-text-main flex items-center gap-2 mt-1">
-              <School className="w-5 h-5 text-accent" />
-              <span>{t('admin.classList')}</span>
-            </h3>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto rounded-2xl border border-border-warm bg-bg-base/40">
-          <table className="w-full text-left text-xs sm:text-sm">
-            <thead className="bg-surface text-text-muted uppercase text-[10px] tracking-wider font-semibold border-b border-border-warm">
-              <tr>
-                <th className="py-3.5 px-4">Class</th>
-                <th className="py-3.5 px-4">Subject</th>
-                <th className="py-3.5 px-4">Assigned Teacher</th>
-                <th className="py-3.5 px-4">Enrolled</th>
-                <th className="py-3.5 px-4">Avg Score</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-warm/60 text-text-muted">
-              {(metrics?.classes || []).map((c) => (
-                <tr key={c.id} className="hover:bg-surface/80 transition-colors">
-                  <td className="py-3.5 px-4 font-bold text-text-main">{c.name}</td>
-                  <td className="py-3.5 px-4">{c.subject}</td>
-                  <td className="py-3.5 px-4 font-medium text-text-main">{c.teacher}</td>
-                  <td className="py-3.5 px-4">{c.studentsCount} Students</td>
-                  <td className="py-3.5 px-4 font-mono font-bold text-accent">
-                    {c.averageScore > 0 ? `${c.averageScore}%` : 'Pending Quiz'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Student & Parent Roster */}
-      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
-        <div className="flex items-center justify-between border-b border-border-warm pb-3">
-          <div>
-            <SectionLabel text="SCHOOL ROSTER" />
-            <h3 className="font-heading font-extrabold text-base sm:text-lg text-text-main flex items-center gap-2 mt-1">
-              <Users className="w-5 h-5 text-accent" />
-              <span>{t('admin.rosterTitle')}</span>
-            </h3>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto rounded-2xl border border-border-warm bg-bg-base/40">
-          <table className="w-full text-left text-xs sm:text-sm">
-            <thead className="bg-surface text-text-muted uppercase text-[10px] tracking-wider font-semibold border-b border-border-warm">
-              <tr>
-                <th className="py-3.5 px-4">Student</th>
-                <th className="py-3.5 px-4">Class</th>
-                <th className="py-3.5 px-4">Score</th>
-                <th className="py-3.5 px-4">Linked Parent</th>
-                <th className="py-3.5 px-4">Teacher</th>
-                <th className="py-3.5 px-4 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-warm/60 text-text-muted">
-              {(metrics?.students || []).map((s) => (
-                <tr key={s.id} className="hover:bg-surface/80 transition-colors">
-                  <td className="py-3.5 px-4 font-bold text-text-main">{s.name}</td>
-                  <td className="py-3.5 px-4">{s.class}</td>
-                  <td className="py-3.5 px-4 font-mono font-bold text-accent">{s.score}</td>
-                  <td className="py-3.5 px-4 font-medium text-text-main">{s.parent || 'Unlinked'}</td>
-                  <td className="py-3.5 px-4">{s.teacher}</td>
-                  <td className="py-3.5 px-4 text-right">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedStudent(s);
-                        setParentNameInput(s.parent || '');
-                        setLinkModalOpen(true);
-                      }}
-                    >
-                      Link Parent
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Add Class Modal */}
-      {addClassModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <Card variant="surface" className="max-w-md w-full p-6 sm:p-8 border border-border-warm space-y-5 shadow-2xl relative">
-            <button
-              onClick={() => setAddClassModalOpen(false)}
-              className="absolute top-5 right-5 text-text-muted hover:text-text-main transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2 text-accent">
-              <School className="w-5 h-5" />
-              <h3 className="font-heading font-extrabold text-lg text-text-main">Create New Cohort</h3>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
+                {t('admin.studentsCount') || 'Students'}
+              </p>
+              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.counts.students}</p>
             </div>
+          </Card>
 
-            <form onSubmit={handleAddClass} className="space-y-4 text-xs sm:text-sm">
-              <div className="space-y-1.5">
-                <label className="font-bold text-text-main">Class Name</label>
-                <input
-                  type="text"
-                  value={newClassName}
-                  onChange={(e) => setNewClassName(e.target.value)}
-                  className="w-full p-3 rounded-2xl bg-bg-base border border-border-warm text-text-main focus:outline-none focus:border-accent"
-                  required
-                />
-              </div>
+          <Card className="p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+              <UserCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
+                {t('admin.teachersCount') || 'Teachers'}
+              </p>
+              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.counts.teachers}</p>
+            </div>
+          </Card>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-text-main">Section</label>
-                <input
-                  type="text"
-                  value={newClassSection}
-                  onChange={(e) => setNewClassSection(e.target.value)}
-                  className="w-full p-3 rounded-2xl bg-bg-base border border-border-warm text-text-main focus:outline-none focus:border-accent"
-                  required
-                />
-              </div>
+          <Card className="p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
+                {t('admin.parentsCount') || 'Parents'}
+              </p>
+              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.counts.parents}</p>
+            </div>
+          </Card>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-text-main">Assigned Teacher</label>
-                <input
-                  type="text"
-                  value={newClassTeacher}
-                  onChange={(e) => setNewClassTeacher(e.target.value)}
-                  className="w-full p-3 rounded-2xl bg-bg-base border border-border-warm text-text-main focus:outline-none focus:border-accent"
-                  required
-                />
-              </div>
-
-              {classSuccess ? (
-                <div className="p-3.5 rounded-2xl bg-[#EBF7EE] border border-[#C3E6CB] text-[#1E7E34] flex items-center gap-2 text-xs font-semibold">
-                  <Check className="w-4 h-4 shrink-0" />
-                  <span>Cohort added to school roster!</span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-end gap-3 pt-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setAddClassModalOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    icon={<ArrowRight className="w-4 h-4" />}
-                  >
-                    Create Cohort
-                  </Button>
-                </div>
-              )}
-            </form>
+          <Card className="p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522] shrink-0">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
+                {t('admin.classesCount') || 'Cohorts'}
+              </p>
+              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.counts.classes}</p>
+            </div>
           </Card>
         </div>
-      )}
 
-      {/* Link Parent Modal */}
-      {linkModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <Card variant="surface" className="max-w-md w-full p-6 sm:p-8 border border-border-warm space-y-5 shadow-2xl relative">
-            <button
-              onClick={() => setLinkModalOpen(false)}
-              className="absolute top-5 right-5 text-text-muted hover:text-text-main transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2 text-accent">
-              <LinkIcon className="w-5 h-5" />
-              <h3 className="font-heading font-extrabold text-lg text-text-main">
-                Link Parent to {selectedStudent?.name}
-              </h3>
+        {/* 2. User Table with Role Filters and Status Toggle */}
+        <Card className="p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#E3DCD3] pb-5">
+            <div>
+              <h2 className="text-lg font-bold text-[#0D0D0D]">
+                {t('admin.userTableTitle') || 'User Directory'}
+              </h2>
+              <p className="text-xs text-[#736B63]">
+                {t('admin.userTableSubtitle') || 'View and manage all registered accounts across roles.'}
+              </p>
             </div>
 
-            <form onSubmit={handleLinkParent} className="space-y-4 text-xs sm:text-sm">
-              <div className="space-y-1.5">
-                <label className="font-bold text-text-main">Parent Full Name</label>
+            {/* Search Input */}
+            <div className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 text-[#736B63] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search by name, email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-xs text-[#0D0D0D] placeholder-[#736B63] focus:outline-hidden focus:border-[#F26522]"
+              />
+            </div>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: 'all', label: t('admin.filterAll') || 'All Users' },
+              { id: 'student', label: t('admin.filterStudents') || 'Students' },
+              { id: 'teacher', label: t('admin.filterTeachers') || 'Teachers' },
+              { id: 'parent', label: t('admin.filterParents') || 'Parents' },
+              { id: 'admin', label: t('admin.filterAdmins') || 'Admins' },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setActiveFilter(f.id)}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                  activeFilter === f.id
+                    ? 'bg-[#0D0D0D] text-white shadow-xs'
+                    : 'bg-[#FBF8F4] text-[#736B63] border border-[#E3DCD3] hover:border-[#0D0D0D]'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#E3DCD3] text-[#736B63] uppercase tracking-wider font-semibold">
+                  <th className="py-3 px-3">{t('admin.colName') || 'Name'}</th>
+                  <th className="py-3 px-3">{t('admin.colEmail') || 'Email'}</th>
+                  <th className="py-3 px-3">{t('admin.colRole') || 'Role'}</th>
+                  <th className="py-3 px-3">{t('admin.colClass') || 'Class / Details'}</th>
+                  <th className="py-3 px-3">{t('admin.colStatus') || 'Status'}</th>
+                  <th className="py-3 px-3 text-right">{t('admin.colActions') || 'Actions'}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E3DCD3]">
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-[#736B63]">
+                      No users match the selected criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map((u) => {
+                    const isActive = u.status === 'active';
+                    return (
+                      <tr key={u.id} className="hover:bg-[#FBF8F4]/80 transition-colors">
+                        <td className="py-3 px-3 font-semibold text-[#0D0D0D]">{u.name}</td>
+                        <td className="py-3 px-3 text-[#736B63] font-mono text-[11px]">{u.email}</td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full font-semibold capitalize text-[11px] ${
+                              u.role === 'student'
+                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                : u.role === 'teacher'
+                                ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                : u.role === 'parent'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-orange-50 text-[#F26522] border border-orange-200'
+                            }`}
+                          >
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-[#0D0D0D]">
+                          {u.className || u.linkedChild || '—'}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                              isActive
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-gray-100 text-gray-500'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isActive ? 'bg-emerald-500' : 'bg-gray-400'
+                              }`}
+                            />
+                            {isActive
+                              ? t('admin.statusActive') || 'Active'
+                              : t('admin.statusDisabled') || 'Disabled'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            onClick={() => handleToggleStatus(u.id)}
+                            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                              isActive
+                                ? 'border-amber-200 text-amber-700 hover:bg-amber-50'
+                                : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                            }`}
+                          >
+                            {isActive ? (
+                              <>
+                                <ToggleRight className="w-3.5 h-3.5" />
+                                {t('admin.btnDisable') || 'Disable'}
+                              </>
+                            ) : (
+                              <>
+                                <ToggleLeft className="w-3.5 h-3.5" />
+                                {t('admin.btnEnable') || 'Enable'}
+                              </>
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* 3. Forms Section (All 4 forms on this one single page) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Form 1: Create User */}
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-[#E3DCD3]">
+              <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522]">
+                <UserPlus className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0D0D0D]">
+                  {t('admin.createUserTitle') || 'Create User'}
+                </h3>
+                <p className="text-[11px] text-[#736B63]">Register a student, teacher, parent, or admin</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                  {t('admin.fullName') || 'Full Name'}
+                </label>
                 <input
                   type="text"
-                  value={parentNameInput}
-                  onChange={(e) => setParentNameInput(e.target.value)}
-                  placeholder="e.g. Sunita Sharma"
-                  className="w-full p-3 rounded-2xl bg-bg-base border border-border-warm text-text-main focus:outline-none focus:border-accent"
                   required
+                  placeholder="e.g. Ramesh Kumar"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
                 />
               </div>
 
-              {linkSuccess ? (
-                <div className="p-3.5 rounded-2xl bg-[#EBF7EE] border border-[#C3E6CB] text-[#1E7E34] flex items-center gap-2 text-xs font-semibold">
-                  <Check className="w-4 h-4 shrink-0" />
-                  <span>Parent successfully linked to student!</span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-end gap-3 pt-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setLinkModalOpen(false)}
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                  {t('admin.emailAddress') || 'Email Address'}
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. ramesh@learnlens.edu"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                    {t('admin.role') || 'Role'}
+                  </label>
+                  <select
+                    value={newUser.role}
+                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    icon={<ArrowRight className="w-4 h-4" />}
-                  >
-                    Save Link
-                  </Button>
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="parent">Parent</option>
+                    <option value="admin">Admin</option>
+                  </select>
                 </div>
-              )}
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                    {t('admin.password') || 'Password'}
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Temporary password"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" variant="primary" size="sm" className="w-full mt-2">
+                {t('admin.submitCreateUser') || 'Create User'}
+              </Button>
             </form>
           </Card>
+
+          {/* Form 2: Create Class */}
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-[#E3DCD3]">
+              <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522]">
+                <PlusCircle className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0D0D0D]">
+                  {t('admin.createClassTitle') || 'Create Class'}
+                </h3>
+                <p className="text-[11px] text-[#736B63]">Add a new academic cohort or section</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateClass} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                    {t('admin.className') || 'Class Name'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Class 12-A"
+                    value={newClass.name}
+                    onChange={(e) => setNewClass({ ...newClass, name: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                    {t('admin.section') || 'Section'}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. A"
+                    value={newClass.section}
+                    onChange={(e) => setNewClass({ ...newClass, section: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                  {t('admin.subject') || 'Subject'}
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Mathematics & Physics"
+                  value={newClass.subject}
+                  onChange={(e) => setNewClass({ ...newClass, subject: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                  {t('admin.teacher') || 'Assigned Teacher'}
+                </label>
+                <select
+                  value={newClass.teacher}
+                  onChange={(e) => setNewClass({ ...newClass, teacher: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                >
+                  <option value="">Select teacher (optional)...</option>
+                  {teachersList.map((t) => (
+                    <option key={t.id} value={t.name}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <Button type="submit" variant="primary" size="sm" className="w-full mt-2">
+                {t('admin.submitCreateClass') || 'Create Class'}
+              </Button>
+            </form>
+          </Card>
+
+          {/* Form 3: Assign Teacher / Student to Class */}
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-[#E3DCD3]">
+              <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522]">
+                <Layers className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0D0D0D]">
+                  {t('admin.assignClassTitle') || 'Assign to Class'}
+                </h3>
+                <p className="text-[11px] text-[#736B63]">Enroll student or assign teacher to a cohort</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAssign} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                  {t('admin.selectClass') || 'Select Class'}
+                </label>
+                <select
+                  value={assignment.classId}
+                  onChange={(e) => setAssignment({ ...assignment, classId: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                >
+                  <option value="">Select a class cohort...</option>
+                  {metrics.classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.subject})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                  {t('admin.selectUser') || 'Select User (Teacher or Student)'}
+                </label>
+                <select
+                  value={assignment.userId}
+                  onChange={(e) => setAssignment({ ...assignment, userId: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                >
+                  <option value="">Select user...</option>
+                  <optgroup label="Teachers">
+                    {teachersList.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} (Teacher)
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Students">
+                    {studentsList.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} (Student)
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+
+              <Button type="submit" variant="dark" size="sm" className="w-full mt-2">
+                {t('admin.submitAssign') || 'Save Assignment'}
+              </Button>
+            </form>
+          </Card>
+
+          {/* Form 4: Link Parent to Child */}
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-[#E3DCD3]">
+              <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522]">
+                <LinkIcon className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0D0D0D]">
+                  {t('admin.linkParentTitle') || 'Link Parent to Child'}
+                </h3>
+                <p className="text-[11px] text-[#736B63]">Establish guardianship link for parent portal</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleLinkParent} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                  {t('admin.selectParent') || 'Select Parent'}
+                </label>
+                <select
+                  value={parentLink.parentId}
+                  onChange={(e) => setParentLink({ ...parentLink, parentId: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                >
+                  <option value="">Select parent...</option>
+                  {parentsList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                  {t('admin.selectStudent') || 'Select Student (Child)'}
+                </label>
+                <select
+                  value={parentLink.studentId}
+                  onChange={(e) => setParentLink({ ...parentLink, studentId: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                >
+                  <option value="">Select student...</option>
+                  {studentsList.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.className || 'Unassigned'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <Button type="submit" variant="dark" size="sm" className="w-full mt-2">
+                {t('admin.submitLinkParent') || 'Link Parent'}
+              </Button>
+            </form>
+          </Card>
+
         </div>
-      )}
+
+      </div>
     </div>
   );
 }
