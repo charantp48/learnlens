@@ -1,86 +1,179 @@
 # LearnLens 🎓🔍
-> **Smart, Inclusive, Personalized Education for Large Classrooms**  
-> *Built for a 24-Hour Hackathon • Clean Pure-JS Architecture • Unified Single-Server Mode*
+> **Smart, Inclusive, Personalized Education for Real Classrooms**  
+> *Production-Ready Single-Server Setup • Server-Graded Diagnostics • Multi-Level Cognitive Ranks • Teacher Clarification Workflow*
 
 ---
 
-## 🏆 Executive Summary & Pitch
+## 🌟 Overview: Real Education App Flow
 
-In modern high-enrollment classrooms (40–60+ students per teacher), exams report **what** a student scored (e.g. *50% on Quadratic Equations*), but fail to answer:
-1. **Why** did they struggle? (Is it truly quadratic equations, or an unresolved 8th-grade prerequisite like factoring?)
-2. **How** should they study? (Students don't have endless hours; generic advice like "study more" causes burnout.)
-3. **Who** is keeping track? (Teachers lack class-wide prerequisite bottleneck heatmaps; parents receive impenetrable technical marks cards.)
+LearnLens is a full-stack educational diagnostic and guidance platform running on a single Express/React server. It bridges the gap between raw test scores and personalized learning intervention:
 
-**LearnLens solves all three with five core pillars:**
-- 🔍 **Root-Cause Prerequisite Gap Finder**: Traverses the curriculum Directed Acyclic Graph (DAG) to find the foundational ancestor concept holding the student back.
-- 🎯 **Confidence-Weighted Diagnostics**: Students tag every answer as *Sure*, *Not Sure*, or *Guessing*. Correct guesses are down-weighted ($0.5\times$) because guessing isn't genuine mastery.
-- ⏱️ **Adaptive Free-Hour Study Planner**: Dynamically converts available study hours and target exam dates into strict, science-backed **25–30 minute focused sessions**, scheduling root prerequisites chronologically first.
-- 🤖 **Responsible Gemini AI Tutor**: Provides step-by-step misconception coaching with server-side caching, strict offline curriculum fallbacks, bad-question reporting, and mandatory AI-verification tags.
-- 🌐 **Four Unified Dashboards with Tri-Lingual Support**: One unified PostgreSQL (Supabase) schema serves **Students, Teachers, Parents, and Administrators** in **English, Hindi (हिंदी), and Kannada (ಕನ್ನಡ)** with zero hardcoded UI strings.
+```mermaid
+flowchart LR
+    A["Admin Onboards Cohort<br/>(Single or CSV Upload)"] --> B["Temporary Passwords<br/>(Forced First-Login Change)"]
+    B --> C["Student Takes Diagnostic<br/>(L1=1m, L2=2m, L3=3m)"]
+    C --> D["Server Evaluates Quiz<br/>(Grades, Level, Weak Topics)"]
+    D --> E["Automatic Report & Rank<br/>(Ties Share Rank, Exclude Demo)"]
+    E --> F["Teacher Queue & Review<br/>(Needs Help / Focus / Doing Well)"]
+    F --> G["Student & Parent Dashboards<br/>(Live Rank & Teacher Note)"]
+    G --> H["Adaptive Study Planner<br/>(Teacher-Prioritized 25m Sessions)"]
+```
+
+1. **Admin creates real accounts**: Add individual people or batch-import up to 500 users at once via CSV with instant row-by-row pre-validation and downloadable templates.
+2. **Secure temporary credentials**: The server generates random temporary passwords (`Lens#XXXXXX`). Every new user has `must_change_password = true` and is forced to set a permanent password at first login.
+3. **Server-side quiz grading**: Browser scores are never trusted. The server verifies each answer against authoritative answer keys:
+   - **Level 1** = 1 mark
+   - **Level 2** = 2 marks
+   - **Level 3** = 3 marks
+   - Wrong or skipped = 0 marks (no negative marking; confidence weighting is recorded for metacognitive analysis without lowering raw score).
+   - Atomic database write with unique constraints prevents duplicate attempt submissions.
+4. **Real competition rankings**: Cumulative percentage across all completed attempts. Uses SQL competition `RANK()` where ties share a rank (e.g. 1, 1, 3). Demo accounts (`is_demo = true`) are strictly excluded from real ranks.
+5. **Teacher review and clarification**: Incoming reports appear automatically in the assigned teacher's queue with a "New" badge (polled every 15 seconds). Teachers review reports and submit a clarification:
+   - Status: **Needs extra help**, **Improve focus**, or **Doing well**
+   - Topic tags selected from weak areas
+   - Guidance comment (max 500 characters)
+6. **Student and Parent visibility**:
+   - Students see their live class rank, school rank, and their teacher's latest guidance note.
+   - Parents see their child's live rank, jargon-free academic progress, and teacher notes with one-click acknowledgment.
+   - Strict Row-Level Security (RLS): students never see other students' data; parents only see their linked children; teachers only see assigned classes.
+7. **Study Planner feed**: The teacher's clarified topics feed directly into the student's adaptive study planner as high-priority sessions scheduled before unguided topics.
+8. **Admin monitoring**: Single-page monitoring console showing real totals (students, teachers, parents, classes, reports submitted, pending reviews), full user directory, school-wide reports and ranks table, and audit activity stream.
 
 ---
 
-## 🚀 How to Run (Single Unified Server)
+## 🚀 Quick Start (Unified Single Server)
 
-LearnLens runs on **one single server** serving both the API routes (`/api/*`) and the compiled React production frontend from **`http://localhost:5000`**.
+LearnLens runs on **one single server** serving both the REST API routes (`/api/*`) and the compiled React production frontend from **`http://localhost:5000`**.
 
 ### 1. Prerequisites
 - **Node.js** (v18+ or v20+)
 - **npm** (v9+)
 
-### 2. Quick Setup & Build
-From the project root directory:
+### 2. Build Frontend Distribution
+From the repository root:
 ```bash
-# 1. Build the frontend (installs frontend packages and compiles to frontend/dist)
+# Compiles React frontend to frontend/dist
 npm run build
 ```
 
-### 3. Start the Single Server
+### 3. Start the Server
 ```bash
-# Starts the unified server serving both the REST API and the React frontend
+# Starts Express server on port 5000 serving both API and static UI
 npm start
 ```
 
-### 4. Open the App in Your Browser
-Visit: **[http://localhost:5000](http://localhost:5000)**
-
-### 5. Health & Database Verification Endpoints
-- **API Health:** `http://localhost:5000/api/health`
-- **Database Connection & Topic Count:** `http://localhost:5000/api/health/db`
+### 4. Access the Application
+Open your browser at: **[http://localhost:5000](http://localhost:5000)**
 
 ---
 
-## 🛠️ Troubleshooting Guide
+## 📥 How to Add Real Data
 
-| Issue | Plain-English Explanation | How to Fix |
-| :--- | :--- | :--- |
-| **Port 5000 is busy (`EADDRINUSE`)** | Another application or an earlier instance of Node.js is already running on port 5000. | 1. Stop the existing process using port 5000.<br>2. On Windows PowerShell, find and kill it: `Get-Process -Id (Get-NetTCPConnection -LocalPort 5000).OwningProcess \| Stop-Process`<br>3. Or change the port in your `.env` file (e.g., `PORT=5001`). |
-| **Old server still running in background** | A background daemon was started in an earlier terminal session and never terminated. | Stop all background Node instances or restart your terminal. |
-| **"Frontend Build Required" / Missing `frontend/dist`** | The Express server started, but the React frontend has not been compiled yet. | Run `npm run build` in the root folder, then refresh the page. |
-| **Missing or Default `.env` values** | Supabase or Gemini keys are empty or using default template placeholders. | Copy `.env.example` to `.env` and fill in your actual credentials. The app gracefully falls back to mock data if offline. |
+### 1. Adding Users One by One
+1. Log in as Administrator (`admin@learnlens.edu` / `Admin#12345`).
+2. In the **Add Individual Person** form:
+   - Choose Role: **Student**, **Teacher**, **Parent**, or **Admin**.
+   - Enter Full Name and Email Address.
+   - Assign Class (for students), Teaching Class (for teachers), or Linked Student (for parents).
+3. Click **Generate Account & Password**.
+4. The server generates a random temporary password (`Lens#XXXXXX`). Copy it or hand it to the user.
+
+### 2. Batch-Adding Users via CSV
+1. In the Admin Console under **Batch CSV Onboarding**, click **Template** to download `learnlens_users_template.csv`.
+2. CSV format specifications:
+   ```csv
+   role,full_name,email,class_name,linked_student_email
+   student,Kavya Nair,kavya.nair@school.edu,Class 10-A,
+   student,Rohan Gupta,rohan.gupta@school.edu,Class 10-A,
+   teacher,Mr. Vikram Sarabhai,vikram.sarabhai@school.edu,Class 10-A,
+   parent,Suresh Nair,suresh.nair@school.edu,,kavya.nair@school.edu
+   ```
+3. Upload your CSV file (up to 500 rows).
+4. The server runs an instant row-by-row pre-validation preview displaying valid rows and highlighting specific row errors (duplicate emails, invalid role, unknown class, missing child).
+5. Click **Import Valid Accounts**. All valid users are created with random temporary passwords.
+6. Click **Download Passwords CSV** to save all generated credentials for distribution.
+
+### 3. First Login & Password Change Flow
+1. The new user navigates to `http://localhost:5000/login` and enters their email and temporary password.
+2. The server recognizes `must_change_password = true` and prompts the user with the forced **Permanent Password Change** dialog.
+3. Once set, `must_change_password` becomes `false` and subsequent logins use the permanent password.
 
 ---
 
-## 🧪 Running Automated Tests
+## ⚙️ Environment Variables & Configuration
 
-```bash
-# Runs the deterministic test suite for Gap Finder and Study Planner (10/10 passing)
-npm test
+Create or edit `.env` in the project root:
+
+```env
+# Server Port
+PORT=5000
+NODE_ENV=production
+
+# Demo Mode Toggle
+# Set DEMO_MODE=false in production to hide demo buttons and exclude demo accounts from lists
+DEMO_MODE=true
+
+# Supabase PostgreSQL (Optional - backend runs pure JS fallbacks if offline)
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# Google Gemini AI (Optional - uses textbook fallbacks if unconfigured)
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ---
 
-## 👥 Role Portals & Demo Accounts
+## 🧪 Automated Test Battery
 
-LearnLens features an interactive login screen at `/login` with 4 instant demo autofill buttons:
+The project includes thorough deterministic test suites verifying every layer of the application:
 
-| Role | Demo Credentials | Route | Scope & Features |
-| :--- | :--- | :--- | :--- |
-| **Student** | `student@learnlens.demo`<br>pw: `Student@123` | `/student` | Summary dashboard, untimed multi-level diagnostic quiz, confidence ratings, root-cause prerequisite display, 25-30 min study planner, AI Coach with report & fallback, and 3-room Escape the Library game. |
-| **Teacher** | `teacher@learnlens.demo`<br>pw: `Teacher@123` | `/teacher` | Class overview, filterable roster, detailed student modal/report with feedback, live 15s incoming quiz submissions feed, question review queue. |
-| **Parent** | `parent@learnlens.demo`<br>pw: `Parent@123` | `/parent` | Child selector, jargon-free summaries, subject levels, progress chart, teacher note reply. |
-| **Admin** | `admin@learnlens.demo`<br>pw: `Admin@123` | `/admin` | Single-page console (Logout only, no Home button), student/teacher/parent counts, user table with enable/disable toggle, forms for creating users, cohorts, and parent-child links. |
+```bash
+# 1. Run Complete End-to-End Real Cohort Verification (Step 8)
+node backend/tests/step8_e2e.test.js
+
+# 2. Run All Step Test Suites (Step 2 through Step 8)
+node backend/tests/step8_e2e.test.js ; node backend/tests/step7.test.js ; node backend/tests/step6.test.js ; node backend/tests/step5.test.js ; node backend/tests/step4.test.js ; node backend/tests/step3.test.js ; node backend/tests/step2.test.js
+
+# 3. Or run default npm test
+npm test
+```
+
+### What the Test Suites Verify:
+- **Step 2 (`step2.test.js`)**: Single user creation, CSV preview validation (duplicate/format checks), temporary passwords, forced password change, and password reset.
+- **Step 3 (`step3.test.js`)**: Server-side level grading (L1=1m, L2=2m, L3=3m), duplicate submission protection (409 Conflict), cognitive prerequisite gap analysis.
+- **Step 4 (`step4.test.js`)**: Competition `RANK()` algorithm, ties sharing ranks, demo accounts excluded from ranks, student privacy (403 Forbidden for cross-student access).
+- **Step 5 (`step5.test.js`)**: Teacher incoming reports feed, student roster with overall % and class rank, teacher clarifications with status, topics, and comment validation.
+- **Step 6 (`step6.test.js`)**: Student & Parent dashboard teacher note displays, parent linked-child rank view, study planner feed with teacher priority sessions.
+- **Step 7 (`step7.test.js`)**: Admin monitoring real totals, user directory with role and status filters, school-wide reports and ranks table, and audit activity stream.
+- **Step 8 (`step8_e2e.test.js`)**: Complete multi-role simulation with a real cohort (teacher, students, parent) testing onboarding -> temporary password -> forced change -> quiz grading -> automatic report -> teacher review & clarification -> student/parent dashboard update -> study planner prioritization -> admin monitoring.
 
 ---
 
-*Built with ❤️ for inclusive, smart education that leaves no student behind.*
+## 🛡️ Privacy & Access Control (Row-Level Security)
+
+| Role | Access Permissions | Restricted / Blocked |
+| :--- | :--- | :--- |
+| **Student** | Own quiz attempts, own score, own class/school rank, own teacher guidance note, adaptive study planner. | Strictly blocked (403) from seeing other students' ranks, scores, notes, or class leaderboards. |
+| **Parent** | Linked children's progress, live ranks, plain-language summaries, teacher feedback, study schedule. | Strictly blocked (403) from viewing unlinked students' scores, reports, or ranks. |
+| **Teacher** | Assigned class rosters, class averages, incoming reports feed (15s auto-poll), report review & clarification. | Strictly blocked (403) from writing notes or viewing reports for unassigned classes. |
+| **Admin** | Full control on one page: create/edit users, reset passwords, batch CSV onboarding, assign classes, school-wide reports & rankings table, activity audit log. | Kept strictly on a single admin console with no student/teacher Home navigation. |
+
+---
+
+## 👥 Default Accounts
+
+| Role | Name | Email | Default Password | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Admin** | School Administrator | `admin@learnlens.edu` | `Admin#12345` | Single-page console with complete school controls |
+| **Teacher** | Mr. Rajesh Rao | `rajesh.rao@learnlens.edu` | `Admin#12345` | Teacher for Class 11-A |
+| **Student** | Priya Sharma | `priya.sharma@learnlens.edu` | `Admin#12345` | Class 11-A Student |
+| **Student** | Ananya Sen | `ananya.sen@learnlens.edu` | `Admin#12345` | Class 11-A Real Student |
+| **Parent** | Sunita Sharma | `sunita.sharma@learnlens.edu` | `Admin#12345` | Parent linked to Priya Sharma & Arjun Sharma |
+
+*(New users created by the admin receive temporary passwords generated by the server and are forced to change their password on first login.)*
+
+---
+
+*Built with ❤️ for inclusive, high-integrity education.*
