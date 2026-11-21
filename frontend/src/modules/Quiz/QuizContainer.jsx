@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import QuestionCard from './QuestionCard';
 import QuizProgressBar from './QuizProgressBar';
 import QuizResults from './QuizResults';
+import SectionLabel from '../../components/common/SectionLabel';
+import Button from '../../components/common/Button';
 import { DIAGNOSTIC_QUESTIONS } from './quizData';
 import { BookOpen, ArrowLeft, ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
 
@@ -143,8 +145,8 @@ export default function QuizContainer() {
   if (loading) {
     return (
       <div className="text-center py-24 space-y-3">
-        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mx-auto" />
-        <p className="text-sm text-slate-400">{t('common.loading')}</p>
+        <Loader2 className="w-8 h-8 text-[#F26522] animate-spin mx-auto" />
+        <p className="text-sm text-[#6B6660]">{t('common.loading')}</p>
       </div>
     );
   }
@@ -159,16 +161,19 @@ export default function QuizContainer() {
   const currentAnswer = answers[currentIndex];
 
   return (
-    <div className="max-w-3xl mx-auto py-4 space-y-6">
+    <div className="max-w-3xl mx-auto py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center">
-            <BookOpen className="w-4 h-4" />
-          </div>
+      <div className="space-y-2 pb-4 border-b border-[#E3DCD3]">
+        <SectionLabel>ASSESSMENT IN PROGRESS</SectionLabel>
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-base font-bold text-white">{t('quiz.title')}</h1>
-            <p className="text-xs text-slate-400">{t('quiz.subtitle')}</p>
+            <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-[#0D0D0D] tracking-tight">
+              {t('quiz.title')}
+            </h1>
+            <p className="text-xs text-[#6B6660] mt-0.5">{t('quiz.subtitle')}</p>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center shrink-0">
+            <BookOpen className="w-5 h-5 text-[#F26522]" />
           </div>
         </div>
       </div>
@@ -189,48 +194,35 @@ export default function QuizContainer() {
 
       {/* Navigation Buttons */}
       <div className="flex items-center justify-between pt-2">
-        <button
-          type="button"
+        <Button
           onClick={handlePrev}
           disabled={isFirst}
-          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-            isFirst
-              ? 'opacity-40 cursor-not-allowed text-slate-500 bg-slate-800/40'
-              : 'text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white cursor-pointer'
-          }`}
+          variant="secondary"
+          size="sm"
+          icon={ArrowLeft}
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>{t('quiz.prev')}</span>
-        </button>
+          {t('quiz.prev')}
+        </Button>
 
         {isLast ? (
-          <button
-            type="button"
+          <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 cursor-pointer"
+            variant="primary"
+            size="md"
+            icon={submitting ? Loader2 : CheckCircle}
           >
-            {submitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Evaluating...</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                <span>{t('quiz.submit')}</span>
-              </>
-            )}
-          </button>
+            {submitting ? 'Evaluating...' : t('quiz.submit')}
+          </Button>
         ) : (
-          <button
-            type="button"
+          <Button
             onClick={handleNext}
-            className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+            variant="primary"
+            size="md"
+            showArrow
           >
-            <span>{t('quiz.next')}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+            {t('quiz.next')}
+          </Button>
         )}
       </div>
     </div>

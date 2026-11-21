@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from '../../context/LanguageContext';
+import Card from '../../components/common/Card';
+import Button from '../../components/common/Button';
+import SectionLabel from '../../components/common/SectionLabel';
 import { 
   Bot, 
   Sparkles, 
   Lightbulb, 
-  HelpCircle, 
   AlertCircle, 
   Flag, 
   Send, 
   CheckCircle2, 
-  RotateCcw,
-  BookOpen,
   Loader2
 } from 'lucide-react';
 
@@ -81,7 +81,7 @@ export default function AIChatView() {
       explanation: `In "${selectedTopic}", when working with polynomials, remember: (a - b)(a + b) = a² - b². The middle cross-terms (+ab and -ab) cancel each other out completely. Therefore, (x - 3)(x + 3) = x² - 9, not x² + 9. Always verify by multiplying both terms!`,
       source: 'offline_fallback',
       modelUsed: 'gemini-2.5-flash',
-      disclaimer: '⚠️ AI-generated, please verify with your textbook.',
+      disclaimer: '⚠️ Standard curriculum explanation (Offline fallback active). Please verify with your textbook.',
     });
     setLoading(false);
   };
@@ -110,37 +110,34 @@ export default function AIChatView() {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto py-2">
-      {/* Header */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-800/60 border border-purple-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Responsible AI Tutor (Gemini API)</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            {t('nav.aiTutor')}
+    <div className="space-y-8 max-w-4xl mx-auto py-6">
+      {/* Header Banner */}
+      <Card padding="lg" className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <SectionLabel>RESPONSIBLE GEMINI TUTORING</SectionLabel>
+          <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-[#0D0D0D] tracking-tight">
+            AI Learning <span className="text-[#F26522]">Assistant</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-            Trained to explain Class 9 math misconceptions with server-side caching and offline fallback protection.
+          <p className="text-xs sm:text-sm text-[#6B6660] max-w-lg leading-relaxed">
+            Trained to explain Class 9 math misconceptions with server-side caching and offline curriculum fallback protection.
           </p>
         </div>
 
-        <div className="text-xs px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 shrink-0">
-          Model: <span className="text-purple-300 font-mono font-bold">gemini-2.5-flash</span>
+        <div className="text-xs px-3.5 py-1.5 rounded-full bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D] font-mono font-bold shrink-0">
+          Model: <span className="text-[#F26522]">gemini-2.5-flash</span>
         </div>
-      </div>
+      </Card>
 
       {/* Topic & Mode Selectors */}
-      <div className="p-6 rounded-3xl bg-slate-800/40 border border-slate-700/60 shadow-lg space-y-5">
+      <Card padding="lg" className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Topic Select */}
-          <div className="space-y-1 flex-1">
-            <label className="text-xs font-semibold text-slate-300">Active Focus Topic</label>
+          <div className="space-y-1.5 flex-1">
+            <label className="text-xs font-bold text-[#0D0D0D]">Active Focus Topic</label>
             <select
               value={selectedTopic}
               onChange={(e) => setSelectedTopic(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+              className="w-full px-3.5 py-2.5 rounded-full bg-white border border-[#E3DCD3] text-xs font-semibold text-[#0D0D0D] focus:outline-none focus:border-[#F26522] cursor-pointer"
             >
               {topicsList.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -149,16 +146,16 @@ export default function AIChatView() {
           </div>
 
           {/* Action Tabs */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300">Assistant Mode</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-[#0D0D0D]">Assistant Mode</label>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => { setActiveTab('explain'); handleAskAI('explain'); }}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer ${
                   activeTab === 'explain'
-                    ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
-                    : 'bg-slate-900/60 text-slate-300 border-slate-700 hover:bg-slate-800'
+                    ? 'bg-[#0D0D0D] text-white border-[#0D0D0D] shadow-xs'
+                    : 'bg-white text-[#6B6660] border-[#E3DCD3] hover:border-[#0D0D0D]'
                 }`}
               >
                 Explain Concept
@@ -166,10 +163,10 @@ export default function AIChatView() {
               <button
                 type="button"
                 onClick={() => { setActiveTab('hint'); handleAskAI('hint'); }}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer ${
                   activeTab === 'hint'
-                    ? 'bg-amber-600 text-white border-amber-500 shadow-sm'
-                    : 'bg-slate-900/60 text-slate-300 border-slate-700 hover:bg-slate-800'
+                    ? 'bg-[#0D0D0D] text-white border-[#0D0D0D] shadow-xs'
+                    : 'bg-white text-[#6B6660] border-[#E3DCD3] hover:border-[#0D0D0D]'
                 }`}
               >
                 Get a Hint
@@ -177,13 +174,13 @@ export default function AIChatView() {
               <button
                 type="button"
                 onClick={() => { setActiveTab('practice'); handleAskAI('practice'); }}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer ${
                   activeTab === 'practice'
-                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
-                    : 'bg-slate-900/60 text-slate-300 border-slate-700 hover:bg-slate-800'
+                    ? 'bg-[#0D0D0D] text-white border-[#0D0D0D] shadow-xs'
+                    : 'bg-white text-[#6B6660] border-[#E3DCD3] hover:border-[#0D0D0D]'
                 }`}
               >
-                Generate Practice (3 Qs)
+                Generate Practice
               </button>
             </div>
           </div>
@@ -191,75 +188,77 @@ export default function AIChatView() {
 
         {/* Query Input Box */}
         {activeTab !== 'practice' && (
-          <div className="space-y-2 pt-2">
-            <label className="text-xs font-semibold text-slate-300">Your Math Question / Doubt</label>
-            <div className="flex items-center gap-2">
+          <div className="space-y-2 pt-2 border-t border-[#E3DCD3]">
+            <label className="text-xs font-bold text-[#0D0D0D]">Your Math Question / Doubt</label>
+            <div className="flex items-center gap-3">
               <input
                 type="text"
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
                 placeholder="Ask any math question..."
-                className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-white focus:outline-none focus:border-purple-500"
+                className="flex-1 px-4 py-3 rounded-full bg-white border border-[#E3DCD3] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#F26522]"
               />
-              <button
-                type="button"
+              <Button
                 onClick={() => handleAskAI(activeTab)}
                 disabled={loading}
-                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 flex items-center gap-2 cursor-pointer shrink-0"
+                variant="primary"
+                size="md"
+                icon={loading ? Loader2 : Send}
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                <span>Ask AI</span>
-              </button>
+                {loading ? 'Thinking...' : 'Ask AI'}
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* AI Response Output Card */}
       {loading ? (
-        <div className="p-12 rounded-3xl bg-slate-800/30 border border-slate-700/60 text-center space-y-3">
-          <Loader2 className="w-8 h-8 text-purple-400 animate-spin mx-auto" />
-          <p className="text-xs text-slate-400">Consulting Gemini AI tutor...</p>
-        </div>
+        <Card padding="lg" className="text-center py-16 space-y-3">
+          <Loader2 className="w-8 h-8 text-[#F26522] animate-spin mx-auto" />
+          <p className="text-xs text-[#6B6660]">Consulting Gemini AI tutor with curriculum safety checks...</p>
+        </Card>
       ) : aiResponse ? (
-        <div className="p-6 sm:p-8 rounded-3xl bg-slate-800/40 border border-slate-700/60 shadow-xl space-y-5">
+        <Card padding="lg" className="space-y-5">
           {/* Top Metadata & Safety Notice */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-700/50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E3DCD3]">
             <div className="flex items-center gap-2 text-xs">
-              <Bot className="w-4 h-4 text-purple-400" />
-              <span className="font-bold text-white">AI Tutor Response</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                {aiResponse.source === 'gemini_api' ? 'Live Gemini Model' : 'Verified Fallback'}
+              <div className="w-6 h-6 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center">
+                <Bot className="w-3.5 h-3.5 text-[#F26522]" />
+              </div>
+              <span className="font-heading font-bold text-[#0D0D0D]">AI Tutor Response</span>
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D] font-bold">
+                {aiResponse.source === 'gemini_api' ? 'Live Gemini Model' : 'Verified Textbook Fallback'}
               </span>
             </div>
 
             <button
               type="button"
               onClick={() => setReportModalOpen(true)}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs text-[#6B6660] hover:text-rose-600 transition-colors cursor-pointer"
             >
-              <Flag className="w-3.5 h-3.5" />
-              <span>Report bad question / response</span>
+              <Flag className="w-3.5 h-3.5 text-[#F26522]" />
+              <span>Report response</span>
             </button>
           </div>
 
           {/* Practice Questions Mode */}
           {activeTab === 'practice' && aiResponse.questions ? (
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-white">Targeted Practice Questions on {selectedTopic}</h3>
+              <h3 className="font-heading text-base font-bold text-[#0D0D0D]">Targeted Practice Questions on {selectedTopic}</h3>
               <div className="space-y-3">
                 {aiResponse.questions.map((q, qIdx) => (
-                  <div key={q.id || qIdx} className="p-4 rounded-2xl bg-slate-900/60 border border-slate-700/50 space-y-2.5">
-                    <div className="text-xs font-semibold text-white">
+                  <div key={q.id || qIdx} className="p-4 rounded-[18px] bg-white border border-[#E3DCD3] space-y-2.5">
+                    <div className="text-xs font-bold text-[#0D0D0D]">
                       Q{qIdx + 1}. {q.question_text}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                      <div className="p-2 rounded-lg bg-slate-800/60 text-slate-300 border border-slate-700/40">A. {q.option_a}</div>
-                      <div className="p-2 rounded-lg bg-slate-800/60 text-slate-300 border border-slate-700/40">B. {q.option_b}</div>
-                      <div className="p-2 rounded-lg bg-slate-800/60 text-slate-300 border border-slate-700/40">C. {q.option_c}</div>
-                      <div className="p-2 rounded-lg bg-slate-800/60 text-slate-300 border border-slate-700/40">D. {q.option_d}</div>
+                      <div className="p-2.5 rounded-xl bg-[#F5F0EA] text-[#0D0D0D] border border-[#E3DCD3]">A. {q.option_a}</div>
+                      <div className="p-2.5 rounded-xl bg-[#F5F0EA] text-[#0D0D0D] border border-[#E3DCD3]">B. {q.option_b}</div>
+                      <div className="p-2.5 rounded-xl bg-[#F5F0EA] text-[#0D0D0D] border border-[#E3DCD3]">C. {q.option_c}</div>
+                      <div className="p-2.5 rounded-xl bg-[#F5F0EA] text-[#0D0D0D] border border-[#E3DCD3]">D. {q.option_d}</div>
                     </div>
-                    <div className="text-[11px] text-emerald-400 pt-1">
+                    <div className="text-[11px] text-emerald-700 font-medium pt-1">
                       Correct: <strong>{q.correct_option}</strong> — {q.explanation}
                     </div>
                   </div>
@@ -268,56 +267,56 @@ export default function AIChatView() {
             </div>
           ) : (
             /* Explanation / Hint Output */
-            <div className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line p-4 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+            <div className="text-xs sm:text-sm text-[#0D0D0D] leading-relaxed whitespace-pre-line p-5 rounded-[18px] bg-white border border-[#E3DCD3]">
               {aiResponse.explanation || aiResponse.hint}
             </div>
           )}
 
           {/* Mandatory Responsible AI Verification Banner */}
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
-            <span>{aiResponse.disclaimer || '⚠️ AI-generated, please verify with your textbook.'}</span>
+          <div className="flex items-center gap-2 p-3 rounded-full bg-[#FBF8F4] border border-[#E3DCD3] text-[#6B6660] text-xs">
+            <AlertCircle className="w-4 h-4 shrink-0 text-[#F26522]" />
+            <span className="font-medium">{aiResponse.disclaimer || '⚠️ AI-generated, please verify with your textbook.'}</span>
           </div>
-        </div>
+        </Card>
       ) : null}
 
       {/* Report Bad Question Modal */}
       {reportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="max-w-md w-full p-6 rounded-3xl bg-slate-900 border border-slate-700 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-2 text-rose-400">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <Card padding="lg" className="max-w-md w-full space-y-4">
+            <div className="flex items-center gap-2 text-rose-600">
               <Flag className="w-5 h-5" />
-              <h3 className="text-base font-bold text-white">Report Question / Response</h3>
+              <h3 className="font-heading text-lg font-bold text-[#0D0D0D]">Report Question / Response</h3>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-[#6B6660] leading-relaxed">
               In LearnLens, we ensure high curriculum safety. If this answer contained mathematical inaccuracies, ambiguous wording, or unclear steps, our teaching team will review it.
             </p>
             <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
+              <Button
                 onClick={() => setReportModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white"
+                variant="ghost"
+                size="sm"
               >
                 Cancel
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={handleReport}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md cursor-pointer"
+                variant="dark"
+                size="sm"
               >
                 Confirm Report
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Report Success Toast */}
       {reportSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-3 text-xs text-emerald-300">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <Card padding="sm" className="bg-emerald-50 border-emerald-200 text-emerald-800 flex items-center gap-3 text-xs">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>Thank you! The question has been flagged for human review and curriculum verification.</span>
-        </div>
+        </Card>
       )}
     </div>
   );

@@ -3,16 +3,17 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { generateStudyPlan } from './studyPlannerLogic';
+import Card from '../../components/common/Card';
+import Button from '../../components/common/Button';
+import SectionLabel from '../../components/common/SectionLabel';
 import { 
   Calendar, 
   Clock, 
   CheckCircle2, 
   AlertTriangle, 
-  Sparkles, 
   ArrowRight, 
   Bot, 
   Flame, 
-  BookOpen,
   Filter
 } from 'lucide-react';
 
@@ -69,48 +70,42 @@ export default function StudyPlannerView() {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto py-2">
+    <div className="space-y-8 max-w-4xl mx-auto py-6">
       {/* Header Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-800/60 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-            <Calendar className="w-3.5 h-3.5" />
-            <span>Prerequisite-First Adaptive Planner</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            {t('nav.planner')}
+      <Card padding="lg" className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <SectionLabel>COGNITIVE LOAD AWARE</SectionLabel>
+          <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-[#0D0D0D] tracking-tight">
+            Adaptive <span className="text-[#F26522]">Study Planner</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-            Sessions are strictly 25–30 minutes to prevent fatigue, with foundational prerequisites scheduled first.
+          <p className="text-xs sm:text-sm text-[#6B6660] max-w-lg leading-relaxed">
+            Sessions are strictly 25–30 minutes to prevent fatigue, with foundational prerequisites scheduled chronologically first.
           </p>
         </div>
 
-        <Link
-          to="/ai-tutor"
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-purple-600/30 transition-all hover:scale-105 shrink-0"
-        >
-          <Bot className="w-4 h-4" />
-          <span>{t('nav.aiTutor')}</span>
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+        <div className="shrink-0">
+          <Button to="/ai-tutor" variant="primary" size="md" showArrow icon={Bot}>
+            {t('nav.aiTutor')}
+          </Button>
+        </div>
+      </Card>
 
       {/* Interactive Planner Controls Form */}
       <form
         onSubmit={handleGenerate}
-        className="p-6 rounded-3xl bg-slate-800/40 border border-slate-700/60 shadow-lg space-y-5"
+        className="p-6 sm:p-8 rounded-[24px] bg-[#FBF8F4] border border-[#E3DCD3] card-shadow space-y-6"
       >
-        <div className="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-700/50 pb-3">
-          <Filter className="w-4 h-4 text-indigo-400" />
+        <div className="flex items-center gap-2 text-sm font-bold text-[#0D0D0D] border-b border-[#E3DCD3] pb-3">
+          <Filter className="w-4 h-4 text-[#F26522]" />
           <span>Customize Your Available Study Time</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {/* Daily Free Time Selector */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+            <label className="text-xs font-bold text-[#0D0D0D] flex items-center justify-between">
               <span>Daily Free Time</span>
-              <span className="text-indigo-400 font-mono font-bold">{dailyFreeMinutes} mins</span>
+              <span className="text-[#F26522] font-mono">{dailyFreeMinutes} mins</span>
             </label>
             <div className="flex items-center gap-2">
               {[30, 60, 90].map((mins) => (
@@ -118,10 +113,10 @@ export default function StudyPlannerView() {
                   key={mins}
                   type="button"
                   onClick={() => setDailyFreeMinutes(mins)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  className={`flex-1 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer ${
                     dailyFreeMinutes === mins
-                      ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
-                      : 'bg-slate-900/50 text-slate-300 border-slate-700 hover:bg-slate-800'
+                      ? 'bg-[#0D0D0D] text-white border-[#0D0D0D] shadow-xs'
+                      : 'bg-white text-[#6B6660] border-[#E3DCD3] hover:border-[#0D0D0D]'
                   }`}
                 >
                   {mins}m
@@ -132,9 +127,9 @@ export default function StudyPlannerView() {
 
           {/* Session Duration Selector (25m vs 30m) */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+            <label className="text-xs font-bold text-[#0D0D0D] flex items-center justify-between">
               <span>Session Duration</span>
-              <span className="text-emerald-400 font-mono font-bold">{sessionDuration} mins</span>
+              <span className="text-[#F26522] font-mono">{sessionDuration} mins</span>
             </label>
             <div className="flex items-center gap-2">
               {[25, 30].map((dur) => (
@@ -142,139 +137,160 @@ export default function StudyPlannerView() {
                   key={dur}
                   type="button"
                   onClick={() => setSessionDuration(dur)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  className={`flex-1 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer ${
                     sessionDuration === dur
-                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
-                      : 'bg-slate-900/50 text-slate-300 border-slate-700 hover:bg-slate-800'
+                      ? 'bg-[#0D0D0D] text-white border-[#0D0D0D] shadow-xs'
+                      : 'bg-white text-[#6B6660] border-[#E3DCD3] hover:border-[#0D0D0D]'
                   }`}
                 >
-                  {dur} mins {dur === 25 ? '(Pomodoro)' : ''}
+                  {dur}m
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Exam Date Picker */}
+          {/* Target Exam Date Input */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300">
-              Target Exam Date (Optional)
+            <label className="text-xs font-bold text-[#0D0D0D] flex items-center justify-between">
+              <span>Target Exam Date (Optional)</span>
             </label>
             <input
               type="date"
               value={examDate}
               onChange={(e) => setExamDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-slate-900/70 border border-slate-700 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="w-full py-2 px-3 rounded-full bg-white border border-[#E3DCD3] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#F26522]"
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-end pt-2">
-          <button
-            type="submit"
-            className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
-          >
-            Update Adaptive Schedule
-          </button>
+        <div className="pt-2 flex justify-end">
+          <Button type="submit" variant="primary" size="sm" showArrow>
+            Regenerate Adaptive Schedule
+          </Button>
         </div>
       </form>
 
-      {/* Exam Urgency Alert (if date chosen is <= 7 days) */}
-      {plan?.isExamUrgent && (
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
-          <Flame className="w-5 h-5 text-amber-400 shrink-0" />
-          <div className="text-xs">
-            <strong className="text-amber-300 font-bold">Exam Proximity Alert: </strong>
-            <span className="text-slate-300">
-              Your exam is {plan.daysUntilExam} day(s) away! Sessions have been packed into daily slots to ensure complete prerequisite review before test day.
-            </span>
+      {/* Plan Summary & Sessions Timeline */}
+      {plan && (
+        <div className="space-y-6">
+          {/* Plan KPI Highlights */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Card padding="sm" hoverLift={false}>
+              <div className="text-[11px] text-[#6B6660] font-semibold">Total Sessions</div>
+              <div className="font-heading text-2xl font-black text-[#0D0D0D] mt-0.5">
+                {plan.totalSessions}
+              </div>
+            </Card>
+
+            <Card padding="sm" hoverLift={false}>
+              <div className="text-[11px] text-[#6B6660] font-semibold">Total Study Time</div>
+              <div className="font-heading text-2xl font-black text-[#0D0D0D] mt-0.5">
+                {plan.totalMinutes} mins
+              </div>
+            </Card>
+
+            <Card padding="sm" hoverLift={false}>
+              <div className="text-[11px] text-[#6B6660] font-semibold">Session Pace</div>
+              <div className="font-heading text-2xl font-black text-[#0D0D0D] mt-0.5">
+                {sessionDuration}m/session
+              </div>
+            </Card>
+
+            <Card padding="sm" hoverLift={false}>
+              <div className="text-[11px] text-[#6B6660] font-semibold">Prerequisite Sessions</div>
+              <div className="font-heading text-2xl font-black text-[#F26522] mt-0.5">
+                {plan.prerequisiteSessionsCount || 2} Scheduled
+              </div>
+            </Card>
+          </div>
+
+          {/* Urgency Alert if exam is near */}
+          {plan.isUrgent && (
+            <Card padding="sm" className="bg-[#F26522]/10 border-[#F26522] text-[#0D0D0D] flex items-center gap-3">
+              <Flame className="w-5 h-5 text-[#F26522] shrink-0" />
+              <div className="text-xs">
+                <strong>Exam Proximity Acceleration Active:</strong> Sessions are scheduled compactly to complete prerequisites 48 hours prior to your exam.
+              </div>
+            </Card>
+          )}
+
+          {/* Chronological Sessions Schedule */}
+          <div className="space-y-4">
+            <h3 className="font-heading text-xl font-bold text-[#0D0D0D] flex items-center justify-between">
+              <span>Your Daily Focused Sessions</span>
+              <span className="text-xs text-[#6B6660] font-normal">Strict 25–30 min intervals</span>
+            </h3>
+
+            <div className="space-y-3">
+              {plan.sessions.map((sess, idx) => {
+                const isCompleted = completedSessions[sess.id];
+                return (
+                  <Card
+                    key={sess.id || idx}
+                    padding="md"
+                    hoverLift={false}
+                    className={`transition-all ${
+                      isCompleted ? 'bg-white opacity-60' : 'bg-[#FBF8F4]'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <button
+                          type="button"
+                          onClick={() => toggleSessionComplete(sess.id)}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors cursor-pointer ${
+                            isCompleted
+                              ? 'bg-emerald-600 text-white'
+                              : 'border-2 border-[#E3DCD3] hover:border-[#F26522] bg-white'
+                          }`}
+                        >
+                          {isCompleted && <CheckCircle2 className="w-4 h-4" />}
+                        </button>
+
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#0D0D0D] text-white">
+                              Day {sess.day} • Session {sess.sessionNumber}
+                            </span>
+                            {sess.isPrerequisite && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F26522]/15 text-[#F26522]">
+                                Prerequisite Review
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className={`text-base font-bold text-[#0D0D0D] ${isCompleted ? 'line-through text-[#6B6660]' : ''}`}>
+                            {sess.topicName}
+                          </h4>
+
+                          <p className="text-xs text-[#6B6660]">
+                            {sess.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                        <span className="text-xs font-mono font-bold text-[#0D0D0D] bg-[#F5F0EA] px-3 py-1 rounded-full border border-[#E3DCD3]">
+                          {sess.duration} mins
+                        </span>
+
+                        <Button
+                          to="/ai-tutor"
+                          variant="secondary"
+                          size="sm"
+                          icon={Bot}
+                        >
+                          Practice with AI
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
-
-      {/* Plan Timeline Grid */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Clock className="w-5 h-5 text-indigo-400" />
-            <span>Your Scheduled Study Sessions ({plan?.totalSessions || 0})</span>
-          </h2>
-          <span className="text-xs text-slate-400 font-medium">
-            Total Time: <strong className="text-white">{plan?.totalMinutes || 0} mins</strong>
-          </span>
-        </div>
-
-        <div className="space-y-3">
-          {plan?.sessions.map((session, index) => {
-            const isCompleted = !!completedSessions[session.id];
-
-            return (
-              <div
-                key={session.id || index}
-                className={`p-5 rounded-2xl border transition-all ${
-                  isCompleted
-                    ? 'bg-slate-900/40 border-slate-800 opacity-60'
-                    : session.isPrerequisiteRoot
-                    ? 'bg-indigo-950/20 border-indigo-500/30 hover:border-indigo-500/50'
-                    : 'bg-slate-800/40 border-slate-700/60 hover:border-slate-600'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  {/* Left Section: Details */}
-                  <div className="flex items-start gap-3.5">
-                    <button
-                      type="button"
-                      onClick={() => toggleSessionComplete(session.id)}
-                      className="mt-0.5 text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer"
-                      title={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-400 fill-emerald-400/20" />
-                      ) : (
-                        <div className="w-6 h-6 rounded-full border-2 border-slate-600 hover:border-emerald-400" />
-                      )}
-                    </button>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
-                          Day {session.dayNumber} • {session.scheduledDate}
-                        </span>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                          {session.durationMinutes} mins
-                        </span>
-                        {session.isPrerequisiteRoot && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                            Prerequisite Root Fix
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 className={`text-base font-bold ${isCompleted ? 'line-through text-slate-400' : 'text-white'}`}>
-                        {session.topicName}
-                      </h3>
-
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        {session.focusNotes}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Right Section: Action */}
-                  <div className="sm:self-center shrink-0 pl-9 sm:pl-0">
-                    <Link
-                      to={`/ai-tutor?topic=${encodeURIComponent(session.topicName)}`}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-semibold transition-all"
-                    >
-                      <Bot className="w-3.5 h-3.5" />
-                      <span>Practice with AI</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

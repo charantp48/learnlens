@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
+import Card from '../../components/common/Card';
+import Button from '../../components/common/Button';
+import SectionLabel from '../../components/common/SectionLabel';
 import { 
   GitFork, 
   AlertTriangle, 
@@ -9,10 +12,8 @@ import {
   Calendar, 
   CheckCircle2, 
   Bot, 
-  ShieldCheck, 
-  Lightbulb, 
-  CornerDownRight,
-  BookOpen
+  Lightbulb,
+  Sparkles
 } from 'lucide-react';
 
 export default function LearningGapView() {
@@ -60,131 +61,109 @@ export default function LearningGapView() {
   }, [currentUser]);
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto py-2">
-      {/* Header */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-800/60 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold">
-            <GitFork className="w-3.5 h-3.5" />
-            <span>Deterministic Prerequisite Tracing</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            {t('nav.gaps')}
+    <div className="space-y-8 max-w-4xl mx-auto py-6">
+      {/* Header Banner */}
+      <Card padding="lg" className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <SectionLabel>DETERMINISTIC GRAPH TRAVERSAL</SectionLabel>
+          <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-[#0D0D0D] tracking-tight">
+            Diagnosed <span className="text-[#F26522]">Learning Gaps</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-            We don't just tell you that you missed marks. LearnLens maps the root prerequisite concept that caused the error.
+          <p className="text-xs sm:text-sm text-[#6B6660] max-w-lg leading-relaxed">
+            We don't just tell you that you lost marks. LearnLens traverses the curriculum DAG to uncover the root prerequisite concept holding you back.
           </p>
         </div>
 
-        <Link
-          to="/planner"
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-105 shrink-0"
-        >
-          <Calendar className="w-4 h-4" />
-          <span>Plan Study Sessions</span>
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+        <div className="shrink-0">
+          <Button to="/planner" variant="primary" size="md" showArrow icon={Calendar}>
+            Plan Study Sessions
+          </Button>
+        </div>
+      </Card>
 
       {/* Diagnosed Gaps List */}
       <div className="space-y-6">
         {gaps.map((gap, idx) => (
-          <div
+          <Card
             key={gap.id || idx}
-            className="p-6 sm:p-8 rounded-3xl bg-slate-800/40 border border-slate-700/60 shadow-lg space-y-6"
+            padding="lg"
+            hoverLift={false}
+            className="space-y-6"
           >
             {/* Visual Prerequisite Root Cause Graph */}
             <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-                Pedagogical Learning Graph
+              <div className="text-xs font-bold text-[#6B6660] uppercase tracking-wider mb-4">
+                Pedagogical Curriculum Dependency Graph
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-11 items-center gap-3 p-5 rounded-2xl bg-slate-900/60 border border-slate-700/50">
+              <div className="grid grid-cols-1 md:grid-cols-11 items-center gap-3 p-5 rounded-[20px] bg-[#F5F0EA] border border-[#E3DCD3]">
                 {/* 1. Target Topic (Weak) */}
-                <div className="md:col-span-5 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1 text-center md:text-left">
-                  <div className="flex items-center justify-center md:justify-start gap-1.5 text-[11px] font-bold text-amber-400">
-                    <AlertTriangle className="w-3.5 h-3.5" />
+                <div className="md:col-span-5 p-4 rounded-[16px] bg-white border border-[#E3DCD3] space-y-1 text-center md:text-left shadow-xs">
+                  <div className="flex items-center justify-center md:justify-start gap-1.5 text-[11px] font-bold text-[#F26522]">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                     <span>Target Weak Topic (&lt; 60%)</span>
                   </div>
-                  <h3 className="text-base font-bold text-white">{gap.topicName}</h3>
-                  <div className="text-xs text-amber-300 font-mono">
+                  <h3 className="font-heading text-base font-bold text-[#0D0D0D]">{gap.topicName}</h3>
+                  <div className="text-xs text-[#F26522] font-bold font-mono">
                     Accuracy: {gap.accuracy}%
                   </div>
                 </div>
 
                 {/* Graph Traversal Directed Arrow */}
-                <div className="md:col-span-1 flex flex-col items-center justify-center text-slate-400 py-1 md:py-0">
-                  <span className="text-[10px] uppercase font-bold text-slate-500 hidden md:block">Root</span>
-                  <div className="hidden md:block w-full border-t-2 border-dashed border-indigo-500/50 my-1 relative">
-                    <span className="absolute -top-1.5 right-0 text-indigo-400">►</span>
+                <div className="md:col-span-1 flex flex-col items-center justify-center text-[#F26522] py-2 md:py-0">
+                  <span className="text-[10px] uppercase font-bold text-[#6B6660] hidden md:block">Roots In</span>
+                  <div className="hidden md:flex items-center justify-center w-full">
+                    <ArrowRight className="w-5 h-5 text-[#F26522]" />
                   </div>
-                  <div className="md:hidden flex items-center justify-center text-indigo-400">
+                  <div className="md:hidden flex items-center justify-center text-[#F26522]">
                     ▼
                   </div>
                 </div>
 
                 {/* 2. Root Prerequisite (The Real Culprit) */}
-                <div className="md:col-span-5 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 space-y-1 text-center md:text-left">
-                  <div className="flex items-center justify-center md:justify-start gap-1.5 text-[11px] font-bold text-indigo-400">
-                    <GitFork className="w-3.5 h-3.5" />
+                <div className="md:col-span-5 p-4 rounded-[16px] bg-[#0D0D0D] text-white space-y-1 text-center md:text-left shadow-sm">
+                  <div className="flex items-center justify-center md:justify-start gap-1.5 text-[11px] font-bold text-[#F26522]">
+                    <GitFork className="w-3.5 h-3.5 shrink-0" />
                     <span>Foundational Prerequisite Cause</span>
                   </div>
-                  <h3 className="text-base font-bold text-white">{gap.rootPrerequisiteName}</h3>
-                  <div className="text-xs text-indigo-300">
-                    Prior Concept Deficit (Class 8)
+                  <h3 className="font-heading text-base font-bold text-white">
+                    {gap.rootPrerequisiteName}
+                  </h3>
+                  <div className="text-xs text-[#A8A29E] font-medium">
+                    Origin: Class 8 Foundations
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Evidence & Diagnosis Breakdown */}
-            <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-700/40 space-y-2">
-              <div className="flex items-center gap-2 text-slate-200 text-xs font-bold">
-                <Lightbulb className="w-4 h-4 text-amber-400" />
-                <span>Deterministic Evidence & Diagnostic Insight</span>
+            {/* Diagnostic Evidence & Explanation */}
+            <div className="p-4 rounded-[18px] bg-white border border-[#E3DCD3] space-y-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
+                <Lightbulb className="w-4 h-4 text-[#F26522] shrink-0" />
+                <span>Diagnostic Evidence Analysis</span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed pl-6">
+              <p className="text-xs text-[#6B6660] leading-relaxed">
                 {gap.reason}
               </p>
             </div>
 
-            {/* Prerequisite Path Breadcrumb */}
-            {gap.prerequisiteChain && gap.prerequisiteChain.length > 0 && (
-              <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
-                <span className="font-semibold text-slate-300">Learning Path:</span>
-                {gap.prerequisiteChain.map((step, sIdx) => (
-                  <React.Fragment key={sIdx}>
-                    <span className={`px-2.5 py-0.5 rounded-md font-medium text-[11px] ${
-                      sIdx === 0
-                        ? 'bg-slate-700 text-slate-300'
-                        : sIdx === gap.prerequisiteChain.length - 1
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold'
-                        : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                    }`}>
-                      {step}
-                    </span>
-                    {sIdx < gap.prerequisiteChain.length - 1 && (
-                      <span className="text-slate-600">➔</span>
-                    )}
-                  </React.Fragment>
-                ))}
+            {/* Next Steps Buttons */}
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-4 border-t border-[#E3DCD3]">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#0D0D0D]">
+                <CheckCircle2 className="w-4 h-4 text-[#F26522]" />
+                <span>Target: 3 remedial sessions unblocks this chapter</span>
               </div>
-            )}
 
-            {/* Next Steps CTA */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-700/60">
-              <div className="text-xs text-slate-400">
-                Recommended Remediation: <strong>2 focused sessions (25 mins) on {gap.rootPrerequisiteName}</strong>.
+              <div className="flex items-center gap-3">
+                <Button to="/ai-tutor" variant="secondary" size="sm" icon={Bot}>
+                  Ask AI Tutor
+                </Button>
+                <Button to="/planner" variant="primary" size="sm" showArrow>
+                  Generate Plan
+                </Button>
               </div>
-              <Link
-                to="/planner"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20"
-              >
-                <span>Add to My Study Plan</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>

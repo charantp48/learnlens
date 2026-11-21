@@ -2,6 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
+import SectionLabel from '../components/common/SectionLabel';
 import { 
   BookOpen, 
   GitFork, 
@@ -10,192 +13,188 @@ import {
   ArrowRight, 
   AlertTriangle, 
   CheckCircle2, 
-  TrendingUp,
-  Clock,
-  Sparkles
+  TrendingUp, 
+  Clock, 
+  Sparkles 
 } from 'lucide-react';
 
 export default function StudentDashboard() {
   const { currentUser } = useAuth();
   const { t } = useTranslation();
 
+  const journeySteps = [
+    {
+      step: '01',
+      title: 'Take Diagnostic Quiz',
+      desc: 'Test your knowledge with confidence tags (Sure / Not Sure / Guessing). Guessing is recognized and weighted.',
+      icon: BookOpen,
+      to: '/quiz',
+      cta: 'Start Assessment',
+    },
+    {
+      step: '02',
+      title: 'Prerequisite Gap Finder',
+      desc: 'View your prerequisite tree. See exactly which foundational topic is causing errors in current coursework.',
+      icon: GitFork,
+      to: '/gaps',
+      cta: 'View Graph',
+    },
+    {
+      step: '03',
+      title: 'Adaptive Study Planner',
+      desc: 'Enter your free hours. The algorithm schedules bite-sized 25-minute sessions tackling root gaps first.',
+      icon: Calendar,
+      to: '/planner',
+      cta: 'Generate Plan',
+    },
+    {
+      step: '04',
+      title: 'AI Learning Assistant',
+      desc: 'Get step-by-step hints and practice questions from Gemini AI with offline fallback reliability.',
+      icon: Bot,
+      to: '/ai-tutor',
+      cta: 'Ask Assistant',
+    },
+  ];
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-10 max-w-5xl mx-auto py-4 sm:py-8">
       {/* Top Welcome Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-indigo-900/40 via-slate-800 to-slate-900 border border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-xl">
-        <div className="flex items-center gap-4">
+      <Card padding="lg" className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative overflow-hidden">
+        {/* Subtle Ambient Decorative Swoosh */}
+        <svg className="absolute right-0 top-0 w-80 h-full opacity-10 pointer-events-none text-[#F26522]" viewBox="0 0 300 200" fill="none">
+          <circle cx="200" cy="100" r="100" stroke="currentColor" strokeWidth="2" strokeDasharray="6 8" />
+        </svg>
+
+        <div className="flex items-center gap-5 relative z-10">
           <img
-            src={currentUser?.avatar_url}
+            src={currentUser?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya'}
             alt={currentUser?.full_name}
-            className="w-16 h-16 rounded-2xl bg-indigo-500/20 border-2 border-indigo-400 p-1 shrink-0"
+            className="w-16 h-16 rounded-full bg-[#E3DCD3] border-2 border-[#0D0D0D] p-0.5 shadow-sm shrink-0"
           />
-          <div>
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D] font-bold">
                 {currentUser?.class_name || 'Class 9-A'}
               </span>
-              <span className="text-xs text-slate-400">Class 9 Mathematics</span>
+              <span className="text-xs text-[#6B6660]">Class 9 Mathematics</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+            <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-[#0D0D0D] tracking-tight">
               Welcome back, {currentUser?.full_name}! 👋
             </h1>
-            <p className="text-sm text-slate-300 mt-1">
+            <p className="text-xs sm:text-sm text-[#6B6660] max-w-lg leading-relaxed">
               Your personalized learning roadmap is active. Ready to turn weak topics into strengths?
             </p>
           </div>
         </div>
 
-        <Link
-          to="/quiz"
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 shrink-0"
-        >
-          <BookOpen className="w-4 h-4" />
-          <span>{t('nav.quiz')}</span>
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+        <div className="relative z-10 shrink-0">
+          <Button to="/quiz" variant="primary" size="md" showArrow>
+            {t('nav.quiz')}
+          </Button>
+        </div>
+      </Card>
 
-      {/* Snapshot KPI Cards */}
+      {/* 4 Snapshot KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+        <Card padding="sm" hoverLift className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-[#6B6660] font-semibold">
             <span>Diagnostic Score</span>
-            <TrendingUp className="w-4 h-4 text-indigo-400" />
+            <TrendingUp className="w-4 h-4 text-[#F26522]" />
           </div>
-          <div className="text-2xl font-bold text-white">50% <span className="text-xs font-normal text-slate-400">(5/10)</span></div>
-          <p className="text-[11px] text-amber-400 flex items-center gap-1 pt-1">
-            <AlertTriangle className="w-3.5 h-3.5" /> 1 prerequisite gap identified
-          </p>
-        </div>
+          <div className="font-heading text-2xl font-black text-[#0D0D0D]">
+            50% <span className="text-xs font-normal text-[#6B6660]">(5/10)</span>
+          </div>
+          <div className="text-[11px] text-[#F26522] font-semibold flex items-center gap-1 pt-1">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            <span>1 prerequisite gap identified</span>
+          </div>
+        </Card>
 
-        <div className="p-5 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+        <Card padding="sm" hoverLift className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-[#6B6660] font-semibold">
             <span>Root Prerequisite Gap</span>
-            <GitFork className="w-4 h-4 text-amber-400" />
+            <GitFork className="w-4 h-4 text-[#F26522]" />
           </div>
-          <div className="text-base font-bold text-amber-300 truncate">Algebraic Factoring</div>
-          <p className="text-[11px] text-slate-400 pt-1">
-            Blocking Quadratic Equations
-          </p>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-            <span>Study Plan</span>
-            <Clock className="w-4 h-4 text-emerald-400" />
+          <div className="font-heading text-base font-bold text-[#0D0D0D] truncate">
+            Algebraic Factoring
           </div>
-          <div className="text-2xl font-bold text-white">3 Sessions</div>
-          <p className="text-[11px] text-emerald-400 flex items-center gap-1 pt-1">
-            <CheckCircle2 className="w-3.5 h-3.5" /> 25-30 mins per session
-          </p>
-        </div>
+          <div className="text-[11px] text-[#6B6660] pt-1">
+            Blocking Quadratic Equations (Cl. 9)
+          </div>
+        </Card>
 
-        <div className="p-5 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+        <Card padding="sm" hoverLift className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-[#6B6660] font-semibold">
+            <span>Adaptive Study Plan</span>
+            <Clock className="w-4 h-4 text-[#F26522]" />
+          </div>
+          <div className="font-heading text-2xl font-black text-[#0D0D0D]">
+            3 Sessions
+          </div>
+          <div className="text-[11px] text-[#0D0D0D] font-semibold flex items-center gap-1 pt-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#F26522] shrink-0" />
+            <span>25-30 mins per session</span>
+          </div>
+        </Card>
+
+        <Card padding="sm" hoverLift className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs text-[#6B6660] font-semibold">
             <span>AI Practice Coach</span>
-            <Sparkles className="w-4 h-4 text-purple-400" />
+            <Sparkles className="w-4 h-4 text-[#F26522]" />
           </div>
-          <div className="text-base font-bold text-purple-300">Active & Ready</div>
-          <p className="text-[11px] text-slate-400 pt-1">
-            Safe offline fallback verified
-          </p>
-        </div>
+          <div className="font-heading text-base font-bold text-[#0D0D0D]">
+            Active & Ready
+          </div>
+          <div className="text-[11px] text-[#6B6660] pt-1">
+            Offline textbook fallback active
+          </div>
+        </Card>
       </div>
 
-      {/* Core Student Journey Modules Grid */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <span>Your 4-Step Learning Journey</span>
-        </h2>
+      {/* 4-Step Learning Journey Cards */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <SectionLabel>RECOMMENDED LEARNING ROADMAP</SectionLabel>
+          <span className="text-xs text-[#6B6660]">Step-by-step unblocking</span>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Step 1: Quiz */}
-          <Link
-            to="/quiz"
-            className="group p-6 rounded-2xl bg-slate-800/40 border border-slate-700/60 hover:border-indigo-500/50 transition-all flex items-start gap-4"
-          >
-            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <BookOpen className="w-6 h-6" />
-            </div>
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Step 1</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-colors" />
-              </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
-                Take Diagnostic Quiz
-              </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Test your knowledge with confidence tags (Sure / Not Sure / Guessing). Guessing is recognized and weighted.
-              </p>
-            </div>
-          </Link>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {journeySteps.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Card key={item.step} padding="lg" hoverLift className="flex flex-col justify-between group">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center font-bold">
+                      <Icon className="w-5 h-5 text-[#F26522]" />
+                    </div>
+                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D]">
+                      Step {item.step}
+                    </span>
+                  </div>
 
-          {/* Step 2: Gap Finder */}
-          <Link
-            to="/gaps"
-            className="group p-6 rounded-2xl bg-slate-800/40 border border-slate-700/60 hover:border-amber-500/50 transition-all flex items-start gap-4"
-          >
-            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <GitFork className="w-6 h-6" />
-            </div>
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Step 2</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-amber-400 transition-colors" />
-              </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
-                Prerequisite Gap Finder
-              </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                View your prerequisite tree. See exactly which foundational topic is causing errors in current coursework.
-              </p>
-            </div>
-          </Link>
+                  <h3 className="font-heading text-xl font-bold text-[#0D0D0D] group-hover:text-[#F26522] transition-colors">
+                    {item.title}
+                  </h3>
 
-          {/* Step 3: Study Planner */}
-          <Link
-            to="/planner"
-            className="group p-6 rounded-2xl bg-slate-800/40 border border-slate-700/60 hover:border-emerald-500/50 transition-all flex items-start gap-4"
-          >
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Step 3</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors" />
-              </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
-                Adaptive Study Planner
-              </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Enter your free hours. The algorithm schedules bite-sized 25-minute sessions tackling root gaps first.
-              </p>
-            </div>
-          </Link>
+                  <p className="text-xs sm:text-sm text-[#6B6660] leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
 
-          {/* Step 4: AI Tutor */}
-          <Link
-            to="/ai-tutor"
-            className="group p-6 rounded-2xl bg-slate-800/40 border border-slate-700/60 hover:border-purple-500/50 transition-all flex items-start gap-4"
-          >
-            <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <Bot className="w-6 h-6" />
-            </div>
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">Step 4</span>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-purple-400 transition-colors" />
-              </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-purple-300 transition-colors">
-                AI Learning Assistant
-              </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Get step-by-step hints and practice questions from Gemini AI with offline fallback reliability.
-              </p>
-            </div>
-          </Link>
+                <div className="pt-6 flex items-center justify-between border-t border-[#E3DCD3]">
+                  <span className="text-xs font-bold text-[#0D0D0D]">{item.cta}</span>
+                  <Link
+                    to={item.to}
+                    className="w-9 h-9 rounded-full bg-[#0D0D0D] text-white group-hover:bg-[#F26522] flex items-center justify-center transition-colors shadow-xs"
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>

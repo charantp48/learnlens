@@ -6,19 +6,19 @@ export default function QuizProgressBar({ total, current, answers }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between text-xs text-slate-400">
-        <span className="font-medium text-slate-300">
-          Question <strong className="text-white text-sm">{current + 1}</strong> of {total}
+      <div className="flex items-center justify-between text-xs text-[#6B6660]">
+        <span>
+          Question <strong className="text-[#0D0D0D] font-bold text-sm">{current + 1}</strong> of {total}
         </span>
-        <span className="font-medium">
-          <strong className="text-indigo-400">{answeredCount}</strong> of {total} answered
+        <span>
+          <strong className="text-[#F26522] font-bold">{answeredCount}</strong> of {total} answered
         </span>
       </div>
 
       {/* Main Bar */}
-      <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+      <div className="w-full h-2 rounded-full bg-[#E3DCD3] overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-300 ease-out"
+          className="h-full bg-[#F26522] transition-all duration-300 ease-out rounded-full"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -32,12 +32,12 @@ export default function QuizProgressBar({ total, current, answers }) {
           return (
             <div
               key={i}
-              className={`w-7 h-7 rounded-lg text-xs font-semibold flex items-center justify-center transition-all ${
+              className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center transition-all ${
                 isCurrent
-                  ? 'bg-indigo-600 text-white ring-2 ring-indigo-400/50 shadow-md'
+                  ? 'bg-[#F26522] text-white ring-2 ring-[#F26522]/30 shadow-xs'
                   : isAnswered
-                  ? 'bg-slate-700 text-emerald-300 border border-emerald-500/30'
-                  : 'bg-slate-800/60 text-slate-500 border border-slate-700/40'
+                  ? 'bg-[#0D0D0D] text-white'
+                  : 'bg-[#FBF8F4] text-[#6B6660] border border-[#E3DCD3]'
               }`}
             >
               {i + 1}

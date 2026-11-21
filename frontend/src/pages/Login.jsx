@@ -2,14 +2,16 @@ import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
+import SectionLabel from '../components/common/SectionLabel';
 import { 
   GraduationCap, 
   Users, 
   HeartHandshake, 
   ShieldAlert, 
-  Sparkles, 
-  ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  ArrowRight
 } from 'lucide-react';
 
 export default function Login() {
@@ -26,8 +28,6 @@ export default function Login() {
       name: 'Priya Sharma (Class 9A)',
       desc: 'Takes quizzes, views prerequisite gap tree, generates custom study schedule.',
       icon: GraduationCap,
-      color: 'from-indigo-600 to-blue-600',
-      border: 'border-indigo-500/40 hover:border-indigo-400',
       actionText: t('login.studentBtn'),
     },
     {
@@ -36,8 +36,6 @@ export default function Login() {
       name: 'Mr. Rajesh Rao (Maths Faculty)',
       desc: 'Classroom topic heatmaps, per-student gap tracking, quiz assignments & feedback.',
       icon: Users,
-      color: 'from-emerald-600 to-teal-600',
-      border: 'border-emerald-500/40 hover:border-emerald-400',
       actionText: t('login.teacherBtn'),
     },
     {
@@ -46,8 +44,6 @@ export default function Login() {
       name: 'Sunita Sharma (Parent of Priya)',
       desc: 'Non-technical progress overview, weekly study planner monitoring, teacher notes.',
       icon: HeartHandshake,
-      color: 'from-pink-600 to-rose-600',
-      border: 'border-pink-500/40 hover:border-pink-400',
       actionText: t('login.parentBtn'),
     },
     {
@@ -56,8 +52,6 @@ export default function Login() {
       name: 'Dr. Vikram Malhotra (Principal)',
       desc: 'School-wide subject health, roster and class management, parent-student linkage.',
       icon: ShieldAlert,
-      color: 'from-amber-600 to-orange-600',
-      border: 'border-amber-500/40 hover:border-amber-400',
       actionText: t('login.adminBtn'),
     },
   ];
@@ -69,33 +63,39 @@ export default function Login() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-8 space-y-8">
+    <div className="max-w-3xl mx-auto py-6 sm:py-10 space-y-8">
+      {/* Header */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>{t('login.demoNotice')}</span>
-        </div>
-        <h1 className="text-3xl font-extrabold text-white">{t('login.title')}</h1>
-        <p className="text-slate-400 text-sm">{t('login.subtitle')}</p>
+        <SectionLabel className="justify-center">ONE-CLICK DEMO ACCESS</SectionLabel>
+        <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0D0D0D] tracking-tight">
+          Select a Role to <span className="text-[#F26522]">Explore</span>
+        </h1>
+        <p className="text-[#6B6660] text-sm max-w-md mx-auto leading-relaxed">
+          {t('login.subtitle')}
+        </p>
       </div>
 
+      {/* Active Session Notification */}
       {currentUser && (
-        <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-between text-xs">
+        <Card padding="sm" className="bg-[#FBF8F4] border-[#E3DCD3] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span className="text-slate-200">
-              Currently signed in as <strong className="text-white">{currentUser.full_name}</strong> ({currentUser.role}).
+            <CheckCircle2 className="w-4 h-4 text-[#F26522] shrink-0" />
+            <span className="text-[#6B6660]">
+              Currently signed in as <strong className="text-[#0D0D0D]">{currentUser.full_name}</strong> ({currentUser.role}).
             </span>
           </div>
-          <button
+          <Button
             onClick={() => navigate(getDashboardPath(currentUser.role))}
-            className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500 cursor-pointer"
+            variant="dark"
+            size="sm"
+            showArrow
           >
             Go to Active Dashboard
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
 
+      {/* Demo Roles Grid */}
       <div className="space-y-4">
         {demoAccounts.map((account) => {
           const Icon = account.icon;
@@ -103,49 +103,58 @@ export default function Login() {
           const isPreselected = preselectedRole === account.role;
 
           return (
-            <div
+            <Card
               key={account.role}
-              className={`p-5 rounded-2xl bg-slate-800/50 border transition-all ${
+              padding="md"
+              hoverLift
+              className={`transition-all ${
                 isCurrent
-                  ? 'border-emerald-500 ring-2 ring-emerald-500/30 bg-slate-800/80'
+                  ? 'border-[#F26522] ring-2 ring-[#F26522]/30 bg-white'
                   : isPreselected
-                  ? 'border-indigo-500 ring-2 ring-indigo-500/30 bg-slate-800/80'
-                  : account.border
+                  ? 'border-[#0D0D0D] bg-white'
+                  : ''
               }`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                 <div className="flex items-start gap-4">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-tr ${account.color} flex items-center justify-center text-white shrink-0 shadow-md`}>
-                    <Icon className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Icon className="w-5 h-5 text-[#F26522]" />
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B6660]">
                         {account.title}
                       </span>
-                      <span className="text-xs px-2 py-0.5 rounded-md bg-slate-700/60 text-slate-300">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D] font-bold">
                         Demo Account
                       </span>
                       {isCurrent && (
-                        <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-medium">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F26522]/15 text-[#F26522] font-bold">
                           Active
                         </span>
                       )}
                     </div>
-                    <h3 className="text-base font-bold text-white">{account.name}</h3>
-                    <p className="text-xs text-slate-400 mt-1">{account.desc}</p>
+                    <h3 className="font-heading text-lg font-bold text-[#0D0D0D]">
+                      {account.name}
+                    </h3>
+                    <p className="text-xs text-[#6B6660] leading-relaxed max-w-md">
+                      {account.desc}
+                    </p>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => handleSelectRole(account.role)}
-                  className="sm:self-center flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all cursor-pointer shrink-0 shadow-md shadow-indigo-600/20"
-                >
-                  <span>{account.actionText}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                <div className="sm:self-center shrink-0">
+                  <Button
+                    onClick={() => handleSelectRole(account.role)}
+                    variant={isCurrent ? 'dark' : 'primary'}
+                    size="sm"
+                    showArrow
+                  >
+                    {account.actionText}
+                  </Button>
+                </div>
               </div>
-            </div>
+            </Card>
           );
         })}
       </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import Card from '../../components/common/Card';
 import ConfidenceSelector from './ConfidenceSelector';
 import { Tag } from 'lucide-react';
 
@@ -30,20 +31,20 @@ export default function QuestionCard({ question, currentAnswer, onAnswerChange }
   };
 
   return (
-    <div className="p-6 sm:p-8 rounded-3xl bg-slate-800/60 border border-slate-700/70 shadow-xl space-y-6">
-      {/* Topic Badge */}
-      <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
-          <Tag className="w-3.5 h-3.5" />
+    <Card variant="surface" padding="lg" hoverLift={false} className="space-y-6">
+      {/* Topic Badge & Difficulty */}
+      <div className="flex items-center justify-between gap-2 pb-2">
+        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D] text-xs font-bold">
+          <Tag className="w-3.5 h-3.5 text-[#F26522]" />
           <span>{question.topic_name}</span>
         </span>
-        <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold px-2 py-0.5 rounded bg-slate-800">
+        <span className="text-[11px] uppercase tracking-wider text-[#6B6660] font-bold px-2.5 py-0.5 rounded-full bg-[#F5F0EA] border border-[#E3DCD3]">
           {question.difficulty}
         </span>
       </div>
 
       {/* Question Text */}
-      <h3 className="text-lg sm:text-xl font-bold text-white leading-relaxed">
+      <h3 className="font-heading text-xl sm:text-2xl font-bold text-[#0D0D0D] leading-snug tracking-tight">
         {question.question_text}
       </h3>
 
@@ -56,32 +57,34 @@ export default function QuestionCard({ question, currentAnswer, onAnswerChange }
               key={opt.key}
               type="button"
               onClick={() => handleSelectOption(opt.key)}
-              className={`flex items-start gap-3 p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+              className={`flex items-start gap-3.5 p-4 rounded-[18px] border text-left transition-all cursor-pointer ${
                 isSelected
-                  ? 'border-indigo-500 bg-indigo-600/20 text-white ring-2 ring-indigo-500/40 shadow-md'
-                  : 'border-slate-700/70 bg-slate-900/40 text-slate-300 hover:border-slate-600 hover:bg-slate-800/50'
+                  ? 'border-[#F26522] bg-[#F26522]/5 text-[#0D0D0D] ring-2 ring-[#F26522]/30 shadow-xs'
+                  : 'border-[#E3DCD3] bg-white text-[#0D0D0D] hover:border-[#0D0D0D]'
               }`}
             >
-              <span
-                className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
                   isSelected
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                    ? 'bg-[#F26522] text-white'
+                    : 'bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D]'
                 }`}
               >
                 {opt.key}
+              </div>
+              <span className="text-sm font-medium leading-relaxed pt-0.5">
+                {opt.text}
               </span>
-              <span className="text-sm font-medium pt-0.5">{opt.text}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Confidence Segment (Always present) */}
+      {/* Confidence Selection */}
       <ConfidenceSelector
         value={confidence}
         onChange={handleConfidenceChange}
       />
-    </div>
+    </Card>
   );
 }
