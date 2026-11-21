@@ -8,7 +8,7 @@ export default function Button({
   href,
   variant = 'primary', // 'primary' | 'secondary' | 'dark' | 'ghost'
   size = 'md',        // 'sm' | 'md' | 'lg'
-  icon: Icon,
+  icon,
   showArrow = false,
   className = '',
   ...props
@@ -30,10 +30,19 @@ export default function Button({
 
   const combinedClasses = `${baseStyles} ${sizeStyles} ${variantStyles} ${className}`.trim();
 
+  const renderIcon = () => {
+    if (!icon) return null;
+    if (React.isValidElement(icon)) {
+      return icon;
+    }
+    const IconComponent = icon;
+    return <IconComponent className="w-4 h-4 shrink-0" />;
+  };
+
   const content = (
     <>
-      {Icon && <Icon className="w-4 h-4 shrink-0" />}
-      <span>{children}</span>
+      {renderIcon()}
+      {children && <span>{children}</span>}
       {showArrow && <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" />}
     </>
   );
