@@ -1,17 +1,20 @@
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { 
   GraduationCap, 
   Users, 
   HeartHandshake, 
   ShieldAlert, 
-  Sparkles,
-  ArrowRight
+  Sparkles, 
+  ArrowRight,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function Login() {
   const { t } = useTranslation();
+  const { loginDemo, currentUser, getDashboardPath } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedRole = searchParams.get('role');
@@ -50,7 +53,7 @@ export default function Login() {
     {
       role: 'admin',
       title: t('roles.admin_title'),
-      name: 'Principal / Academic Coordinator',
+      name: 'Dr. Vikram Malhotra (Principal)',
       desc: 'School-wide subject health, roster and class management, parent-student linkage.',
       icon: ShieldAlert,
       color: 'from-amber-600 to-orange-600',
@@ -60,10 +63,9 @@ export default function Login() {
   ];
 
   const handleSelectRole = (role) => {
-    // In Phase 3, this will authenticate via Supabase Auth
-    // For Phase 1 skeleton, we route cleanly to demonstrate role separation
-    if (role === 'student') navigate('/quiz');
-    else navigate(`/${role}`);
+    loginDemo(role);
+    const destination = getDashboardPath(role);
+    navigate(destination);
   };
 
   return (
@@ -77,16 +79,36 @@ export default function Login() {
         <p className="text-slate-400 text-sm">{t('login.subtitle')}</p>
       </div>
 
+      {currentUser && (
+        <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span className="text-slate-200">
+              Currently signed in as <strong className="text-white">{currentUser.full_name}</strong> ({currentUser.role}).
+            </span>
+          </div>
+          <button
+            onClick={() => navigate(getDashboardPath(currentUser.role))}
+            className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500 cursor-pointer"
+          >
+            Go to Active Dashboard
+          </button>
+        </div>
+      )}
+
       <div className="space-y-4">
         {demoAccounts.map((account) => {
           const Icon = account.icon;
+          const isCurrent = currentUser?.role === account.role;
           const isPreselected = preselectedRole === account.role;
 
           return (
             <div
               key={account.role}
               className={`p-5 rounded-2xl bg-slate-800/50 border transition-all ${
-                isPreselected
+                isCurrent
+                  ? 'border-emerald-500 ring-2 ring-emerald-500/30 bg-slate-800/80'
+                  : isPreselected
                   ? 'border-indigo-500 ring-2 ring-indigo-500/30 bg-slate-800/80'
                   : account.border
               }`}
@@ -102,8 +124,13 @@ export default function Login() {
                         {account.title}
                       </span>
                       <span className="text-xs px-2 py-0.5 rounded-md bg-slate-700/60 text-slate-300">
-                        Demo
+                        Demo Account
                       </span>
+                      {isCurrent && (
+                        <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-medium">
+                          Active
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-base font-bold text-white">{account.name}</h3>
                     <p className="text-xs text-slate-400 mt-1">{account.desc}</p>

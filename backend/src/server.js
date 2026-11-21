@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config/index.js';
+import authRoutes from './routes/authRoutes.js';
 
 const app = express();
 
@@ -22,8 +23,12 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
+    supabaseConfigured: !!config.supabase.url,
   });
 });
+
+// Auth & Role routes
+app.use('/api/auth', authRoutes);
 
 // 404 handler for unknown endpoints
 app.use((req, res) => {

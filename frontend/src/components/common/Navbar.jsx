@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import LanguageToggle from './LanguageToggle';
 import { 
   GraduationCap, 
@@ -10,21 +11,42 @@ import {
   GitFork, 
   Calendar, 
   Sparkles, 
-  LogIn 
+  LogIn,
+  LogOut,
+  LayoutDashboard
 } from 'lucide-react';
 
 export default function Navbar() {
   const { t } = useTranslation();
+  const { currentUser, logout, isAuthenticated, getDashboardPath } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const navLinks = [
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+    setMobileMenuOpen(false);
+  };
+
+  // Student prioritized navigation links
+  const studentNavLinks = [
+    { to: '/student', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/quiz', label: t('nav.quiz'), icon: BookOpen },
+    { to: '/gaps', label: t('nav.gaps'), icon: GitFork },
+    { to: '/planner', label: t('nav.planner'), icon: Calendar },
+    { to: '/ai-tutor', label: t('nav.aiTutor'), icon: Sparkles },
+  ];
+
+  const defaultNavLinks = [
     { to: '/', label: t('nav.home'), icon: BookOpen },
     { to: '/quiz', label: t('nav.quiz'), icon: BookOpen },
     { to: '/gaps', label: t('nav.gaps'), icon: GitFork },
     { to: '/planner', label: t('nav.planner'), icon: Calendar },
     { to: '/ai-tutor', label: t('nav.aiTutor'), icon: Sparkles },
   ];
+
+  const activeLinks = currentUser?.role === 'student' ? studentNavLinks : defaultNavLinks;
 
   return (
     <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
@@ -47,7 +69,7 @@ export default function Navbar() {
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center space-x-1">
-            {navLinks.map((item) => {
+            {activeLinks.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.to;
               return (
@@ -67,16 +89,47 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Right Section: Language Switcher & Login CTA */}
+          {/* Right Section: Language Switcher & Auth User Pill */}
           <div className="hidden md:flex items-center gap-3">
             <LanguageToggle />
-            <Link
-              to="/login"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-md shadow-indigo-600/20 transition-all hover:shadow-indigo-500/30"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>{t('nav.login')}</span>
-            </Link>
+
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
+                <Link
+                  to={getDashboardPath(currentUser.role)}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 transition-colors"
+                >
+                  <img
+                    src={currentUser.avatar_url}
+                    alt={currentUser.full_name}
+                    className="w-6 h-6 rounded-full bg-slate-700"
+                  />
+                  <div className="text-left text-xs">
+                    <div className="font-semibold text-white leading-tight truncate max-w-[100px]">
+                      {currentUser.full_name.split(' ')[0]}
+                    </div>
+                    <div className="text-[10px] text-indigo-400 capitalize">
+                      {currentUser.role}
+                    </div>
+                  </div>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-md shadow-indigo-600/20 transition-all hover:shadow-indigo-500/30"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>{t('nav.login')}</span>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -96,7 +149,29 @@ export default function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-slate-800 bg-slate-900/95 px-4 pt-2 pb-4 space-y-1">
-          {navLinks.map((item) => {
+          {isAuthenticated && (
+            <div className="flex items-center justify-between p-3 mb-2 rounded-xl bg-slate-800/60 border border-slate-700/60">
+              <div className="flex items-center gap-2.5">
+                <img
+                  src={currentUser.avatar_url}
+                  alt={currentUser.full_name}
+                  className="w-8 h-8 rounded-full bg-slate-700"
+                />
+                <div>
+                  <div className="text-xs font-bold text-white">{currentUser.full_name}</div>
+                  <div className="text-[10px] text-indigo-400 capitalize">{currentUser.role} Dashboard</div>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-400 text-xs font-medium cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
+
+          {activeLinks.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.to;
             return (
@@ -115,16 +190,19 @@ export default function Navbar() {
               </Link>
             );
           })}
-          <div className="pt-2">
-            <Link
-              to="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>{t('nav.login')}</span>
-            </Link>
-          </div>
+
+          {!isAuthenticated && (
+            <div className="pt-2">
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>{t('nav.login')}</span>
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </header>

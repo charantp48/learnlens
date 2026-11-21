@@ -4,8 +4,15 @@ import AppLayout from './components/layout/AppLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
-// Phase 1 placeholder page components (will be populated in corresponding phases)
+// Role Dashboards
+import StudentDashboard from './pages/StudentDashboard';
+import TeacherDashboard from './pages/TeacherDashboard';
+import ParentDashboard from './pages/ParentDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+
+// Placeholder for remaining phases (Quiz, Gaps, Planner, AI Tutor)
 function PhasePlaceholder({ title, phaseNumber }) {
   return (
     <div className="p-8 rounded-2xl bg-slate-800/40 border border-slate-700/60 text-center space-y-3">
@@ -24,15 +31,83 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<AppLayout />}>
+        {/* Public Routes */}
         <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
-        <Route path="quiz" element={<PhasePlaceholder title="Student Diagnostic Quiz Flow" phaseNumber={4} />} />
-        <Route path="gaps" element={<PhasePlaceholder title="Prerequisite Gap Finder" phaseNumber={5} />} />
-        <Route path="planner" element={<PhasePlaceholder title="Adaptive Study Planner" phaseNumber={6} />} />
-        <Route path="ai-tutor" element={<PhasePlaceholder title="Responsible AI Learning Assistant" phaseNumber={7} />} />
-        <Route path="teacher" element={<PhasePlaceholder title="Teacher Class Portal & Heatmaps" phaseNumber={8} />} />
-        <Route path="parent" element={<PhasePlaceholder title="Parent Progress View" phaseNumber={9} />} />
-        <Route path="admin" element={<PhasePlaceholder title="Administrator Console" phaseNumber={10} />} />
+
+        {/* Student Routes (Protected) */}
+        <Route
+          path="student"
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="quiz"
+          element={
+            <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
+              <PhasePlaceholder title="Student Diagnostic Quiz Flow" phaseNumber={4} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="gaps"
+          element={
+            <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
+              <PhasePlaceholder title="Prerequisite Gap Finder" phaseNumber={5} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="planner"
+          element={
+            <ProtectedRoute allowedRoles={['student', 'parent', 'teacher', 'admin']}>
+              <PhasePlaceholder title="Adaptive Study Planner" phaseNumber={6} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="ai-tutor"
+          element={
+            <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
+              <PhasePlaceholder title="Responsible AI Learning Assistant" phaseNumber={7} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Teacher Routes (Protected) */}
+        <Route
+          path="teacher"
+          element={
+            <ProtectedRoute allowedRoles={['teacher', 'admin']}>
+              <TeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Parent Routes (Protected) */}
+        <Route
+          path="parent"
+          element={
+            <ProtectedRoute allowedRoles={['parent', 'admin']}>
+              <ParentDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Routes (Protected) */}
+        <Route
+          path="admin"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 404 Route */}
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
