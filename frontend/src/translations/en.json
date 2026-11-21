@@ -1,0 +1,71 @@
+{
+  "app_name": "LearnLens",
+  "tagline": "Smart, Inclusive, Personalized Education",
+  "nav": {
+    "home": "Home",
+    "quiz": "Take Diagnostic Quiz",
+    "gaps": "My Learning Gaps",
+    "planner": "Study Planner",
+    "aiTutor": "AI Learning Assistant",
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "studentDashboard": "Student Dashboard",
+    "teacherDashboard": "Teacher Portal",
+    "parentDashboard": "Parent View",
+    "adminDashboard": "Admin Console"
+  },
+  "hero": {
+    "badge": "EduTech Innovation for Large Classrooms",
+    "title": "Don't just count lost marks.",
+    "highlight": "Fix the root prerequisite gap.",
+    "description": "LearnLens identifies weak topics, traces them down to foundational prerequisite concepts, and generates an actionable study plan tailored to your free hours.",
+    "startQuiz": "Take 5-Min Diagnostic Quiz",
+    "viewDemo": "Explore Role Dashboards",
+    "rolePreview": "Experience LearnLens across four connected roles"
+  },
+  "features": {
+    "gapFinder_title": "Prerequisite Root-Cause Tracing",
+    "gapFinder_desc": "Struggling with Class 9 Quadratic Equations? LearnLens traverses your learning graph to diagnose if your real block is Class 8 Factoring.",
+    "confidence_title": "Confidence-Aware Scoring",
+    "confidence_desc": "Tag every answer as Sure, Not Sure, or Guessing. Guessing correctly isn't true mastery — we treat your uncertainty with care.",
+    "studyPlanner_title": "Adaptive Free-Time Planner",
+    "studyPlanner_desc": "Plug in your free hours and upcoming exam date. LearnLens maps out 25-30 minute focused sessions tackling root prerequisites first.",
+    "aiTutor_title": "Responsible AI Tutor",
+    "aiTutor_desc": "Powered by Gemini with strict offline fallbacks. Get personalized explanations for mistakes without hallucination risks."
+  },
+  "roles": {
+    "title": "One Unified Database, Four Focused Perspectives",
+    "subtitle": "Connecting students, teachers, parents, and school leaders in real-time.",
+    "student_title": "Student",
+    "student_desc": "Diagnostic quiz, prerequisite gap tree, free-hour study schedule, and AI tutor.",
+    "teacher_title": "Teacher",
+    "teacher_desc": "Class-wide weak topic heatmaps, per-student diagnostics, quiz assignments, and feedback.",
+    "parent_title": "Parent",
+    "parent_desc": "Jargon-free summary of your child's progress, focus topics, and active study schedule.",
+    "admin_title": "Administrator",
+    "admin_desc": "Manage classes, teachers, student rosters, parent links, and school-wide performance.",
+    "enterRole": "Open Dashboard"
+  },
+  "login": {
+    "title": "Welcome to LearnLens",
+    "subtitle": "Select a role to preview the role-based dashboard",
+    "selectDemoRole": "Choose a Demo Account",
+    "studentBtn": "Continue as Student (Priya Sharma)",
+    "teacherBtn": "Continue as Teacher (Mr. Rajesh Rao)",
+    "parentBtn": "Continue as Parent (Sunita Sharma)",
+    "adminBtn": "Continue as Administrator (Principal)",
+    "demoNotice": "Hackathon Demo Mode: One-click sign-in for instant evaluation across all 4 roles."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "retry": "Try Again",
+    "language": "Language",
+    "changeLanguage": "Change Language",
+    "aiDisclaimer": "AI-generated, please verify with your textbook.",
+    "copyright": "Built for Hackathon. LearnLens - Smart, Inclusive Education."
+  }
+}
