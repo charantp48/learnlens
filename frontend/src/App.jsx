@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import StyleGuide from './pages/StyleGuide';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
@@ -25,6 +26,7 @@ export default function App() {
         {/* Public Routes */}
         <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
+        <Route path="styleguide" element={<StyleGuide />} />
 
         {/* Student Journey Routes (Protected) */}
         <Route

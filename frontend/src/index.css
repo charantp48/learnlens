@@ -1,11 +1,68 @@
 @import "tailwindcss";
 
-/* Custom utility & scrollbar styling */
+@theme {
+  --color-bg-base: #F5F0EA;
+  --color-surface: #FBF8F4;
+  --color-text-main: #0D0D0D;
+  --color-text-muted: #6B6660;
+  --color-accent: #F26522;
+  --color-accent-hover: #D9531A;
+  --color-dark-banner: #111111;
+  --color-border-warm: #E3DCD3;
+
+  --font-heading: 'Inter Tight', 'Inter', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-hindi: 'Noto Sans Devanagari', 'Inter', sans-serif;
+  --font-kannada: 'Noto Sans Kannada', 'Inter', sans-serif;
+
+  --radius-card: 24px;
+}
+
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-main);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings with tight tracking and compact line height */
+.font-heading {
+  font-family: var(--font-heading);
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* Multilingual Font Stacks */
+:lang(hi), .lang-hi {
+  font-family: var(--font-hindi);
+}
+
+:lang(kn), .lang-kn {
+  font-family: var(--font-kannada);
+}
+
+/* Accessible card shadow */
+.card-shadow {
+  box-shadow: 0 4px 24px -2px rgba(13, 13, 13, 0.05), 0 2px 8px -2px rgba(13, 13, 13, 0.03);
+}
+
+.card-shadow-hover {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card-shadow-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px -4px rgba(13, 13, 13, 0.08), 0 4px 12px -2px rgba(13, 13, 13, 0.04);
+  }
 }

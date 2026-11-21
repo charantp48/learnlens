@@ -12,7 +12,8 @@
     "studentDashboard": "Student Dashboard",
     "teacherDashboard": "Teacher Portal",
     "parentDashboard": "Parent View",
-    "adminDashboard": "Admin Console"
+    "adminDashboard": "Admin Console",
+    "styleguide": "Style Guide"
   },
   "hero": {
     "badge": "EduTech Innovation for Large Classrooms",

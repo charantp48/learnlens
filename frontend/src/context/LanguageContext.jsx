@@ -29,6 +29,12 @@ export function LanguageProvider({ children }) {
     }
   };
 
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.body.classList.remove('lang-en', 'lang-hi', 'lang-kn');
+    document.body.classList.add(`lang-${language}`);
+  }, [language]);
+
   /**
    * Helper function to translate keys with fallback to English.
    * Usage: t('nav.home') or t('features.gapFinder_title')

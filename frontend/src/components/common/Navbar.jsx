@@ -3,8 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import LanguageToggle from './LanguageToggle';
+import Button from './Button';
 import { 
-  GraduationCap, 
   Menu, 
   X, 
   BookOpen, 
@@ -13,7 +13,8 @@ import {
   Sparkles, 
   LogIn,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  Layers
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -29,107 +30,103 @@ export default function Navbar() {
     setMobileMenuOpen(false);
   };
 
-  // Student prioritized navigation links
+  // Nav links
   const studentNavLinks = [
-    { to: '/student', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/quiz', label: t('nav.quiz'), icon: BookOpen },
-    { to: '/gaps', label: t('nav.gaps'), icon: GitFork },
-    { to: '/planner', label: t('nav.planner'), icon: Calendar },
-    { to: '/ai-tutor', label: t('nav.aiTutor'), icon: Sparkles },
+    { to: '/student', label: t('nav.studentDashboard') || 'Dashboard' },
+    { to: '/quiz', label: t('nav.quiz') },
+    { to: '/gaps', label: t('nav.gaps') },
+    { to: '/planner', label: t('nav.planner') },
+    { to: '/ai-tutor', label: t('nav.aiTutor') },
   ];
 
   const defaultNavLinks = [
-    { to: '/', label: t('nav.home'), icon: BookOpen },
-    { to: '/quiz', label: t('nav.quiz'), icon: BookOpen },
-    { to: '/gaps', label: t('nav.gaps'), icon: GitFork },
-    { to: '/planner', label: t('nav.planner'), icon: Calendar },
-    { to: '/ai-tutor', label: t('nav.aiTutor'), icon: Sparkles },
+    { to: '/', label: t('nav.home') },
+    { to: '/quiz', label: t('nav.quiz') },
+    { to: '/gaps', label: t('nav.gaps') },
+    { to: '/planner', label: t('nav.planner') },
+    { to: '/ai-tutor', label: t('nav.aiTutor') },
   ];
 
   const activeLinks = currentUser?.role === 'student' ? studentNavLinks : defaultNavLinks;
 
   return (
-    <header className="sticky top-0 z-50 bg-[#07130e]/90 backdrop-blur-md border-b border-emerald-950/40">
+    <header className="sticky top-0 z-50 bg-[#F5F0EA]/90 backdrop-blur-md border-b border-[#E3DCD3]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo & Brand */}
+        <div className="flex items-center justify-between h-20">
+          {/* Logo & Brand at Left */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-2xl bg-[#0f291e] border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-900/30 group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-5 h-5 text-lime-400" />
+            <div className="w-9 h-9 rounded-xl bg-[#0D0D0D] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+              <span className="font-heading font-black text-white text-base">
+                L<span className="text-[#F26522]">.</span>
+              </span>
             </div>
             <div>
-              <span className="text-xl font-extrabold text-white tracking-tight flex items-center gap-1.5">
+              <span className="font-heading text-lg font-extrabold text-[#0D0D0D] tracking-tight block">
                 {t('app_name')}
-                <span className="w-1.5 h-1.5 rounded-full bg-lime-400"></span>
-              </span>
-              <span className="hidden sm:block text-[10px] text-emerald-200/60 font-medium tracking-wide">
-                {t('tagline')}
               </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-1">
+          {/* Centered Navigation Links with Orange Underline on Active */}
+          <nav className="hidden lg:flex items-center space-x-8">
             {activeLinks.map((item) => {
-              const Icon = item.icon;
               const isActive = location.pathname === item.to;
               return (
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                  className={`text-sm font-semibold transition-colors py-2 relative ${
                     isActive
-                      ? 'bg-[#102e21] text-lime-300 border border-emerald-500/30'
-                      : 'text-slate-300 hover:text-lime-300 hover:bg-[#0c2219]'
+                      ? 'text-[#0D0D0D]'
+                      : 'text-[#6B6660] hover:text-[#0D0D0D]'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
                   <span>{item.label}</span>
+                  {isActive && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F26522] rounded-full" />
+                  )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* Right Section: Language Switcher & Auth User Pill */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Right Section: Language Switcher & Action Pill */}
+          <div className="hidden md:flex items-center gap-4">
             <LanguageToggle />
 
             {isAuthenticated ? (
-              <div className="flex items-center gap-2.5 pl-2 border-l border-emerald-950/60">
+              <div className="flex items-center gap-3 pl-2 border-l border-[#E3DCD3]">
                 <Link
                   to={getDashboardPath(currentUser.role)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0d221a] hover:bg-[#122e23] border border-emerald-500/30 transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FBF8F4] hover:bg-white border border-[#E3DCD3] transition-colors shadow-xs"
                 >
                   <img
                     src={currentUser.avatar_url}
                     alt={currentUser.full_name}
-                    className="w-5 h-5 rounded-full bg-slate-700"
+                    className="w-6 h-6 rounded-full bg-[#E3DCD3]"
                   />
                   <div className="text-left text-xs">
-                    <div className="font-semibold text-white leading-tight truncate max-w-[100px]">
+                    <div className="font-bold text-[#0D0D0D] leading-tight truncate max-w-[90px]">
                       {currentUser.full_name.split(' ')[0]}
                     </div>
-                    <div className="text-[10px] text-lime-400 capitalize">
+                    <div className="text-[10px] text-[#F26522] font-semibold capitalize">
                       {currentUser.role}
                     </div>
                   </div>
                 </Link>
+
                 <button
                   onClick={handleLogout}
-                  className="p-1.5 rounded-full text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                  className="p-2 rounded-full text-[#6B6660] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                   title="Sign Out"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-lime-400 hover:bg-lime-300 text-slate-950 text-xs font-bold shadow-md shadow-lime-400/20 transition-all hover:scale-105"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>{t('nav.login')}</span>
-              </Link>
+              <Button to="/login" variant="primary" size="sm" showArrow>
+                {t('nav.login')}
+              </Button>
             )}
           </div>
 
@@ -138,10 +135,10 @@ export default function Navbar() {
             <LanguageToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 focus:outline-none"
+              className="p-2 rounded-full bg-[#FBF8F4] border border-[#E3DCD3] text-[#0D0D0D] hover:bg-[#E3DCD3]/40 focus:outline-none cursor-pointer"
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5 text-[#0D0D0D]" />}
             </button>
           </div>
         </div>
@@ -149,23 +146,23 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-emerald-950/60 bg-[#07130e]/98 px-4 pt-2 pb-4 space-y-1">
+        <div className="md:hidden border-b border-[#E3DCD3] bg-[#F5F0EA] px-4 pt-3 pb-5 space-y-2">
           {isAuthenticated && (
-            <div className="flex items-center justify-between p-3 mb-2 rounded-2xl bg-[#0b1e16] border border-emerald-500/20">
+            <div className="flex items-center justify-between p-3 mb-2 rounded-[16px] bg-[#FBF8F4] border border-[#E3DCD3]">
               <div className="flex items-center gap-2.5">
                 <img
                   src={currentUser.avatar_url}
                   alt={currentUser.full_name}
-                  className="w-8 h-8 rounded-full bg-slate-700"
+                  className="w-8 h-8 rounded-full bg-[#E3DCD3]"
                 />
                 <div>
-                  <div className="text-xs font-bold text-white">{currentUser.full_name}</div>
-                  <div className="text-[10px] text-lime-400 capitalize">{currentUser.role} Dashboard</div>
+                  <div className="text-xs font-bold text-[#0D0D0D]">{currentUser.full_name}</div>
+                  <div className="text-[10px] text-[#F26522] capitalize font-semibold">{currentUser.role} Dashboard</div>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-medium cursor-pointer"
+                className="px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-xs font-bold cursor-pointer"
               >
                 Sign Out
               </button>
@@ -173,35 +170,36 @@ export default function Navbar() {
           )}
 
           {activeLinks.map((item) => {
-            const Icon = item.icon;
             const isActive = location.pathname === item.to;
             return (
               <Link
                 key={item.to}
                 to={item.to}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium ${
+                className={`flex items-center justify-between px-4 py-2.5 rounded-full text-sm font-semibold transition-colors ${
                   isActive
-                    ? 'bg-[#102e21] text-lime-300 border border-emerald-500/30'
-                    : 'text-slate-300 hover:text-lime-300 hover:bg-[#0c2219]'
+                    ? 'bg-[#FBF8F4] text-[#0D0D0D] border border-[#E3DCD3]'
+                    : 'text-[#6B6660] hover:text-[#0D0D0D] hover:bg-[#FBF8F4]'
                 }`}
               >
-                <Icon className="w-4 h-4" />
                 <span>{item.label}</span>
+                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#F26522]" />}
               </Link>
             );
           })}
 
           {!isAuthenticated && (
             <div className="pt-2">
-              <Link
+              <Button
                 to="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full bg-lime-400 hover:bg-lime-300 text-slate-950 font-bold text-xs"
+                variant="primary"
+                size="md"
+                showArrow
+                className="w-full"
               >
-                <LogIn className="w-4 h-4" />
-                <span>{t('nav.login')}</span>
-              </Link>
+                {t('nav.login')}
+              </Button>
             </div>
           )}
         </div>
