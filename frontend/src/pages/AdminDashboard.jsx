@@ -1369,9 +1369,9 @@ export default function AdminDashboard() {
                   className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
                 >
                   <option value="">Select teacher (optional)...</option>
-                  {teachersList.map((t) => (
-                    <option key={t.id} value={t.name}>
-                      {tName(t.name)}
+                  {teachersList.map((teacher) => (
+                    <option key={teacher.id} value={teacher.name}>
+                      {tName(teacher.name)}
                     </option>
                   ))}
                 </select>
@@ -1446,16 +1446,16 @@ export default function AdminDashboard() {
                 >
                   <option value="">Select user...</option>
                   <optgroup label="Teachers">
-                    {teachersList.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {tName(t.name)} ({t('roles.teacher_title') || 'Teacher'})
+                    {teachersList.map((teacher) => (
+                      <option key={teacher.id} value={teacher.id}>
+                        {tName(teacher.name)} ({t('roles.teacher_title') || 'Teacher'})
                       </option>
                     ))}
                   </optgroup>
                   <optgroup label="Students">
-                    {studentsList.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {tName(s.name)} ({t('roles.student_title') || 'Student'})
+                    {studentsList.map((student) => (
+                      <option key={student.id} value={student.id}>
+                        {tName(student.name)} ({t('roles.student_title') || 'Student'})
                       </option>
                     ))}
                   </optgroup>
