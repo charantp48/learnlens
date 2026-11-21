@@ -25,7 +25,10 @@ import {
   X,
   Shield,
   Activity,
-  History
+  History,
+  Award,
+  MessageSquare,
+  Eye
 } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
@@ -46,7 +49,11 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'disabled'
   const [searchQuery, setSearchQuery] = useState('');
+  const [reportsClassFilter, setReportsClassFilter] = useState('all');
+  const [reportsSearchQuery, setReportsSearchQuery] = useState('');
+  const [selectedReportModal, setSelectedReportModal] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [copiedKey, setCopiedKey] = useState('');
 
@@ -369,12 +376,31 @@ export default function AdminDashboard() {
 
   // Filtered users for table
   const filteredUsers = (metrics.users || []).filter((user) => {
+    if (metrics.isDemoMode === false && user.is_demo) return false;
     const matchesFilter = activeFilter === 'all' || user.role === activeFilter;
+    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+    const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.className && user.className.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesFilter && matchesSearch;
+      !q ||
+      user.name.toLowerCase().includes(q) ||
+      user.email.toLowerCase().includes(q) ||
+      (user.className && user.className.toLowerCase().includes(q)) ||
+      (user.status && user.status.toLowerCase().includes(q));
+    return matchesFilter && matchesStatus && matchesSearch;
+  });
+
+  // Filtered reports & ranks for school-wide reports table
+  const filteredReports = (metrics.reportsAndRanks || []).filter((r) => {
+    if (metrics.isDemoMode === false && r.isDemo) return false;
+    const matchesClass =
+      reportsClassFilter === 'all' || (r.className || '').toLowerCase() === reportsClassFilter.toLowerCase();
+    const q = reportsSearchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      r.studentName.toLowerCase().includes(q) ||
+      r.studentEmail.toLowerCase().includes(q) ||
+      (r.className && r.className.toLowerCase().includes(q));
+    return matchesClass && matchesSearch;
   });
 
   const studentsList = (metrics.users || []).filter((u) => u.role === 'student');
@@ -516,57 +542,87 @@ export default function AdminDashboard() {
           </Card>
         )}
 
-        {/* 1. Real Totals (Demo accounts strictly excluded) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-              <GraduationCap className="w-6 h-6" />
+        {/* 1. Real Totals Monitoring Cards (Demo accounts strictly excluded) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+          <Card className="p-4 flex flex-col justify-between space-y-2 border border-[#E3DCD3]">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+              <GraduationCap className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#736B63]">
                 {t('admin.studentsCount') || 'Students'} (Real)
               </p>
               <p className="text-2xl font-black text-[#0D0D0D]">{realCounts.students}</p>
-              <p className="text-[10px] text-[#6B6660] mt-0.5">+2 demo students excluded</p>
+              <p className="text-[10px] text-[#6B6660] mt-0.5">Demo excluded</p>
             </div>
           </Card>
 
-          <Card className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-              <UserCheck className="w-6 h-6" />
+          <Card className="p-4 flex flex-col justify-between space-y-2 border border-[#E3DCD3]">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+              <UserCheck className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#736B63]">
                 {t('admin.teachersCount') || 'Teachers'} (Real)
               </p>
               <p className="text-2xl font-black text-[#0D0D0D]">{realCounts.teachers}</p>
-              <p className="text-[10px] text-[#6B6660] mt-0.5">+1 demo teacher excluded</p>
+              <p className="text-[10px] text-[#6B6660] mt-0.5">Demo excluded</p>
             </div>
           </Card>
 
-          <Card className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-              <Users className="w-6 h-6" />
+          <Card className="p-4 flex flex-col justify-between space-y-2 border border-[#E3DCD3]">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <Users className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#736B63]">
                 {t('admin.parentsCount') || 'Parents'} (Real)
               </p>
               <p className="text-2xl font-black text-[#0D0D0D]">{realCounts.parents}</p>
-              <p className="text-[10px] text-[#6B6660] mt-0.5">+1 demo parent excluded</p>
+              <p className="text-[10px] text-[#6B6660] mt-0.5">Demo excluded</p>
             </div>
           </Card>
 
-          <Card className="p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522] shrink-0">
-              <BookOpen className="w-6 h-6" />
+          <Card className="p-4 flex flex-col justify-between space-y-2 border border-[#E3DCD3]">
+            <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522] shrink-0">
+              <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
-                {t('admin.classesCount') || 'Cohorts'}
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#736B63]">
+                {t('admin.classesCount') || 'Classes'}
               </p>
-              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.classes?.length || 2}</p>
-              <p className="text-[10px] text-[#6B6660] mt-0.5">Active curriculum groups</p>
+              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.counts?.real?.classes || metrics.classes?.length || 2}</p>
+              <p className="text-[10px] text-[#6B6660] mt-0.5">Curriculum cohorts</p>
+            </div>
+          </Card>
+
+          <Card className="p-4 flex flex-col justify-between space-y-2 border border-[#E3DCD3]">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#736B63]">
+                Reports Submitted
+              </p>
+              <p className="text-2xl font-black text-[#0D0D0D]">
+                {metrics.counts?.real?.reportsSubmitted ?? (metrics.reportsAndRanks?.filter((r) => !r.isDemo && r.latestReport).length || 0)}
+              </p>
+              <p className="text-[10px] text-[#6B6660] mt-0.5">Real assessments</p>
+            </div>
+          </Card>
+
+          <Card className="p-4 flex flex-col justify-between space-y-2 border border-[#E3DCD3]">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#736B63]">
+                Pending Review
+              </p>
+              <p className="text-2xl font-black text-[#0D0D0D]">
+                {metrics.counts?.real?.reportsNotReviewed ?? (metrics.reportsAndRanks?.filter((r) => !r.isDemo && r.latestReport?.reviewStatus === 'new').length || 0)}
+              </p>
+              <p className="text-[10px] text-[#6B6660] mt-0.5">Awaiting teacher</p>
             </div>
           </Card>
         </div>
@@ -861,27 +917,51 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              { id: 'all', label: t('admin.filterAll') || 'All Users' },
-              { id: 'student', label: t('admin.filterStudents') || 'Students' },
-              { id: 'teacher', label: t('admin.filterTeachers') || 'Teachers' },
-              { id: 'parent', label: t('admin.filterParents') || 'Parents' },
-              { id: 'admin', label: t('admin.filterAdmins') || 'Admins' },
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setActiveFilter(f.id)}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-                  activeFilter === f.id
-                    ? 'bg-[#0D0D0D] text-white shadow-xs'
-                    : 'bg-[#FBF8F4] text-[#736B63] border border-[#E3DCD3] hover:border-[#0D0D0D]'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+          {/* Filter Pills: Role Filter & Status Filter */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-bold text-[#736B63] mr-1">Role:</span>
+              {[
+                { id: 'all', label: t('admin.filterAll') || 'All Users' },
+                { id: 'student', label: t('admin.filterStudents') || 'Students' },
+                { id: 'teacher', label: t('admin.filterTeachers') || 'Teachers' },
+                { id: 'parent', label: t('admin.filterParents') || 'Parents' },
+                { id: 'admin', label: t('admin.filterAdmins') || 'Admins' },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setActiveFilter(f.id)}
+                  className={`text-xs font-semibold px-3 py-1 rounded-full transition-all cursor-pointer ${
+                    activeFilter === f.id
+                      ? 'bg-[#0D0D0D] text-white shadow-xs'
+                      : 'bg-[#FBF8F4] text-[#736B63] border border-[#E3DCD3] hover:border-[#0D0D0D]'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5 self-start sm:self-auto">
+              <span className="text-[11px] font-bold text-[#736B63] mr-1">Status:</span>
+              {[
+                { id: 'all', label: 'All' },
+                { id: 'active', label: 'Active' },
+                { id: 'disabled', label: 'Disabled' },
+              ].map((sf) => (
+                <button
+                  key={sf.id}
+                  onClick={() => setStatusFilter(sf.id)}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                    statusFilter === sf.id
+                      ? 'bg-[#F26522] text-white shadow-xs'
+                      : 'bg-[#FBF8F4] text-[#736B63] border border-[#E3DCD3] hover:border-[#F26522]'
+                  }`}
+                >
+                  {sf.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Table */}
@@ -1014,7 +1094,170 @@ export default function AdminDashboard() {
           </div>
         </Card>
 
-        {/* 4. Cohorts, Assignments, and Links Section */}
+        {/* 4. School-Wide Reports and Ranks Table (Filterable by Class) */}
+        <Card className="p-6 space-y-6 border border-[#E3DCD3]">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#E3DCD3] pb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522]">
+                  <Award className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-[#0D0D0D]">
+                    School-Wide Reports & Student Rankings
+                  </h2>
+                  <p className="text-xs text-[#736B63]">
+                    Cumulative ranks based on total marks earned / total possible across completed diagnostic attempts. Ties share rank.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 text-[#736B63] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search student or email..."
+                value={reportsSearchQuery}
+                onChange={(e) => setReportsSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-xs text-[#0D0D0D] placeholder-[#736B63] focus:outline-hidden focus:border-[#F26522]"
+              />
+            </div>
+          </div>
+
+          {/* Class Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-bold text-[#736B63] mr-1">Filter Class:</span>
+            <button
+              type="button"
+              onClick={() => setReportsClassFilter('all')}
+              className={`text-xs font-semibold px-3 py-1 rounded-full transition-all cursor-pointer ${
+                reportsClassFilter === 'all'
+                  ? 'bg-[#0D0D0D] text-white shadow-xs'
+                  : 'bg-[#FBF8F4] text-[#736B63] border border-[#E3DCD3] hover:border-[#0D0D0D]'
+              }`}
+            >
+              All Classes ({metrics.reportsAndRanks?.length || 0})
+            </button>
+            {metrics.classes?.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setReportsClassFilter(c.name)}
+                className={`text-xs font-semibold px-3 py-1 rounded-full transition-all cursor-pointer ${
+                  reportsClassFilter === c.name
+                    ? 'bg-[#0D0D0D] text-white shadow-xs'
+                    : 'bg-[#FBF8F4] text-[#736B63] border border-[#E3DCD3] hover:border-[#0D0D0D]'
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Reports Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#E3DCD3] text-[#736B63] uppercase tracking-wider font-semibold">
+                  <th className="py-3 px-3">School Rank</th>
+                  <th className="py-3 px-3">Class Rank</th>
+                  <th className="py-3 px-3">Student</th>
+                  <th className="py-3 px-3">Class</th>
+                  <th className="py-3 px-3">Overall Avg</th>
+                  <th className="py-3 px-3">Latest Report</th>
+                  <th className="py-3 px-3">Teacher Status</th>
+                  <th className="py-3 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E3DCD3]">
+                {filteredReports.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-[#736B63]">
+                      No student reports match the selected filters.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredReports.map((r) => {
+                    return (
+                      <tr key={r.studentId} className="hover:bg-[#FBF8F4]/80 transition-colors">
+                        <td className="py-3 px-3 font-mono font-bold text-[#0D0D0D]">
+                          #{r.schoolRank}
+                        </td>
+                        <td className="py-3 px-3 font-mono text-[#0D0D0D]">
+                          Rank {r.classRank} of {r.classTotal}
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-semibold text-[#0D0D0D]">{tName(r.studentName)}</div>
+                          <div className="text-[10px] text-[#736B63] font-mono">{r.studentEmail}</div>
+                        </td>
+                        <td className="py-3 px-3 text-[#0D0D0D] font-medium">
+                          {r.className}
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-mono font-bold text-[#0D0D0D]">{r.overallPercentage}%</div>
+                          <div className="text-[10px] text-[#736B63]">{r.attemptsCount} attempt(s)</div>
+                        </td>
+                        <td className="py-3 px-3">
+                          {r.latestReport ? (
+                            <div>
+                              <span className="font-medium text-[#0D0D0D]">{r.latestReport.subject}</span>
+                              <div className="text-[10px] text-[#736B63] font-mono">
+                                {r.latestReport.marksEarned}/{r.latestReport.marksPossible} ({r.latestReport.percentage}%)
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-[#736B63] text-[11px] italic">No attempts yet</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3">
+                          {r.clarification ? (
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              r.clarification.status === 'needs_extra_help'
+                                ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                : r.clarification.status === 'improve_focus'
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            }`}>
+                              {r.clarification.status === 'needs_extra_help'
+                                ? 'Needs Extra Help'
+                                : r.clarification.status === 'improve_focus'
+                                ? 'Improve Focus'
+                                : 'Doing Well'}
+                            </span>
+                          ) : r.latestReport?.reviewStatus === 'new' ? (
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
+                              Pending Review
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-[#736B63]">—</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          {r.latestReport ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedReportModal(r)}
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-[#E3DCD3] text-[#0D0D0D] hover:bg-[#F5F0EA] transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3 h-3 text-[#F26522]" />
+                              <span>View Report</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-[#736B63]">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* 5. Cohorts, Assignments, and Links Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Form 2: Create Class */}
@@ -1288,7 +1531,87 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 6. Recent Administrative Activity Log */}
+        {/* 6. REPORT INSPECTION MODAL FOR ADMIN */}
+        {selectedReportModal && (
+          <div className="fixed inset-0 z-50 bg-[#0D0D0D]/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <Card className="max-w-lg w-full p-6 space-y-4 bg-white border border-[#E3DCD3] shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#E3DCD3] pb-3">
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-[#F26522]" />
+                  <h3 className="font-bold text-sm text-[#0D0D0D]">
+                    Diagnostic Report: {tName(selectedReportModal.studentName)} ({selectedReportModal.className})
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedReportModal(null)}
+                  className="p-1 rounded-lg text-[#736B63] hover:bg-[#F5F0EA] transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-3 rounded-xl bg-[#F5F0EA]">
+                  <div className="text-[10px] text-[#736B63] uppercase font-bold">Class Rank</div>
+                  <div className="font-bold text-sm text-[#0D0D0D]">
+                    Rank {selectedReportModal.classRank} of {selectedReportModal.classTotal}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-[#F5F0EA]">
+                  <div className="text-[10px] text-[#736B63] uppercase font-bold">School Rank</div>
+                  <div className="font-bold text-sm text-[#0D0D0D]">
+                    #{selectedReportModal.schoolRank} of {selectedReportModal.schoolTotal}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-[#F5F0EA]">
+                  <div className="text-[10px] text-[#736B63] uppercase font-bold">Score</div>
+                  <div className="font-bold text-sm text-[#F26522]">
+                    {selectedReportModal.latestReport?.marksEarned}/{selectedReportModal.latestReport?.marksPossible} ({selectedReportModal.latestReport?.percentage}%)
+                  </div>
+                </div>
+              </div>
+
+              {selectedReportModal.latestReport?.weakTopics?.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-[11px] font-bold text-[#736B63] uppercase">
+                    Diagnosed Weak Topics & Root Causes:
+                  </div>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                    {selectedReportModal.latestReport.weakTopics.map((wt, i) => (
+                      <div key={i} className="p-2.5 rounded-xl bg-[#F5F0EA] text-xs">
+                        <div className="font-bold text-[#0D0D0D]">{wt.topicName}</div>
+                        <div className="text-[11px] text-[#6B6660]">Root Cause: {wt.rootPrerequisite || 'Foundation Gap'}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedReportModal.clarification ? (
+                <div className="p-3.5 rounded-xl bg-[#FFF3EC] border border-[#F26522]/30 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-[#0D0D0D]">Teacher Note ({selectedReportModal.clarification.teacherName})</span>
+                    <span className="font-bold text-[10px] uppercase text-[#F26522]">{selectedReportModal.clarification.status}</span>
+                  </div>
+                  <p className="text-xs text-[#0D0D0D] italic">"{selectedReportModal.clarification.comment}"</p>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs text-[#736B63] text-center">
+                  Teacher clarification pending review.
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2 border-t border-[#E3DCD3]">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedReportModal(null)}>
+                  Close
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* 7. Recent Administrative Activity Log */}
         {metrics.recentActivity?.length > 0 && (
           <Card className="p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-[#E3DCD3] pb-3">

@@ -3,7 +3,7 @@ import { supabase } from '../config/supabase.js';
 import { MOCK_TOPICS, MOCK_PREREQUISITES_GRAPH } from '../config/mockData.js';
 import { findLearningGaps } from '../services/gapFinder.js';
 import { saveAttemptAndReport, getStudentRankSnapshot, computeStudentRankings } from '../services/reportService.js';
-import { getAllUsers } from './adminRoutes.js';
+import { getAllUsers, logActivity } from './adminRoutes.js';
 
 const router = express.Router();
 
@@ -483,6 +483,15 @@ router.post('/submit', async (req, res) => {
     }
 
     const { report, rankSnapshot } = saveResult;
+
+    // Log diagnostic report submission to central activity log
+    logActivity(
+      { id: studentId, email: studentEmail, role: 'student' },
+      'report_submitted',
+      'student_report',
+      report.id,
+      { studentName, className, percentage, marksEarned, marksPossible }
+    );
 
     // Return student-facing result (Never show other students' names or scores)
     res.json({

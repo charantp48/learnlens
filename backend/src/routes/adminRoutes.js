@@ -1,6 +1,13 @@
 import express from 'express';
 import crypto from 'crypto';
 import { supabase } from '../config/supabase.js';
+import {
+  studentReportsStore,
+  quizAttemptsStore,
+  getStudentRankSnapshot,
+  computeStudentRankings,
+  getClarificationForStudent,
+} from '../services/reportService.js';
 
 const router = express.Router();
 
@@ -170,8 +177,8 @@ export function getAllUsers() {
 
 /**
  * 1. GET /api/admin/metrics
- * Returns counts (real totals excluding demo accounts, plus total),
- * full user roster, classes, and recent activity log
+ * Returns real totals (excluding demo accounts), full user roster,
+ * school-wide reports & rankings, classes, and recent activity log
  */
 router.get('/metrics', async (req, res) => {
   try {
@@ -183,10 +190,63 @@ router.get('/metrics', async (req, res) => {
     const realParents = usersList.filter((u) => u.role === 'parent' && !u.is_demo).length;
     const realAdmins = usersList.filter((u) => u.role === 'admin' && !u.is_demo).length;
 
+    // Real reports counts EXCLUDE demo accounts
+    const realReports = studentReportsStore.filter((r) => !r.is_demo);
+    const reportsSubmitted = realReports.length;
+    const reportsNotReviewed = realReports.filter((r) => r.review_status === 'new').length;
+
     // Total counts including demo
     const totalStudents = usersList.filter((u) => u.role === 'student').length;
     const totalTeachers = usersList.filter((u) => u.role === 'teacher').length;
     const totalParents = usersList.filter((u) => u.role === 'parent').length;
+
+    // Build School-Wide Reports and Ranks Table Data
+    const reportsAndRanks = usersList
+      .filter((u) => u.role === 'student')
+      .map((s) => {
+        const studentReports = studentReportsStore.filter((r) => r.student_id === s.id);
+        const latestReport = studentReports[0] || null;
+        const rankSnap = getStudentRankSnapshot(s.id);
+        const clarification = getClarificationForStudent(s.id);
+        const attempts = quizAttemptsStore.filter((a) => a.student_id === s.id && a.is_completed);
+
+        return {
+          studentId: s.id,
+          studentName: s.name,
+          studentEmail: s.email,
+          className: s.className || 'Class 11-A',
+          isDemo: !!s.is_demo,
+          status: s.status || 'active',
+          schoolRank: rankSnap.school_rank,
+          schoolTotal: rankSnap.school_total_students,
+          classRank: rankSnap.class_rank,
+          classTotal: rankSnap.class_total_students,
+          overallPercentage: rankSnap.overall_percentage,
+          attemptsCount: attempts.length,
+          latestReport: latestReport
+            ? {
+                id: latestReport.id,
+                subject: latestReport.subject || 'Mathematics',
+                marksEarned: latestReport.marks_earned,
+                marksPossible: latestReport.marks_possible,
+                percentage: latestReport.percentage,
+                levelAchieved: latestReport.level_achieved,
+                reviewStatus: latestReport.review_status,
+                weakTopics: latestReport.weak_topics || [],
+                submittedAt: latestReport.created_at,
+              }
+            : null,
+          clarification: clarification
+            ? {
+                status: clarification.status,
+                topics: clarification.topics || [],
+                comment: clarification.comment,
+                teacherName: clarification.teacher_name,
+                updatedAt: clarification.updated_at,
+              }
+            : null,
+        };
+      });
 
     res.json({
       status: 'ok',
@@ -198,21 +258,100 @@ router.get('/metrics', async (req, res) => {
           parents: realParents,
           admins: realAdmins,
           total: realStudents + realTeachers + realParents + realAdmins,
+          classes: classesList.length,
+          reportsSubmitted,
+          reportsNotReviewed,
         },
         all: {
           students: totalStudents,
           teachers: totalTeachers,
           parents: totalParents,
           total: usersList.length,
+          classes: classesList.length,
+          reportsSubmitted: studentReportsStore.length,
+          reportsNotReviewed: studentReportsStore.filter((r) => r.review_status === 'new').length,
         },
         classes: classesList.length,
       },
       users: usersList,
       classes: classesList,
-      recentActivity: activityLog.slice(0, 20),
+      reportsAndRanks,
+      recentActivity: activityLog.slice(0, 30),
     });
   } catch (err) {
     res.status(500).json({ error: 'AdminMetricsError', message: err.message });
+  }
+});
+
+/**
+ * 2. GET /api/admin/reports-and-ranks
+ * Dedicated endpoint to query school-wide reports and rankings with optional class filter
+ */
+router.get('/reports-and-ranks', (req, res) => {
+  try {
+    const classFilter = req.query.class;
+    const includeDemo = req.query.includeDemo !== 'false';
+
+    let list = usersList.filter((u) => u.role === 'student');
+    if (!includeDemo) {
+      list = list.filter((u) => !u.is_demo);
+    }
+    if (classFilter && classFilter !== 'all') {
+      list = list.filter((u) => (u.className || '').toLowerCase() === classFilter.toLowerCase());
+    }
+
+    const reportsAndRanks = list.map((s) => {
+      const studentReports = studentReportsStore.filter((r) => r.student_id === s.id);
+      const latestReport = studentReports[0] || null;
+      const rankSnap = getStudentRankSnapshot(s.id);
+      const clarification = getClarificationForStudent(s.id);
+      const attempts = quizAttemptsStore.filter((a) => a.student_id === s.id && a.is_completed);
+
+      return {
+        studentId: s.id,
+        studentName: s.name,
+        studentEmail: s.email,
+        className: s.className || 'Class 11-A',
+        isDemo: !!s.is_demo,
+        status: s.status || 'active',
+        schoolRank: rankSnap.school_rank,
+        schoolTotal: rankSnap.school_total_students,
+        classRank: rankSnap.class_rank,
+        classTotal: rankSnap.class_total_students,
+        overallPercentage: rankSnap.overall_percentage,
+        attemptsCount: attempts.length,
+        latestReport: latestReport
+          ? {
+              id: latestReport.id,
+              subject: latestReport.subject || 'Mathematics',
+              marksEarned: latestReport.marks_earned,
+              marksPossible: latestReport.marks_possible,
+              percentage: latestReport.percentage,
+              levelAchieved: latestReport.level_achieved,
+              reviewStatus: latestReport.review_status,
+              weakTopics: latestReport.weak_topics || [],
+              submittedAt: latestReport.created_at,
+            }
+          : null,
+        clarification: clarification
+          ? {
+              status: clarification.status,
+              topics: clarification.topics || [],
+              comment: clarification.comment,
+              teacherName: clarification.teacher_name,
+              updatedAt: clarification.updated_at,
+            }
+          : null,
+      };
+    });
+
+    res.json({
+      status: 'ok',
+      total: reportsAndRanks.length,
+      reportsAndRanks,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'ReportsAndRanksError', message: err.message });
   }
 });
 
