@@ -22,6 +22,18 @@ import {
   FileText,
   Award
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ReferenceLine,
+  Cell
+} from 'recharts';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
+import SectionLabel from '../components/common/SectionLabel';
 
 const CURRICULUM_TOPICS = [
   'Algebraic Identities & Factoring',
