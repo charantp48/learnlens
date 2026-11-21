@@ -381,3 +381,118 @@ export async function saveAttemptAndReport({
     rankSnapshot,
   };
 }
+
+/**
+ * Save or Edit Teacher Clarification
+ * - status: needs_extra_help | improve_focus | doing_well
+ * - topics: array of topic names
+ * - comment: max 500 characters
+ * - Marks the corresponding report as reviewed
+ */
+export async function saveTeacherClarification({
+  reportId,
+  studentId,
+  teacherId,
+  teacherName = 'Teacher',
+  status,
+  topics = [],
+  comment,
+}) {
+  const validStatuses = ['needs_extra_help', 'improve_focus', 'doing_well'];
+  if (!validStatuses.includes(status)) {
+    throw new Error(`InvalidStatus: Status must be one of: ${validStatuses.join(', ')}`);
+  }
+
+  if (!comment || typeof comment !== 'string') {
+    throw new Error('ValidationError: Clarification comment is required.');
+  }
+
+  if (comment.length > 500) {
+    throw new Error('ValidationError: Clarification comment cannot exceed 500 characters.');
+  }
+
+  const existingIndex = teacherClarificationsStore.findIndex(
+    (c) => (reportId && c.report_id === reportId) || (studentId && c.student_id === studentId)
+  );
+
+  const timestamp = new Date().toISOString();
+  let savedClarification;
+
+  if (existingIndex >= 0) {
+    // Edit existing clarification
+    savedClarification = {
+      ...teacherClarificationsStore[existingIndex],
+      status,
+      topics,
+      comment: comment.trim(),
+      updated_at: timestamp,
+    };
+    teacherClarificationsStore[existingIndex] = savedClarification;
+  } else {
+    // Create new clarification
+    savedClarification = {
+      id: crypto.randomUUID(),
+      report_id: reportId || '',
+      student_id: studentId,
+      teacher_id: teacherId,
+      teacher_name: teacherName,
+      status,
+      topics,
+      comment: comment.trim(),
+      created_at: timestamp,
+      updated_at: timestamp,
+    };
+    teacherClarificationsStore.unshift(savedClarification);
+  }
+
+  // Mark the corresponding student report as reviewed
+  if (reportId) {
+    const report = studentReportsStore.find((r) => r.id === reportId);
+    if (report) {
+      report.review_status = 'reviewed';
+      report.updated_at = timestamp;
+    }
+  } else if (studentId) {
+    const report = studentReportsStore.find((r) => r.student_id === studentId);
+    if (report) {
+      report.review_status = 'reviewed';
+      report.updated_at = timestamp;
+    }
+  }
+
+  // Try saving to Supabase if connected
+  if (supabase) {
+    try {
+      await supabase.from('teacher_clarifications').upsert({
+        id: savedClarification.id,
+        report_id: savedClarification.report_id,
+        student_id: savedClarification.student_id,
+        teacher_id: savedClarification.teacher_id,
+        status: savedClarification.status,
+        topics: savedClarification.topics,
+        comment: savedClarification.comment,
+        updated_at: timestamp,
+      });
+
+      if (reportId) {
+        await supabase
+          .from('student_reports')
+          .update({ review_status: 'reviewed', updated_at: timestamp })
+          .eq('id', reportId);
+      }
+    } catch (dbErr) {
+      console.warn('Supabase clarification sync notice:', dbErr.message);
+    }
+  }
+
+  return savedClarification;
+}
+
+export function getClarificationForStudent(studentId) {
+  return teacherClarificationsStore.find((c) => c.student_id === studentId) || null;
+}
+
+export function getClarificationForReport(reportId) {
+  return teacherClarificationsStore.find((c) => c.report_id === reportId) || null;
+}
+

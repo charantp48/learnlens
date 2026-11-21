@@ -19,21 +19,24 @@ import {
   Sparkles,
   Clock,
   Radio,
-  FileText
+  FileText,
+  Award
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ReferenceLine, 
-  Cell 
-} from 'recharts';
-import Card from '../components/common/Card';
-import Button from '../components/common/Button';
-import SectionLabel from '../components/common/SectionLabel';
+
+const CURRICULUM_TOPICS = [
+  'Algebraic Identities & Factoring',
+  'Quadratic Equations',
+  'Differential Calculus',
+  'Kinematics & Vector Resolution',
+  'Rotational Dynamics',
+  'Electrostatics & Coulomb Law',
+  'Chemical Bonding',
+  'Chemical Equilibrium',
+  'Functions & Stack Frames',
+  'Recursion & Base Cases',
+  'Number Systems & Rationals',
+  'Coordinate Geometry',
+];
 
 export default function TeacherDashboard() {
   const { currentUser } = useAuth();
@@ -47,12 +50,14 @@ export default function TeacherDashboard() {
   const [filterLevel, setFilterLevel] = useState('All');
   const [filterSubject, setFilterSubject] = useState('All');
 
-  // Student Report Modal State
+  // Student Report Modal & Clarification State
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [activeStudent, setActiveStudent] = useState(null);
-  const [feedbackMessage, setFeedbackMessage] = useState('');
-  const [feedbackType, setFeedbackType] = useState('revision_focus');
-  const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+  const [clarificationStatus, setClarificationStatus] = useState('improve_focus'); // 'needs_extra_help' | 'improve_focus' | 'doing_well'
+  const [selectedTopics, setSelectedTopics] = useState([]);
+  const [clarificationComment, setClarificationComment] = useState('');
+  const [clarificationSuccess, setClarificationSuccess] = useState(false);
+  const [savingClarification, setSavingClarification] = useState(false);
 
   // Live incoming submissions & auto-polling state
   const [incomingSubmissions, setIncomingSubmissions] = useState([]);
@@ -83,141 +88,51 @@ export default function TeacherDashboard() {
   // Initial Fetch & 15-second Polling Setup
   useEffect(() => {
     async function fetchTeacherData() {
+      const headers = {
+        'x-user-role': currentUser?.role || 'teacher',
+        'x-user-id': currentUser?.id || '00000000-0000-0000-0000-000000000002',
+        'x-user-email': currentUser?.email || 'rajesh.rao@learnlens.edu',
+      };
+
       try {
-        const res = await fetch('http://localhost:5000/api/teacher/class/c0000000-0000-0000-0000-000000000001/analytics');
-        if (res.ok) {
-          const data = await res.json();
+        const [analyticsRes, incomingRes] = await Promise.all([
+          fetch('http://localhost:5000/api/teacher/class/c0000000-0000-0000-0000-000000000001/analytics', { headers }),
+          fetch('http://localhost:5000/api/teacher/reports/incoming', { headers }),
+        ]);
+
+        if (analyticsRes.ok) {
+          const data = await analyticsRes.json();
           setAnalytics(data);
-          if (data.incomingSubmissions) {
-            setIncomingSubmissions(data.incomingSubmissions);
-          }
           if (data.reviewQueue && data.reviewQueue.length > 0) {
             setReviewQuestions(data.reviewQueue);
           }
-          setLoading(false);
-          return;
         }
+
+        if (incomingRes.ok) {
+          const incData = await incomingRes.json();
+          if (incData.submissions) {
+            setIncomingSubmissions(incData.submissions);
+          }
+        }
+        setLoading(false);
       } catch (err) {
         console.warn('Teacher analytics endpoint unreachable, using fallback');
+        setLoading(false);
       }
-
-      // Default demo state
-      setAnalytics({
-        className: 'Class 11-A (Mathematics & Science)',
-        totalStudents: 28,
-        classAverageScore: 64.2,
-        weakestPrerequisite: 'Algebraic Identities & Factoring (48% average)',
-        topicPerformance: [
-          { topic: 'Number Systems', accuracy: 88 },
-          { topic: 'Kinematics', accuracy: 78 },
-          { topic: 'Factoring', accuracy: 48 },
-          { topic: 'Quadratics', accuracy: 42 },
-          { topic: 'Rotational Dyn', accuracy: 40 },
-          { topic: 'Chemical Bonding', accuracy: 64 },
-          { topic: 'CS Stack', accuracy: 82 },
-        ],
-        students: [
-          {
-            id: '00000000-0000-0000-0000-000000000001',
-            name: 'Priya Sharma',
-            class: 'Class 11-A',
-            subject: 'Mathematics',
-            level: 'Level 1: Foundational Review',
-            parentName: 'Sunita Sharma',
-            diagnosticScore: '50%',
-            weakTopic: 'Quadratic Equations (33%)',
-            rootPrerequisite: 'Algebraic Factoring (45%)',
-            status: 'Needs Support',
-            statusColor: 'amber',
-            topicBreakdown: [
-              { topic: 'Factoring', score: 45 },
-              { topic: 'Quadratics', score: 33 },
-              { topic: 'Kinematics', score: 78 },
-              { topic: 'CS Stacks', score: 82 },
-            ],
-          },
-          {
-            id: '00000000-0000-0000-0000-000000000005',
-            name: 'Rahul Verma',
-            class: 'Class 11-A',
-            subject: 'Physics',
-            level: 'Level 2: Intermediate',
-            parentName: 'Amit Verma',
-            diagnosticScore: '55%',
-            weakTopic: 'Rotational Dynamics (40%)',
-            rootPrerequisite: 'Vector Cross Products (50%)',
-            status: 'Needs Support',
-            statusColor: 'amber',
-            topicBreakdown: [
-              { topic: 'Kinematics', score: 65 },
-              { topic: 'Rotational Dyn', score: 40 },
-              { topic: 'Vectors', score: 50 },
-            ],
-          },
-          {
-            id: '00000000-0000-0000-0000-000000000006',
-            name: 'Ananya Sen',
-            class: 'Class 11-A',
-            subject: 'Computer Science',
-            level: 'Level 3: Advanced',
-            parentName: 'Subhash Sen',
-            diagnosticScore: '85%',
-            weakTopic: 'None',
-            rootPrerequisite: 'Foundations Mastered',
-            status: 'On Track',
-            statusColor: 'emerald',
-            topicBreakdown: [
-              { topic: 'CS Stacks', score: 92 },
-              { topic: 'Recursion', score: 88 },
-              { topic: 'Maths', score: 85 },
-            ],
-          },
-          {
-            id: '00000000-0000-0000-0000-000000000007',
-            name: 'Arjun Sharma',
-            class: 'Class 9-B',
-            subject: 'Mathematics',
-            level: 'Level 2: Intermediate',
-            parentName: 'Sunita Sharma',
-            diagnosticScore: '72%',
-            weakTopic: 'Linear Equations (2 Var)',
-            rootPrerequisite: 'Line Intersections',
-            status: 'On Track',
-            statusColor: 'emerald',
-            topicBreakdown: [
-              { topic: 'Linear Eq', score: 62 },
-              { topic: 'Geometry', score: 80 },
-            ],
-          },
-        ],
-      });
-      setIncomingSubmissions([
-        {
-          id: 'sub-1',
-          studentName: 'Priya Sharma',
-          subject: 'Mathematics',
-          score: '5/10 (50%)',
-          submittedAt: 'Just now',
-          confidenceSummary: '3 Sure, 4 Not Sure, 3 Guessing',
-        },
-        {
-          id: 'sub-2',
-          studentName: 'Rahul Verma',
-          subject: 'Physics',
-          score: '6/10 (60%)',
-          submittedAt: '2 mins ago',
-          confidenceSummary: '5 Sure, 3 Not Sure, 2 Guessing',
-        },
-      ]);
-      setLoading(false);
     }
 
     fetchTeacherData();
 
-    // 15-second polling interval for incoming submissions
+    // 15-second polling interval for incoming reports
     const interval = setInterval(async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/teacher/incoming-submissions');
+        const res = await fetch('http://localhost:5000/api/teacher/reports/incoming', {
+          headers: {
+            'x-user-role': currentUser?.role || 'teacher',
+            'x-user-id': currentUser?.id || '00000000-0000-0000-0000-000000000002',
+            'x-user-email': currentUser?.email || 'rajesh.rao@learnlens.edu',
+          },
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.submissions) {
@@ -231,7 +146,7 @@ export default function TeacherDashboard() {
     }, 15000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [currentUser]);
 
   // Filter students
   const filteredStudents = (analytics?.students || []).filter((s) => {
@@ -244,37 +159,105 @@ export default function TeacherDashboard() {
   // Open full student report
   const handleOpenReport = (student) => {
     setActiveStudent(student);
+    setClarificationStatus(student.latestClarification?.status || (student.needsAttention ? 'improve_focus' : 'doing_well'));
+    setSelectedTopics(student.latestClarification?.topics || (student.weakTopic && student.weakTopic !== 'None' ? [student.weakTopic] : []));
+    setClarificationComment(student.latestClarification?.comment || '');
+    setClarificationSuccess(false);
     setReportModalOpen(true);
-    setFeedbackMessage('');
-    setFeedbackSuccess(false);
   };
 
-  // Submit Feedback
-  const handleSendFeedback = async (e) => {
-    e.preventDefault();
-    if (!activeStudent || !feedbackMessage) return;
+  const handleOpenReportForSubmission = (sub) => {
+    const found = (analytics?.students || []).find((s) => s.id === sub.studentId || s.name === sub.studentName);
+    if (found) {
+      handleOpenReport(found);
+    } else {
+      handleOpenReport({
+        id: sub.studentId,
+        name: sub.studentName,
+        class: sub.className || 'Class 11-A',
+        parentName: 'Parent',
+        subject: sub.subject,
+        level: 'Diagnostic Track',
+        diagnosticScore: `${sub.percentage}%`,
+        overallPercentage: sub.percentage,
+        classRank: sub.classRank || 1,
+        classTotal: sub.classTotal || 1,
+        weakTopic: sub.weakTopics?.[0]?.topicName || 'General Practice',
+        rootPrerequisite: sub.weakTopics?.[0]?.rootPrerequisite || 'Foundation Review',
+        needsAttention: sub.isNew,
+        latestReport: { id: sub.id, marks_earned: sub.marksEarned, marks_possible: sub.marksPossible, percentage: sub.percentage },
+      });
+    }
+  };
 
+  const toggleTopic = (topicName) => {
+    setSelectedTopics((prev) =>
+      prev.includes(topicName) ? prev.filter((t) => t !== topicName) : [...prev, topicName]
+    );
+  };
+
+  // Save Clarification (Teacher Note)
+  const handleSaveClarification = async (e) => {
+    e.preventDefault();
+    if (!activeStudent || !clarificationComment.trim()) return;
+
+    setSavingClarification(true);
     try {
-      await fetch('http://localhost:5000/api/teacher/feedback', {
+      const res = await fetch('http://localhost:5000/api/teacher/clarifications', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-role': currentUser?.role || 'teacher',
+          'x-user-id': currentUser?.id || '00000000-0000-0000-0000-000000000002',
+          'x-user-email': currentUser?.email || 'rajesh.rao@learnlens.edu',
+        },
         body: JSON.stringify({
+          reportId: activeStudent.latestReport?.id,
           studentId: activeStudent.id,
-          studentName: activeStudent.name,
-          teacherId: currentUser?.id,
-          message: feedbackMessage,
-          feedbackType,
+          status: clarificationStatus,
+          topics: selectedTopics,
+          comment: clarificationComment.trim(),
         }),
       });
-    } catch (e) {
-      console.warn('Feedback recorded locally');
-    }
 
-    setFeedbackSuccess(true);
-    setTimeout(() => {
-      setFeedbackSuccess(false);
-      setReportModalOpen(false);
-    }, 1600);
+      if (res.ok) {
+        const data = await res.json();
+        const updatedClarification = data.clarification;
+
+        const needsAtt = clarificationStatus !== 'doing_well';
+        const updatedStudent = {
+          ...activeStudent,
+          latestClarification: updatedClarification,
+          needsAttention: needsAtt,
+          status: needsAtt ? 'Needs attention' : 'On track',
+          statusColor: needsAtt ? 'amber' : 'emerald',
+        };
+
+        setActiveStudent(updatedStudent);
+
+        // Update student in list
+        if (analytics?.students) {
+          setAnalytics((prev) => ({
+            ...prev,
+            students: prev.students.map((s) => (s.id === activeStudent.id ? updatedStudent : s)),
+          }));
+        }
+
+        // Clear "New" badge on incoming list for this student
+        setIncomingSubmissions((prev) =>
+          prev.map((sub) =>
+            sub.studentId === activeStudent.id ? { ...sub, isNew: false, reviewStatus: 'reviewed' } : sub
+          )
+        );
+
+        setClarificationSuccess(true);
+      }
+    } catch (e) {
+      console.warn('Clarification saved offline/in-memory');
+      setClarificationSuccess(true);
+    } finally {
+      setSavingClarification(false);
+    }
   };
 
   // Approve AI Question
@@ -410,7 +393,8 @@ export default function TeacherDashboard() {
                 <th className="py-3.5 px-4">Student & Class</th>
                 <th className="py-3.5 px-4">Linked Parent</th>
                 <th className="py-3.5 px-4">Subject & Level</th>
-                <th className="py-3.5 px-4">Diagnostic Score</th>
+                <th className="py-3.5 px-4">Overall %</th>
+                <th className="py-3.5 px-4">Class Rank</th>
                 <th className="py-3.5 px-4">Primary Weakness</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Action</th>
@@ -436,7 +420,15 @@ export default function TeacherDashboard() {
                     <span className="text-[10px] text-[#6B6660]">{s.level.split(':')[0]}</span>
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-[#F26522]">
-                    {s.diagnosticScore}
+                    {s.overallPercentage !== undefined ? `${s.overallPercentage}%` : s.diagnosticScore}
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <span className="font-bold text-[#0D0D0D]">
+                      Rank {s.classRank || 1}
+                    </span>
+                    <span className="text-[10px] text-[#6B6660] block">
+                      of {s.classTotal || 1} in class
+                    </span>
                   </td>
                   <td className="py-3.5 px-4 text-[#0D0D0D]">
                     <div className="text-xs font-medium">{s.weakTopic}</div>
@@ -444,11 +436,11 @@ export default function TeacherDashboard() {
                   </td>
                   <td className="py-3.5 px-4">
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                      s.statusColor === 'emerald'
-                        ? 'bg-[#EBF7EE] text-[#1E7E34] border border-[#C3E6CB]'
-                        : 'bg-[#FFF3EC] text-[#F26522] border border-[#F26522]/20'
+                      s.needsAttention
+                        ? 'bg-[#FFF3EC] text-[#F26522] border border-[#F26522]/30'
+                        : 'bg-[#EBF7EE] text-[#1E7E34] border border-[#C3E6CB]'
                     }`}>
-                      {s.status}
+                      {s.needsAttention ? 'Needs attention' : 'On track'}
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-right">
@@ -460,7 +452,7 @@ export default function TeacherDashboard() {
                       }}
                       className="px-3 py-1.5 rounded-full bg-[#0D0D0D] text-white hover:bg-[#F26522] transition-colors text-xs font-bold"
                     >
-                      Report
+                      Review
                     </button>
                   </td>
                 </tr>
@@ -479,7 +471,7 @@ export default function TeacherDashboard() {
               <span className="relative inline-flex rounded-full h-3 w-3 bg-[#F26522]"></span>
             </span>
             <h3 className="font-heading font-extrabold text-base text-[#0D0D0D]">
-              Live Quiz Submissions (Auto-Polling 15s)
+              Incoming Quiz Submissions (Auto-Polling 15s)
             </h3>
           </div>
           <span className="text-[11px] font-mono text-[#6B6660]">
@@ -488,27 +480,63 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="space-y-2.5">
-          {incomingSubmissions.map((sub, idx) => (
-            <div
-              key={sub.id || idx}
-              className="p-3.5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-            >
-              <div className="flex items-center gap-3">
-                <FileText className="w-4 h-4 text-[#F26522]" />
-                <div>
-                  <span className="font-bold text-[#0D0D0D]">{tName(sub.studentName)}</span>
-                  <span className="text-[#6B6660] ml-2">submitted <strong>{sub.subject}</strong></span>
+          {incomingSubmissions.length === 0 ? (
+            <div className="p-4 text-center text-xs text-[#6B6660] bg-[#F5F0EA] rounded-2xl">
+              No recent incoming submissions for your assigned cohort.
+            </div>
+          ) : (
+            incomingSubmissions.map((sub, idx) => (
+              <div
+                key={sub.id || idx}
+                onClick={() => handleOpenReportForSubmission(sub)}
+                className="p-3.5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] hover:border-[#F26522]/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-white border border-[#E3DCD3] flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4 text-[#F26522]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-[#0D0D0D] text-sm">{tName(sub.studentName)}</span>
+                      {sub.isNew && (
+                        <span className="px-2 py-0.5 rounded-full bg-[#F26522] text-white text-[10px] font-extrabold tracking-wider uppercase shadow-xs">
+                          New
+                        </span>
+                      )}
+                      <span className="text-[11px] text-[#6B6660]">({sub.className || 'Class 11-A'})</span>
+                    </div>
+                    <div className="text-[11px] text-[#6B6660]">
+                      Subject: <strong className="text-[#0D0D0D]">{sub.subject}</strong> • {sub.rankText || `Rank ${sub.classRank || 1} in class`}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 sm:justify-end">
+                  <div className="text-right">
+                    <div className="font-mono font-bold text-[#0D0D0D] text-sm">
+                      {sub.marksEarned !== undefined ? `${sub.marksEarned}/${sub.marksPossible}` : sub.score}
+                    </div>
+                    <div className="text-[10px] text-[#6B6660]">
+                      {sub.percentage !== undefined ? `${sub.percentage}% Score` : ''}
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-white border border-[#E3DCD3] text-[#6B6660]">
+                    {sub.submittedAt?.includes('T') ? 'Recently' : sub.submittedAt || 'Active'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenReportForSubmission(sub);
+                    }}
+                    className="px-3 py-1 rounded-full bg-[#0D0D0D] text-white hover:bg-[#F26522] text-xs font-bold transition-colors"
+                  >
+                    Clarify
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="font-mono font-bold text-[#0D0D0D]">{sub.score}</span>
-                <span className="text-[10px] text-[#6B6660]">{sub.confidenceSummary}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white border border-[#E3DCD3] text-[#6B6660]">
-                  {sub.submittedAt.includes('T') ? 'Recently' : sub.submittedAt}
-                </span>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </Card>
 
@@ -639,30 +667,125 @@ export default function TeacherDashboard() {
               </div>
             </div>
 
-            {/* Teacher Guidance Box */}
-            <form onSubmit={handleSendFeedback} className="space-y-4 pt-2 border-t border-[#E3DCD3]">
+            {/* Teacher Clarification Box */}
+            <form onSubmit={handleSaveClarification} className="space-y-4 pt-3 border-t border-[#E3DCD3]">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#0D0D0D] flex items-center gap-1.5">
+                    <MessageSquare className="w-4 h-4 text-[#F26522]" />
+                    <span>Teacher Clarification & Guidance</span>
+                  </label>
+                  <span className="text-[11px] text-[#6B6660]">
+                    Visible to Student & {tName(activeStudent.parentName)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#6B6660]">
+                  Clarify whether the student needs extra help, improve focus on specific concepts, or is doing well.
+                </p>
+              </div>
+
+              {/* Status Radio Pills */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {[
+                  { id: 'needs_extra_help', label: 'Needs Extra Help', desc: 'Critical support required', color: 'border-rose-300 bg-rose-50/50 text-rose-800' },
+                  { id: 'improve_focus', label: 'Improve Focus', desc: 'Focus on specific weak topics', color: 'border-amber-300 bg-amber-50/50 text-amber-800' },
+                  { id: 'doing_well', label: 'Doing Well', desc: 'Mastery achieved, keep practice', color: 'border-emerald-300 bg-emerald-50/50 text-emerald-800' },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => setClarificationStatus(st.id)}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                      clarificationStatus === st.id
+                        ? `${st.color} ring-2 ring-[#0D0D0D]/10 font-bold shadow-xs`
+                        : 'border-[#E3DCD3] bg-[#F5F0EA] text-[#6B6660] hover:text-[#0D0D0D]'
+                    }`}
+                  >
+                    <div className="text-xs font-extrabold">{st.label}</div>
+                    <div className="text-[10px] opacity-80 mt-0.5">{st.desc}</div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Topics Picker */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#0D0D0D] flex items-center gap-1.5">
-                  <MessageSquare className="w-4 h-4 text-[#F26522]" />
-                  <span>Send Teacher Guidance (Delivered to Student & {tName(activeStudent.parentName)})</span>
-                </label>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#0D0D0D]">Focus Topics</span>
+                  <span className="text-[10px] text-[#6B6660]">
+                    {selectedTopics.length} selected
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 bg-[#F5F0EA] rounded-2xl border border-[#E3DCD3]">
+                  {/* Weak topics first */}
+                  {activeStudent.weakTopic && activeStudent.weakTopic !== 'None' && (
+                    <button
+                      type="button"
+                      onClick={() => toggleTopic(activeStudent.weakTopic)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                        selectedTopics.includes(activeStudent.weakTopic)
+                          ? 'bg-[#F26522] text-white'
+                          : 'bg-white border border-[#F26522]/40 text-[#F26522]'
+                      }`}
+                    >
+                      <span>⚠ {activeStudent.weakTopic}</span>
+                      <span className="text-[9px] uppercase px-1 rounded-full bg-white/20">Weak</span>
+                    </button>
+                  )}
+                  {CURRICULUM_TOPICS.filter((t) => t !== activeStudent.weakTopic).map((topic) => {
+                    const isSelected = selectedTopics.includes(topic);
+                    return (
+                      <button
+                        key={topic}
+                        type="button"
+                        onClick={() => toggleTopic(topic)}
+                        className={`px-2.5 py-1 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#0D0D0D] text-white font-bold'
+                            : 'bg-white border border-[#E3DCD3] text-[#6B6660] hover:text-[#0D0D0D]'
+                        }`}
+                      >
+                        {topic}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Comment Textarea (Max 500 chars) */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#0D0D0D]">Teacher Note / Recommendation</span>
+                  <span className={`text-[10px] font-mono ${clarificationComment.length > 480 ? 'text-rose-600 font-bold' : 'text-[#6B6660]'}`}>
+                    {clarificationComment.length} / 500 characters
+                  </span>
+                </div>
                 <textarea
                   rows={3}
-                  value={feedbackMessage}
-                  onChange={(e) => setFeedbackMessage(e.target.value)}
-                  placeholder="e.g. Focus on middle-term splitting practice this week before our quiz..."
+                  value={clarificationComment}
+                  onChange={(e) => setClarificationComment(e.target.value)}
+                  maxLength={500}
+                  placeholder="e.g. Needs 25 mins daily focus on middle-term splitting before tackling rotational dynamics..."
                   className="w-full p-3.5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] text-xs sm:text-sm text-[#0D0D0D] placeholder:text-[#6B6660] focus:outline-none focus:border-[#F26522]"
                   required
                 />
               </div>
 
-              {feedbackSuccess ? (
-                <div className="p-3.5 rounded-2xl bg-[#EBF7EE] border border-[#C3E6CB] text-[#1E7E34] text-xs font-semibold flex items-center gap-2">
-                  <Check className="w-4 h-4 shrink-0" />
-                  <span>Feedback successfully delivered to student and parent!</span>
+              {clarificationSuccess ? (
+                <div className="p-3.5 rounded-2xl bg-[#EBF7EE] border border-[#C3E6CB] text-[#1E7E34] text-xs font-semibold flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 shrink-0" />
+                    <span>Clarification saved & marked as reviewed! Note updated for student and parent.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setClarificationSuccess(false)}
+                    className="text-xs text-[#1E7E34] underline font-bold"
+                  >
+                    Edit Again
+                  </button>
                 </div>
               ) : (
-                <div className="flex items-center justify-end gap-3">
+                <div className="flex items-center justify-end gap-3 pt-1">
                   <Button
                     type="button"
                     variant="ghost"
@@ -673,9 +796,10 @@ export default function TeacherDashboard() {
                   <Button
                     type="submit"
                     variant="primary"
+                    disabled={savingClarification || !clarificationComment.trim()}
                     icon={<Send className="w-4 h-4" />}
                   >
-                    Send Guidance
+                    {savingClarification ? 'Saving...' : 'Save Clarification'}
                   </Button>
                 </div>
               )}
