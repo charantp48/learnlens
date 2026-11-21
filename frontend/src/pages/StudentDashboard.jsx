@@ -17,16 +17,20 @@ import {
   Compass,
   Layers,
   GraduationCap,
-  Award
+  Award,
+  MessageSquare,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function StudentDashboard() {
   const { currentUser } = useAuth();
   const { t, tName } = useTranslation();
   const [rankData, setRankData] = useState(null);
+  const [teacherClarification, setTeacherClarification] = useState(null);
 
   useEffect(() => {
     if (currentUser?.id) {
+      // 1. Fetch live rank snapshot
       fetch(`http://localhost:5000/api/quiz/ranks/student/${currentUser.id}`, {
         headers: {
           'x-user-role': currentUser.role || 'student',
@@ -37,6 +41,20 @@ export default function StudentDashboard() {
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data?.rank) setRankData(data.rank);
+        })
+        .catch(() => {});
+
+      // 2. Fetch latest teacher clarification note
+      fetch(`http://localhost:5000/api/teacher/clarifications/student/${currentUser.id}`, {
+        headers: {
+          'x-user-role': currentUser.role || 'student',
+          'x-user-id': currentUser.id,
+          'x-user-email': currentUser.email || '',
+        },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.clarification) setTeacherClarification(data.clarification);
         })
         .catch(() => {});
     }
@@ -143,6 +161,75 @@ export default function StudentDashboard() {
           </p>
         </div>
       </div>
+
+      {/* Teacher Guidance & Focus Recommendation */}
+      {teacherClarification && (
+        <Card variant="surface" className="p-6 sm:p-8 space-y-4 border-2 border-[#F26522]/40 bg-[#FFFDFB]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E3DCD3] pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#F26522]/15 flex items-center justify-center shrink-0">
+                <MessageSquare className="w-4 h-4 text-[#F26522]" />
+              </div>
+              <div>
+                <SectionLabel text="TEACHER GUIDANCE & CLARIFICATION" />
+                <h3 className="font-heading font-extrabold text-base sm:text-lg text-[#0D0D0D] mt-0.5">
+                  Recommendation from {teacherClarification.teacher_name || 'Your Teacher'}
+                </h3>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
+                teacherClarification.status === 'needs_extra_help'
+                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                  : teacherClarification.status === 'improve_focus'
+                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                  : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+              }`}>
+                {teacherClarification.status === 'needs_extra_help'
+                  ? 'Needs Extra Help'
+                  : teacherClarification.status === 'improve_focus'
+                  ? 'Improve Focus'
+                  : 'Doing Well'}
+              </span>
+              <span className="text-xs text-[#6B6660]">
+                {new Date(teacherClarification.updated_at || teacherClarification.created_at || Date.now()).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] text-xs sm:text-sm text-[#0D0D0D] leading-relaxed italic">
+            "{teacherClarification.comment}"
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+            <div className="space-y-1.5">
+              <div className="text-[11px] font-bold text-[#6B6660] uppercase tracking-wider">
+                Assigned Priority Topics:
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(teacherClarification.topics || []).map((topic, idx) => (
+                  <span
+                    key={idx}
+                    className="text-xs font-semibold px-3 py-1 rounded-full bg-[#0D0D0D] text-white"
+                  >
+                    {topic}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <Link
+              to="/planner"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#F26522] text-white text-xs font-bold hover:bg-[#d95316] transition-colors self-start sm:self-auto cursor-pointer shadow-xs shrink-0"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Open in Study Planner</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </Card>
+      )}
 
       {/* Top Weak Topics Identified */}
       <Card variant="surface" className="p-6 sm:p-8 space-y-4 border border-[#E3DCD3]">

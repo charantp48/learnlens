@@ -32,6 +32,7 @@ export function generateStudyPlan({
   examDate = null,
   startDate = new Date(),
   sessionDuration = PLANNER_CONFIG.defaultSessionDuration,
+  teacherClarification = null,
 } = {}) {
   // Normalize session duration to 25-30 minutes
   const validDuration = Math.min(
@@ -58,14 +59,41 @@ export function generateStudyPlan({
   // If exam is very close, maximize capacity
   const effectiveSessionsPerDay = isExamUrgent ? Math.min(3, sessionsPerDay + 1) : sessionsPerDay;
 
-  // Step 1: Build Priority Topics Queue
+  // Step 1: Incorporate Teacher Recommended Focus Topics into Learning Gaps
+  const effectiveGaps = [...learningGaps];
+  const teacherTopics = teacherClarification?.topics || [];
+
+  if (teacherClarification && teacherTopics.length > 0) {
+    teacherTopics.forEach((teacherTopicName, idx) => {
+      const existing = effectiveGaps.find(
+        (g) => (g.topicName || '').toLowerCase() === teacherTopicName.toLowerCase()
+      );
+      if (existing) {
+        existing.isTeacherRecommended = true;
+        existing.teacherStatus = teacherClarification.status;
+        existing.teacherComment = teacherClarification.comment;
+      } else {
+        effectiveGaps.unshift({
+          topicId: `teacher-focus-${idx + 1}`,
+          topicName: teacherTopicName,
+          accuracy: teacherClarification.status === 'needs_extra_help' ? 30 : 45,
+          isTeacherRecommended: true,
+          teacherStatus: teacherClarification.status,
+          teacherComment: teacherClarification.comment,
+        });
+      }
+    });
+  }
+
+  // Step 2: Build Priority Topics Queue
   // Rule 2: Root prerequisite topics MUST be placed before target weak topics
+  // Teacher priority topics are scheduled at highest priority after prerequisites
   const sessionQueue = [];
 
-  learningGaps.forEach((gap) => {
+  effectiveGaps.forEach((gap) => {
     // Determine session count based on accuracy (Rule 3)
     let sessionsNeeded = 2;
-    if (gap.accuracy < 35) sessionsNeeded = 3;
+    if (gap.accuracy < 35 || gap.isTeacherRecommended) sessionsNeeded = 3;
     else if (gap.accuracy < 60) sessionsNeeded = 2;
     else sessionsNeeded = 1;
 
@@ -78,6 +106,7 @@ export function generateStudyPlan({
           topicId: gap.rootPrerequisiteId,
           topicName: gap.rootPrerequisiteName,
           isPrerequisiteRoot: true,
+          isTeacherPriority: false,
           targetTopicName: gap.topicName,
           sessionIndex: i,
           totalForTopic: prereqSessions,
@@ -88,19 +117,24 @@ export function generateStudyPlan({
 
     // B. Target topic sessions come AFTER prerequisite sessions
     for (let i = 1; i <= sessionsNeeded; i++) {
+      const note = gap.isTeacherRecommended
+        ? `Teacher Priority Focus (${i}/${sessionsNeeded}): ${gap.teacherComment || `Focus on ${gap.topicName} as recommended by your teacher.`}`
+        : `Target Topic Practice (${i}/${sessionsNeeded}): Apply mastered concepts to solve ${gap.topicName} problems.`;
+
       sessionQueue.push({
         topicId: gap.topicId,
         topicName: gap.topicName,
         isPrerequisiteRoot: false,
+        isTeacherPriority: !!gap.isTeacherRecommended,
         targetTopicName: gap.topicName,
         sessionIndex: i,
         totalForTopic: sessionsNeeded,
-        focusNotes: `Target Topic Practice (${i}/${sessionsNeeded}): Apply mastered concepts to solve ${gap.topicName} problems.`,
+        focusNotes: note,
       });
     }
   });
 
-  // Step 2: Allocate Sessions across Calendar Days
+  // Step 3: Allocate Sessions across Calendar Days
   const scheduledSessions = [];
   const startObj = new Date(startDate);
   startObj.setHours(17, 0, 0, 0); // Default study time: 5:00 PM
@@ -129,14 +163,20 @@ export function generateStudyPlan({
       id: `plan-${index + 1}-${Date.now().toString().slice(-6)}`,
       topicId: item.topicId,
       topicName: item.topicName,
+      isPrerequisite: item.isPrerequisiteRoot,
       isPrerequisiteRoot: item.isPrerequisiteRoot,
+      isTeacherPriority: !!item.isTeacherPriority,
       targetTopicName: item.targetTopicName,
       scheduledDate: dateString,
       startTime: timeString,
+      duration: validDuration,
       durationMinutes: validDuration,
       status: 'planned',
+      description: item.focusNotes,
       focusNotes: item.focusNotes,
+      day: currentDayOffset + 1,
       dayNumber: currentDayOffset + 1,
+      sessionNumber: dailyCount + 1,
     });
 
     dailyCount += 1;
@@ -151,5 +191,15 @@ export function generateStudyPlan({
     daysUntilExam,
     isExamUrgent,
     sessions: scheduledSessions,
+    teacherRecommendation: teacherClarification
+      ? {
+          status: teacherClarification.status,
+          topics: teacherClarification.topics,
+          comment: teacherClarification.comment,
+          teacherName: teacherClarification.teacher_name || 'Teacher',
+        }
+      : null,
+    prerequisiteSessionsCount: scheduledSessions.filter((s) => s.isPrerequisite).length,
+    teacherPrioritySessionsCount: scheduledSessions.filter((s) => s.isTeacherPriority).length,
   };
 }

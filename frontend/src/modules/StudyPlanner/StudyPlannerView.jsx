@@ -14,7 +14,9 @@ import {
   ArrowRight, 
   Bot, 
   Flame, 
-  Filter
+  Filter,
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 
 export default function StudyPlannerView() {
@@ -32,6 +34,7 @@ export default function StudyPlannerView() {
 
   // Current Plan State
   const [plan, setPlan] = useState(null);
+  const [teacherClarification, setTeacherClarification] = useState(null);
 
   // Default gaps from student diagnostic
   const defaultGaps = [
@@ -45,8 +48,11 @@ export default function StudyPlannerView() {
   ];
 
   // Generate / Regenerate plan
-  const handleGenerate = (e) => {
+  const handleGenerate = (e, customClarification = undefined) => {
     if (e) e.preventDefault();
+
+    const activeClarification =
+      customClarification !== undefined ? customClarification : teacherClarification;
 
     const generated = generateStudyPlan({
       learningGaps: defaultGaps,
@@ -54,14 +60,37 @@ export default function StudyPlannerView() {
       sessionDuration,
       examDate: examDate || null,
       startDate: new Date(),
+      teacherClarification: activeClarification,
     });
 
     setPlan(generated);
   };
 
   useEffect(() => {
-    handleGenerate();
-  }, []);
+    if (currentUser?.id) {
+      fetch(`http://localhost:5000/api/teacher/clarifications/student/${currentUser.id}`, {
+        headers: {
+          'x-user-role': currentUser.role || 'student',
+          'x-user-id': currentUser.id,
+          'x-user-email': currentUser.email || '',
+        },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.clarification) {
+            setTeacherClarification(data.clarification);
+            handleGenerate(null, data.clarification);
+          } else {
+            handleGenerate(null, null);
+          }
+        })
+        .catch(() => {
+          handleGenerate(null, null);
+        });
+    } else {
+      handleGenerate(null, null);
+    }
+  }, [currentUser]);
 
   const toggleSessionComplete = (sessionId) => {
     const next = { ...completedSessions, [sessionId]: !completedSessions[sessionId] };
@@ -173,6 +202,55 @@ export default function StudyPlannerView() {
       {/* Plan Summary & Sessions Timeline */}
       {plan && (
         <div className="space-y-6">
+          {/* Teacher Recommendation Alert Card if active */}
+          {teacherClarification && (
+            <div className="p-5 sm:p-6 rounded-[24px] bg-[#FFF3EC] border-2 border-[#F26522]/40 shadow-xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#F26522]/20 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#F26522]/15 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-[#F26522]" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#F26522]">Teacher Priority Recommendation</span>
+                    <h3 className="font-heading font-extrabold text-sm sm:text-base text-[#0D0D0D]">
+                      Guidance from {teacherClarification.teacher_name || 'Your Teacher'}
+                    </h3>
+                  </div>
+                </div>
+
+                <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full self-start sm:self-auto ${
+                  teacherClarification.status === 'needs_extra_help'
+                    ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                    : teacherClarification.status === 'improve_focus'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                }`}>
+                  {teacherClarification.status === 'needs_extra_help'
+                    ? 'Needs Extra Help'
+                    : teacherClarification.status === 'improve_focus'
+                    ? 'Improve Focus'
+                    : 'Doing Well'}
+                </span>
+              </div>
+
+              <p className="text-xs sm:text-sm text-[#0D0D0D] font-medium italic bg-white/70 p-3 rounded-xl border border-[#F26522]/20">
+                "{teacherClarification.comment}"
+              </p>
+
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span className="text-[11px] font-bold text-[#6B6660]">Teacher Focus Topics:</span>
+                {(teacherClarification.topics || []).map((top, idx) => (
+                  <span
+                    key={idx}
+                    className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#0D0D0D] text-white"
+                  >
+                    {top}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Plan KPI Highlights */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Card padding="sm" hoverLift={false}>
@@ -207,7 +285,7 @@ export default function StudyPlannerView() {
           {/* Urgency Alert if exam is near */}
           {plan.isUrgent && (
             <Card padding="sm" className="bg-[#F26522]/10 border-[#F26522] text-[#0D0D0D] flex items-center gap-3">
-              <Flame className="w-5 h-5 text-[#F26522] shrink-0" />
+              <Flame className="w-5 h-5 text-[#F26522]" />
               <div className="text-xs">
                 <strong>Exam Proximity Acceleration Active:</strong> Sessions are scheduled compactly to complete prerequisites 48 hours prior to your exam.
               </div>
@@ -248,13 +326,18 @@ export default function StudyPlannerView() {
                         </button>
 
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#0D0D0D] text-white">
                               Day {sess.day} • Session {sess.sessionNumber}
                             </span>
                             {sess.isPrerequisite && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F26522]/15 text-[#F26522]">
                                 Prerequisite Review
+                              </span>
+                            )}
+                            {sess.isTeacherPriority && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F26522] text-white">
+                                Teacher Priority
                               </span>
                             )}
                           </div>

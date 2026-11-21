@@ -208,9 +208,49 @@ router.get('/reports/incoming', (req, res) => {
 router.get('/reports/:reportId', (req, res) => {
   try {
     const { reportId } = req.params;
+    const requester = getRequester(req);
     const report = studentReportsStore.find((r) => r.id === reportId);
     if (!report) {
       return res.status(404).json({ error: 'NotFound', message: 'Report not found.' });
+    }
+
+    const users = getAllUsers();
+    const targetStudent = users.find((u) => u.id === report.student_id);
+
+    // RLS: Teacher sees only students in own class, student sees own, parent sees linked child, admin sees all
+    if (requester.role === 'teacher') {
+      const teacher = users.find((u) => u.id === requester.id || u.email?.toLowerCase() === requester.email);
+      const teacherClass = (teacher?.className || '').toLowerCase();
+      const studentClass = (report.class_name || targetStudent?.className || '').toLowerCase();
+      if (!teacherClass.includes(studentClass) && !teacherClass.includes('all')) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: `Access Denied: You may only view reports for students in your assigned class (${teacher?.className || 'None'}).`,
+        });
+      }
+    } else if (requester.role === 'student') {
+      if ((requester.id && requester.id !== report.student_id) || (requester.email && requester.email !== report.student_email?.toLowerCase())) {
+        return res.status(403).json({ error: 'Forbidden', message: 'Students may only view their own reports.' });
+      }
+    } else if (requester.role === 'parent') {
+      const parentUser = users.find((u) => u.id === requester.id || u.email?.toLowerCase() === requester.email);
+      const isDemoParent =
+        requester.id === '00000000-0000-0000-0000-000000000003' ||
+        requester.email === 'sunita.sharma@learnlens.edu';
+      const isDemoChild =
+        targetStudent &&
+        (targetStudent.name === 'Priya Sharma' || targetStudent.name === 'Arjun Sharma');
+
+      const linkedChildNames = (parentUser?.linkedChild || '').toLowerCase();
+      const isLinked =
+        (isDemoParent && isDemoChild) ||
+        (targetStudent &&
+          (linkedChildNames.includes(targetStudent.name.toLowerCase()) ||
+            parentUser?.linked_student_id === targetStudent.id));
+
+      if (!isLinked) {
+        return res.status(403).json({ error: 'Forbidden', message: 'Parents can only view reports for their linked children.' });
+      }
     }
 
     const clarification = getClarificationForReport(reportId);
@@ -321,6 +361,62 @@ router.post('/clarifications', async (req, res) => {
 router.get('/clarifications/student/:studentId', (req, res) => {
   try {
     const { studentId } = req.params;
+    const requester = getRequester(req);
+    const users = getAllUsers();
+    const targetStudent = users.find(
+      (u) => u.id === studentId || u.email?.toLowerCase() === studentId.toLowerCase()
+    );
+
+    // RLS: Student can only view own note; parent only linked children; teacher only assigned classes; admin all
+    if (requester.role === 'student') {
+      if (
+        (requester.id && requester.id !== studentId) ||
+        (requester.email && targetStudent && requester.email !== targetStudent.email.toLowerCase())
+      ) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Students may only view their own teacher note.',
+        });
+      }
+    } else if (requester.role === 'parent') {
+      const parentUser = users.find(
+        (u) => u.id === requester.id || u.email?.toLowerCase() === requester.email
+      );
+      const isDemoParent =
+        requester.id === '00000000-0000-0000-0000-000000000003' ||
+        requester.email === 'sunita.sharma@learnlens.edu';
+      const isDemoChild =
+        targetStudent &&
+        (targetStudent.name === 'Priya Sharma' || targetStudent.name === 'Arjun Sharma');
+
+      const linkedChildNames = (parentUser?.linkedChild || '').toLowerCase();
+      const isLinked =
+        (isDemoParent && isDemoChild) ||
+        (targetStudent &&
+          (linkedChildNames.includes(targetStudent.name.toLowerCase()) ||
+            parentUser?.linked_student_id === targetStudent.id));
+
+      if (!isLinked) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Parents can only view teacher notes for their linked children.',
+        });
+      }
+    } else if (requester.role === 'teacher') {
+      const teacherUser = users.find(
+        (u) => u.id === requester.id || u.email?.toLowerCase() === requester.email
+      );
+      const teacherClasses = (teacherUser?.className || '').toLowerCase();
+      const studentClass = (targetStudent?.className || '').toLowerCase();
+      const canAccess = teacherClasses.includes(studentClass) || teacherClasses.includes('all');
+      if (!canAccess) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: `Teachers can only view students in their assigned classes (${teacherUser?.className || 'None'}).`,
+        });
+      }
+    }
+
     const clarification = getClarificationForStudent(studentId);
     res.json({ status: 'ok', clarification });
   } catch (err) {

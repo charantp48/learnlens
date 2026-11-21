@@ -1,6 +1,7 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
 import { generateStudyPlan } from '../services/studyPlanner.js';
+import { getClarificationForStudent } from '../services/reportService.js';
 
 const router = express.Router();
 
@@ -8,6 +9,7 @@ const router = express.Router();
 router.get('/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
+    const clarification = getClarificationForStudent(studentId);
 
     // 1. Try reading from Supabase if connected
     if (supabase) {
@@ -37,11 +39,16 @@ router.get('/:studentId', async (req, res) => {
           status: s.status,
           focusNotes: s.focus_notes,
         }));
-        return res.json({ status: 'ok', source: 'database', sessions: formatted });
+        return res.json({
+          status: 'ok',
+          source: 'database',
+          sessions: formatted,
+          teacherClarification: clarification,
+        });
       }
     }
 
-    // 2. Fallback to default generated plan for Priya
+    // 2. Generate adaptive study plan incorporating teacher recommendations
     const defaultGaps = [
       {
         topicId: '10000000-0000-0000-0000-000000000004',
@@ -56,12 +63,14 @@ router.get('/:studentId', async (req, res) => {
       learningGaps: defaultGaps,
       dailyFreeMinutes: 60,
       sessionDuration: 25,
+      teacherClarification: clarification,
     });
 
     res.json({
       status: 'ok',
       source: 'deterministic_engine',
       ...plan,
+      teacherClarification: clarification,
     });
   } catch (err) {
     console.error('Error fetching study plan:', err);
@@ -73,20 +82,30 @@ router.get('/:studentId', async (req, res) => {
 router.post('/generate', (req, res) => {
   try {
     const {
+      studentId = null,
       learningGaps = [],
       dailyFreeMinutes = 60,
       examDate = null,
       sessionDuration = 25,
+      teacherClarification = null,
     } = req.body;
+
+    const activeClarification =
+      teacherClarification || (studentId ? getClarificationForStudent(studentId) : null);
 
     const plan = generateStudyPlan({
       learningGaps,
       dailyFreeMinutes,
       examDate,
       sessionDuration,
+      teacherClarification: activeClarification,
     });
 
-    res.json({ status: 'ok', ...plan });
+    res.json({
+      status: 'ok',
+      ...plan,
+      teacherClarification: activeClarification,
+    });
   } catch (err) {
     console.error('Error generating study plan:', err);
     res.status(500).json({ error: 'PlanGenerationError', message: err.message });

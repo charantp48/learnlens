@@ -15,7 +15,8 @@ import {
   User,
   Compass,
   Layers,
-  ChevronDown
+  ChevronDown,
+  Award
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -109,8 +110,68 @@ export default function ParentDashboard() {
     },
   ];
 
+  const [children, setChildren] = useState(childrenList);
   const [selectedChildId, setSelectedChildId] = useState(childrenList[0].id);
-  const activeChild = childrenList.find((c) => c.id === selectedChildId) || childrenList[0];
+  const [childRank, setChildRank] = useState(null);
+  const [childClarification, setChildClarification] = useState(null);
+
+  const activeChild = children.find((c) => c.id === selectedChildId) || children[0];
+
+  useEffect(() => {
+    // 1. Fetch parent's linked children from server
+    if (currentUser?.id) {
+      fetch('http://localhost:5000/api/parent/children', {
+        headers: {
+          'x-user-role': currentUser.role || 'parent',
+          'x-user-id': currentUser.id,
+          'x-user-email': currentUser.email || '',
+        },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.children && data.children.length > 0) {
+            setChildren(data.children);
+            if (!data.children.some((c) => c.id === selectedChildId)) {
+              setSelectedChildId(data.children[0].id);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (selectedChildId) {
+      // 2. Fetch live rank for selected child
+      fetch(`http://localhost:5000/api/quiz/ranks/student/${selectedChildId}`, {
+        headers: {
+          'x-user-role': currentUser?.role || 'parent',
+          'x-user-id': currentUser?.id || '',
+          'x-user-email': currentUser?.email || '',
+        },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.rank) setChildRank(data.rank);
+        })
+        .catch(() => {});
+
+      // 3. Fetch active teacher clarification for selected child
+      fetch(`http://localhost:5000/api/teacher/clarifications/student/${selectedChildId}`, {
+        headers: {
+          'x-user-role': currentUser?.role || 'parent',
+          'x-user-id': currentUser?.id || '',
+          'x-user-email': currentUser?.email || '',
+        },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.clarification) setChildClarification(data.clarification);
+          else setChildClarification(null);
+        })
+        .catch(() => {});
+    }
+  }, [selectedChildId, currentUser]);
 
   const [ackMessage, setAckMessage] = useState('');
   const [ackSubmitted, setAckSubmitted] = useState(false);
@@ -140,11 +201,11 @@ export default function ParentDashboard() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto py-4 sm:py-8">
-      {/* Header Banner with Child Selector */}
+      {/* Header Banner with Child Selector & Real-Time Rank */}
       <Card variant="surface" className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border border-[#E3DCD3]">
         <div className="flex items-center gap-4 sm:gap-5">
           <img
-            src={activeChild.avatar}
+            src={activeChild.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya'}
             alt={activeChild.name}
             className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#F5F0EA] border-2 border-[#F26522]/40 p-1 shrink-0 object-cover"
           />
@@ -154,7 +215,7 @@ export default function ParentDashboard() {
                 Parent View
               </span>
               <span className="text-xs font-semibold text-[#6B6660]">
-                {activeChild.grade} • {activeChild.school}
+                {activeChild.grade} • {activeChild.school || 'Kendriya Vidyalaya No. 1'}
               </span>
             </div>
             <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-[#0D0D0D] tracking-tight">
@@ -163,27 +224,43 @@ export default function ParentDashboard() {
           </div>
         </div>
 
-        {/* Child Selector Dropdown/Pills for Multiple Children */}
-        <div className="p-3 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] space-y-1.5 shrink-0">
-          <label className="text-[10px] font-bold uppercase tracking-wider text-[#6B6660] flex items-center gap-1">
-            <User className="w-3 h-3 text-[#F26522]" />
-            <span>Select Child:</span>
-          </label>
-          <div className="flex items-center gap-1.5">
-            {childrenList.map((child) => (
-              <button
-                key={child.id}
-                type="button"
-                onClick={() => setSelectedChildId(child.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  selectedChildId === child.id
-                    ? 'bg-[#0D0D0D] text-white shadow-xs'
-                    : 'bg-white text-[#6B6660] border border-[#E3DCD3] hover:text-[#0D0D0D]'
-                }`}
-              >
-                {tName(child.name.split(' ')[0])} ({child.grade.split('-')[0]})
-              </button>
-            ))}
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          {/* Child Selector Dropdown/Pills for Multiple Children */}
+          <div className="p-3 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] space-y-1.5 shrink-0">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[#6B6660] flex items-center gap-1">
+              <User className="w-3 h-3 text-[#F26522]" />
+              <span>Select Child:</span>
+            </label>
+            <div className="flex items-center gap-1.5">
+              {children.map((child) => (
+                <button
+                  key={child.id}
+                  type="button"
+                  onClick={() => setSelectedChildId(child.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    selectedChildId === child.id
+                      ? 'bg-[#0D0D0D] text-white shadow-xs'
+                      : 'bg-white text-[#6B6660] border border-[#E3DCD3] hover:text-[#0D0D0D]'
+                  }`}
+                >
+                  {tName(child.name.split(' ')[0])} ({child.grade.split('-')[0]})
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Child Live Rank Snapshot Card */}
+          <div className="p-3.5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] shrink-0 text-left sm:text-right space-y-0.5 min-w-[150px]">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#6B6660] flex items-center sm:justify-end gap-1">
+              <Award className="w-3 h-3 text-[#F26522]" />
+              <span>Child Rank</span>
+            </div>
+            <div className="font-heading font-extrabold text-sm sm:text-base text-[#0D0D0D]">
+              {childRank ? `Rank ${childRank.class_rank} of ${childRank.class_total_students}` : 'Rank: Active'}
+            </div>
+            <div className="text-[10px] text-[#6B6660]">
+              {childRank ? `School: #${childRank.school_rank} (${childRank.overall_percentage}% avg)` : 'Active Student'}
+            </div>
           </div>
         </div>
       </Card>
@@ -303,19 +380,62 @@ export default function ParentDashboard() {
 
       {/* Teacher's Note & Quick Acknowledgment */}
       <Card variant="surface" className="p-6 sm:p-8 space-y-5 border-l-4 border-l-[#F26522] border-[#E3DCD3]">
-        <div className="flex items-center justify-between border-b border-[#E3DCD3] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E3DCD3] pb-3">
           <div className="flex items-center gap-2 font-heading font-extrabold text-base text-[#0D0D0D]">
             <MessageSquare className="w-5 h-5 text-[#F26522]" />
-            <span>Note from Teacher: {tName(activeChild.teacherFeedback.teacherName)} ({activeChild.teacherFeedback.subject})</span>
+            <span>
+              Note from Teacher:{' '}
+              {tName(childClarification?.teacher_name || activeChild.teacherFeedback?.teacherName || 'Mr. Rajesh Rao')}
+            </span>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F5F0EA] text-[#6B6660] border border-[#E3DCD3]">
-            {activeChild.teacherFeedback.date}
-          </span>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {(childClarification?.status || activeChild.teacherFeedback?.status) && (
+              <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                (childClarification?.status || activeChild.teacherFeedback?.status) === 'needs_extra_help'
+                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                  : (childClarification?.status || activeChild.teacherFeedback?.status) === 'improve_focus'
+                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                  : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+              }`}>
+                {(childClarification?.status || activeChild.teacherFeedback?.status) === 'needs_extra_help'
+                  ? 'Needs Extra Help'
+                  : (childClarification?.status || activeChild.teacherFeedback?.status) === 'improve_focus'
+                  ? 'Improve Focus'
+                  : 'Doing Well'}
+              </span>
+            )}
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F5F0EA] text-[#6B6660] border border-[#E3DCD3]">
+              {childClarification
+                ? new Date(childClarification.updated_at || childClarification.created_at).toLocaleDateString()
+                : activeChild.teacherFeedback?.date || 'Today'}
+            </span>
+          </div>
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] text-xs sm:text-sm text-[#0D0D0D] italic leading-relaxed">
-          "{activeChild.teacherFeedback.message}"
+          "{childClarification?.comment || activeChild.teacherFeedback?.message}"
         </div>
+
+        {/* If teacher recommended specific focus topics */}
+        {((childClarification?.topics && childClarification.topics.length > 0) ||
+          (activeChild.teacherFeedback?.topics && activeChild.teacherFeedback.topics.length > 0)) && (
+          <div className="space-y-1.5 pt-1">
+            <div className="text-[11px] font-bold text-[#6B6660] uppercase tracking-wider">
+              Teacher's Recommended Focus Topics:
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {(childClarification?.topics || activeChild.teacherFeedback?.topics || []).map((top, idx) => (
+                <span
+                  key={idx}
+                  className="text-xs font-semibold px-3 py-1 rounded-full bg-[#0D0D0D] text-white"
+                >
+                  {top}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Parent Reply / Acknowledgment */}
         <form onSubmit={handleAcknowledge} className="space-y-3 pt-2">
