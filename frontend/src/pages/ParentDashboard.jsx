@@ -7,13 +7,15 @@ import {
   CheckCircle2, 
   MessageSquare, 
   Lightbulb, 
-  BookOpen,
-  Send,
-  Check,
-  TrendingUp,
-  Clock,
+  Send, 
+  Check, 
+  TrendingUp, 
+  Clock, 
   Sparkles,
-  ArrowRight
+  User,
+  Compass,
+  Layers,
+  ChevronDown
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -33,90 +35,85 @@ export default function ParentDashboard() {
   const { currentUser } = useAuth();
   const { t } = useTranslation();
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Multi-child support
+  const childrenList = [
+    {
+      id: '00000000-0000-0000-0000-000000000001',
+      name: 'Priya Sharma',
+      grade: 'Class 11-A',
+      school: 'Kendriya Vidyalaya No. 1',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya',
+      subjectResults: [
+        { subject: 'Mathematics', score: 50, level: 'Level 1: Foundational Review', status: 'Needs Practice' },
+        { subject: 'Physics', score: 78, level: 'Level 2: Intermediate', status: 'On Track' },
+        { subject: 'Chemistry', score: 64, level: 'Level 2: Intermediate', status: 'On Track' },
+        { subject: 'Computer Science', score: 82, level: 'Level 3: Advanced', status: 'Mastered' },
+      ],
+      jargonFreeSummary: "Priya is doing wonderfully in Computer Science and Physics (78%+). In Mathematics, she scored 50% not because 11th-grade quadratic concepts are too hard, but because of a small gap in 10th-grade factoring (splitting middle terms). LearnLens has scheduled 3 short 25-minute practice sessions that will help her catch up smoothly without stress.",
+      weakTopics: [
+        { topic: 'Algebraic Factoring', subject: 'Mathematics', plainText: 'Priya understands the quadratic formula, but occasionally makes calculation slips during factoring. 3 targeted exercises will resolve this completely.' },
+        { topic: 'Vector Resolution', subject: 'Physics', plainText: 'She understands force diagrams well; she just needs a quick refresher on resolving diagonal vectors before upcoming mechanics tests.' },
+      ],
+      topicScores: [
+        { topic: 'CS / Logic', score: 82 },
+        { topic: 'Kinematics', score: 78 },
+        { topic: 'Bonding', score: 64 },
+        { topic: 'Factoring', score: 45 },
+        { topic: 'Quadratics', score: 33 },
+      ],
+      studySchedule: [
+        { id: 'sess-1', title: 'Foundational Review: Middle-Term Splitting', duration: '30 mins', day: 'Today', time: '5:00 PM', status: 'Upcoming', statusColor: 'amber' },
+        { id: 'sess-2', title: 'Algebraic Identities Practice: (a+b)² & (a-b)²', duration: '25 mins', day: 'Tomorrow', time: '5:00 PM', status: 'Scheduled', statusColor: 'slate' },
+        { id: 'sess-3', title: 'Applying Factoring to Quadratic Equations', duration: '25 mins', day: 'Thursday', time: '6:00 PM', status: 'Scheduled', statusColor: 'slate' },
+      ],
+      teacherFeedback: {
+        teacherName: 'Mr. Rajesh Rao',
+        subject: 'Mathematics',
+        date: 'Today',
+        message: 'Priya has good logical thinking. She just needs 25 minutes of practice on middle-term splitting this week. Please encourage her to complete her scheduled sessions on LearnLens.',
+      },
+    },
+    {
+      id: '00000000-0000-0000-0000-000000000007',
+      name: 'Arjun Sharma',
+      grade: 'Class 9-B',
+      school: 'Kendriya Vidyalaya No. 1',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun',
+      subjectResults: [
+        { subject: 'Mathematics', score: 72, level: 'Level 2: Intermediate', status: 'On Track' },
+        { subject: 'Science', score: 85, level: 'Level 3: Advanced', status: 'Mastered' },
+        { subject: 'Social Science', score: 78, level: 'Level 2: Intermediate', status: 'On Track' },
+        { subject: 'English', score: 88, level: 'Level 3: Advanced', status: 'Mastered' },
+      ],
+      jargonFreeSummary: "Arjun is maintaining strong consistency across all subjects. In Mathematics, his geometry skills are strong (80%+). He should keep practicing coordinate geometry to maintain his current momentum.",
+      weakTopics: [
+        { topic: 'Linear Equations in 2 Variables', subject: 'Mathematics', plainText: 'Arjun understands how to plot points; he just needs a quick 20-minute review on finding line intersections.' }
+      ],
+      topicScores: [
+        { topic: 'English', score: 88 },
+        { topic: 'Science', score: 85 },
+        { topic: 'Geometry', score: 80 },
+        { topic: 'Linear Eq', score: 62 },
+        { topic: 'Polygons', score: 70 },
+      ],
+      studySchedule: [
+        { id: 'sess-a1', title: 'Linear Equations: Intersection Points', duration: '25 mins', day: 'Today', time: '6:00 PM', status: 'Upcoming', statusColor: 'amber' },
+        { id: 'sess-a2', title: 'Coordinate Geometry Review', duration: '25 mins', day: 'Friday', time: '5:30 PM', status: 'Scheduled', statusColor: 'slate' },
+      ],
+      teacherFeedback: {
+        teacherName: 'Ms. Sunita Patil',
+        subject: 'Mathematics',
+        date: 'Yesterday',
+        message: 'Arjun is participating actively in class. Keep up the encouragement at home!',
+      },
+    },
+  ];
+
+  const [selectedChildId, setSelectedChildId] = useState(childrenList[0].id);
+  const activeChild = childrenList.find((c) => c.id === selectedChildId) || childrenList[0];
+
   const [ackMessage, setAckMessage] = useState('');
   const [ackSubmitted, setAckSubmitted] = useState(false);
-
-  useEffect(() => {
-    async function fetchParentData() {
-      try {
-        const studentId = currentUser?.child_id || '00000000-0000-0000-0000-000000000001';
-        const res = await fetch(`http://localhost:5000/api/parent/child/${studentId}`);
-        if (res.ok) {
-          const json = await res.json();
-          setData(json);
-          setLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.warn('Parent API unreachable, falling back');
-      }
-
-      // Default demo fallback
-      setData({
-        profile: {
-          full_name: 'Priya Sharma',
-          grade: 'Class 9-A',
-          school: 'Kendriya Vidyalaya No. 1',
-        },
-        overview: {
-          diagnosticScore: 50,
-          status: 'Needs Foundational Review',
-          plainEnglishSummary: t('parent.plainEnglish'),
-        },
-        topicScores: [
-          { topic: 'Numbers', score: 88 },
-          { topic: 'Real No.', score: 76 },
-          { topic: 'Factoring', score: 45 },
-          { topic: 'Quadratics', score: 33 },
-          { topic: 'Linear Eq', score: 85 },
-          { topic: 'Geometry', score: 82 },
-        ],
-        studySchedule: [
-          {
-            id: 'sess-1',
-            title: 'Foundational Review: Middle-Term Splitting',
-            duration: '30 mins',
-            day: 'Today',
-            time: '5:00 PM',
-            status: 'Upcoming',
-            statusColor: 'amber',
-          },
-          {
-            id: 'sess-2',
-            title: 'Algebraic Identities Practice (a+b)² & (a-b)²',
-            duration: '25 mins',
-            day: 'Tomorrow',
-            time: '5:00 PM',
-            status: 'Scheduled',
-            statusColor: 'slate',
-          },
-          {
-            id: 'sess-3',
-            title: 'Applying Factoring to Quadratic Equations',
-            duration: '25 mins',
-            day: 'Thursday',
-            time: '6:00 PM',
-            status: 'Scheduled',
-            statusColor: 'slate',
-          },
-        ],
-        feedback: [
-          {
-            id: 'tf-1',
-            teacherName: 'Mr. Rajesh Rao',
-            subject: 'Class 9 Mathematics',
-            date: 'Today',
-            message: 'Priya has good logical thinking. She just needs 25 minutes of practice on middle-term splitting this week. Please encourage her to complete her scheduled sessions on LearnLens.',
-          },
-        ],
-      });
-      setLoading(false);
-    }
-
-    fetchParentData();
-  }, [t, currentUser]);
 
   const handleAcknowledge = async (e) => {
     e.preventDefault();
@@ -125,13 +122,13 @@ export default function ParentDashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          studentId: currentUser?.child_id || '00000000-0000-0000-0000-000000000001',
+          studentId: activeChild.id,
           parentName: currentUser?.full_name || 'Sunita Sharma',
           message: ackMessage,
         }),
       });
     } catch (err) {
-      console.warn('Ack sent locally');
+      console.warn('Ack recorded locally');
     }
 
     setAckSubmitted(true);
@@ -141,76 +138,142 @@ export default function ParentDashboard() {
     }, 3000);
   };
 
-  const childName = data?.profile?.full_name || currentUser?.child_name || 'Priya Sharma';
-
   return (
-    <div className="space-y-8 max-w-4xl mx-auto py-2">
-      {/* Header Banner */}
-      <Card variant="surface" className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+    <div className="space-y-8 max-w-4xl mx-auto py-4 sm:py-8">
+      {/* Header Banner with Child Selector */}
+      <Card variant="surface" className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border border-[#E3DCD3]">
         <div className="flex items-center gap-4 sm:gap-5">
           <img
-            src={currentUser?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sunita'}
-            alt={currentUser?.full_name}
-            className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-bg-base border-2 border-accent/40 p-1 shrink-0 object-cover"
+            src={activeChild.avatar}
+            alt={activeChild.name}
+            className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#F5F0EA] border-2 border-[#F26522]/40 p-1 shrink-0 object-cover"
           />
-          <div>
+          <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-dark-banner text-white">
-                {t('parent.viewBadge')}
+              <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-[#0D0D0D] text-white">
+                Parent View
               </span>
-              <span className="text-xs font-medium text-text-muted">
-                {t('parent.child', { childName })} ({data?.profile?.grade || 'Class 9-A'})
+              <span className="text-xs font-semibold text-[#6B6660]">
+                {activeChild.grade} • {activeChild.school}
               </span>
             </div>
-            <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-text-main tracking-tight mt-1">
-              {t('parent.greeting', { name: currentUser?.full_name || 'Sunita Sharma' })}
+            <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-[#0D0D0D] tracking-tight">
+              {activeChild.name}'s Academic Progress
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-bg-base border border-border-warm text-xs font-semibold text-text-muted shrink-0">
-          <Sparkles className="w-4 h-4 text-accent" />
-          <span>Kendriya Vidyalaya No. 1</span>
+        {/* Child Selector Dropdown/Pills for Multiple Children */}
+        <div className="p-3 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] space-y-1.5 shrink-0">
+          <label className="text-[10px] font-bold uppercase tracking-wider text-[#6B6660] flex items-center gap-1">
+            <User className="w-3 h-3 text-[#F26522]" />
+            <span>Select Child:</span>
+          </label>
+          <div className="flex items-center gap-1.5">
+            {childrenList.map((child) => (
+              <button
+                key={child.id}
+                type="button"
+                onClick={() => setSelectedChildId(child.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  selectedChildId === child.id
+                    ? 'bg-[#0D0D0D] text-white shadow-xs'
+                    : 'bg-white text-[#6B6660] border border-[#E3DCD3] hover:text-[#0D0D0D]'
+                }`}
+              >
+                {child.name.split(' ')[0]} ({child.grade.split('-')[0]})
+              </button>
+            ))}
+          </div>
         </div>
       </Card>
 
+      {/* Latest Results & Current Level by Subject */}
+      <div className="space-y-3">
+        <SectionLabel text="SUBJECT BREAKDOWN" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {activeChild.subjectResults.map((sub, idx) => (
+            <Card key={idx} variant="surface" className="p-4 space-y-2 border border-[#E3DCD3]">
+              <div className="flex items-center justify-between text-xs font-semibold text-[#6B6660]">
+                <span>{sub.subject}</span>
+                <span className={`font-mono font-bold ${sub.score < 60 ? 'text-[#F26522]' : 'text-[#0D0D0D]'}`}>
+                  {sub.score}%
+                </span>
+              </div>
+              <div className="font-heading font-bold text-sm text-[#0D0D0D]">
+                {sub.level}
+              </div>
+              <div className="text-[11px] text-[#6B6660]">
+                Status: <strong className={sub.score < 60 ? 'text-[#F26522]' : 'text-[#0D0D0D]'}>{sub.status}</strong>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+
       {/* Jargon-Free Summary Card */}
-      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
-        <div className="flex items-center justify-between border-b border-border-warm pb-3">
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4 border border-[#E3DCD3]">
+        <div className="flex items-center justify-between border-b border-[#E3DCD3] pb-3">
           <div>
-            <SectionLabel text="PARENT INSIGHT" />
-            <h2 className="font-heading font-extrabold text-lg sm:text-xl text-text-main flex items-center gap-2 mt-1">
-              <Lightbulb className="w-5 h-5 text-accent" />
-              <span>{t('parent.summaryTitle')}</span>
+            <SectionLabel text="PLAIN-LANGUAGE SUMMARY" />
+            <h2 className="font-heading font-extrabold text-lg sm:text-xl text-[#0D0D0D] flex items-center gap-2 mt-1">
+              <Lightbulb className="w-5 h-5 text-[#F26522]" />
+              <span>How {activeChild.name} is Progressing</span>
             </h2>
           </div>
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FFF3EC] text-accent border border-accent/20">
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FFF3EC] text-[#F26522] border border-[#F26522]/20">
             Jargon-Free
           </span>
         </div>
-        <div className="bg-bg-base p-5 sm:p-6 rounded-2xl border border-border-warm text-sm text-text-main leading-relaxed">
-          {t('parent.plainEnglish')}
+        <p className="p-4 sm:p-5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] text-sm text-[#0D0D0D] leading-relaxed">
+          {activeChild.jargonFreeSummary}
+        </p>
+      </Card>
+
+      {/* Weak Topics in Plain Language */}
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4 border border-[#E3DCD3]">
+        <div className="border-b border-[#E3DCD3] pb-3">
+          <SectionLabel text="PARENT FOCUS AREAS" />
+          <h3 className="font-heading font-extrabold text-base sm:text-lg text-[#0D0D0D] mt-1">
+            Identified Concepts & What They Mean
+          </h3>
+        </div>
+
+        <div className="space-y-3">
+          {activeChild.weakTopics.map((w, idx) => (
+            <div key={idx} className="p-4 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-heading font-bold text-sm text-[#0D0D0D]">{w.topic}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white text-[#6B6660] border border-[#E3DCD3]">
+                  {w.subject}
+                </span>
+              </div>
+              <p className="text-xs text-[#6B6660] leading-relaxed">
+                {w.plainText}
+              </p>
+            </div>
+          ))}
         </div>
       </Card>
 
-      {/* Progress Chart: Topic Mastery at a Glance */}
-      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-warm pb-4">
+      {/* Progress Chart: Topic Mastery at a Glance (Recharts Palette) */}
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4 border border-[#E3DCD3]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E3DCD3] pb-4">
           <div>
             <SectionLabel text="PROGRESS AT A GLANCE" />
-            <h3 className="font-heading font-extrabold text-base sm:text-lg text-text-main flex items-center gap-2 mt-1">
-              <TrendingUp className="w-5 h-5 text-accent" />
-              <span>{childName}'s Subject Strengths</span>
+            <h3 className="font-heading font-extrabold text-base sm:text-lg text-[#0D0D0D] flex items-center gap-2 mt-1">
+              <TrendingUp className="w-5 h-5 text-[#F26522]" />
+              <span>{activeChild.name}'s Topic Mastery Chart</span>
             </h3>
           </div>
-          <span className="text-xs text-text-muted font-medium">
-            Passing Threshold: <strong className="text-accent">60%</strong>
+          <span className="text-xs text-[#6B6660] font-medium">
+            Passing Threshold: <strong className="text-[#F26522]">60%</strong>
           </span>
         </div>
 
         <div className="h-48 sm:h-56 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data?.topicScores || []} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
+            <BarChart data={activeChild.topicScores} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
               <XAxis dataKey="topic" tick={{ fill: '#6B6660', fontSize: 11, fontFamily: 'Inter' }} interval={0} stroke="#E3DCD3" />
               <YAxis tick={{ fill: '#6B6660', fontSize: 11, fontFamily: 'Inter' }} domain={[0, 100]} stroke="#E3DCD3" />
               <Tooltip
@@ -222,11 +285,11 @@ export default function ParentDashboard() {
                   color: '#0D0D0D',
                   boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08)'
                 }}
-                formatter={(val) => [`${val}%`, 'Score']}
+                formatter={(val) => [`${val}%`, 'Mastery']}
               />
               <ReferenceLine y={60} stroke="#F26522" strokeDasharray="4 4" />
               <Bar dataKey="score" radius={[6, 6, 0, 0]}>
-                {(data?.topicScores || []).map((entry, index) => (
+                {activeChild.topicScores.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={entry.score < 60 ? '#F26522' : '#0D0D0D'}
@@ -239,34 +302,34 @@ export default function ParentDashboard() {
       </Card>
 
       {/* Teacher's Note & Quick Acknowledgment */}
-      <Card variant="surface" className="p-6 sm:p-8 space-y-5 border-l-4 border-l-accent">
-        <div className="flex items-center justify-between border-b border-border-warm pb-3">
-          <div className="flex items-center gap-2 font-heading font-extrabold text-base text-text-main">
-            <MessageSquare className="w-5 h-5 text-accent" />
-            <span>{t('parent.teacherNoteTitle')}: Mr. Rajesh Rao (Maths)</span>
+      <Card variant="surface" className="p-6 sm:p-8 space-y-5 border-l-4 border-l-[#F26522] border-[#E3DCD3]">
+        <div className="flex items-center justify-between border-b border-[#E3DCD3] pb-3">
+          <div className="flex items-center gap-2 font-heading font-extrabold text-base text-[#0D0D0D]">
+            <MessageSquare className="w-5 h-5 text-[#F26522]" />
+            <span>Note from Teacher: {activeChild.teacherFeedback.teacherName} ({activeChild.teacherFeedback.subject})</span>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-bg-base text-text-muted border border-border-warm">
-            Today
+          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F5F0EA] text-[#6B6660] border border-[#E3DCD3]">
+            {activeChild.teacherFeedback.date}
           </span>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-bg-base border border-border-warm text-xs sm:text-sm text-text-main italic leading-relaxed">
-          "{data?.feedback?.[0]?.message || 'Priya has good logical thinking. She just needs 25 minutes of practice on middle-term splitting this week. Please encourage her to complete her scheduled sessions on LearnLens.'}"
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] text-xs sm:text-sm text-[#0D0D0D] italic leading-relaxed">
+          "{activeChild.teacherFeedback.message}"
         </div>
 
         {/* Parent Reply / Acknowledgment */}
         <form onSubmit={handleAcknowledge} className="space-y-3 pt-2">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-text-main flex items-center gap-1.5">
-              <HeartHandshake className="w-4 h-4 text-accent" />
-              <span>{t('parent.acknowledgeBtn')}</span>
+            <label className="text-xs font-bold text-[#0D0D0D] flex items-center gap-1.5">
+              <HeartHandshake className="w-4 h-4 text-[#F26522]" />
+              <span>Acknowledge & Send Quick Note to Teacher</span>
             </label>
             <input
               type="text"
               value={ackMessage}
               onChange={(e) => setAckMessage(e.target.value)}
-              placeholder={t('parent.replyPlaceholder')}
-              className="w-full p-3.5 rounded-2xl bg-bg-base border border-border-warm text-xs sm:text-sm text-text-main placeholder:text-text-muted focus:outline-none focus:border-accent"
+              placeholder="e.g. 'Thank you, I will make sure they practice today at 5 PM'..."
+              className="w-full p-3.5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] text-xs sm:text-sm text-[#0D0D0D] placeholder:text-[#6B6660] focus:outline-none focus:border-[#F26522]"
               required
             />
           </div>
@@ -274,7 +337,7 @@ export default function ParentDashboard() {
           {ackSubmitted ? (
             <div className="p-3.5 rounded-2xl bg-[#EBF7EE] border border-[#C3E6CB] text-[#1E7E34] text-xs font-semibold flex items-center gap-2">
               <Check className="w-4 h-4 shrink-0" />
-              <span>{t('parent.ackSuccess')}</span>
+              <span>Your message has been sent directly to the teacher. Thank you!</span>
             </div>
           ) : (
             <Button
@@ -282,49 +345,49 @@ export default function ParentDashboard() {
               variant="primary"
               icon={<Send className="w-4 h-4" />}
             >
-              {t('parent.sendAck')}
+              Send Acknowledgment
             </Button>
           )}
         </form>
       </Card>
 
-      {/* Active 25-30 Min Study Schedule */}
-      <Card variant="surface" className="p-6 sm:p-8 space-y-4">
-        <div className="flex items-center justify-between border-b border-border-warm pb-3">
+      {/* Short Study Plan Summary */}
+      <Card variant="surface" className="p-6 sm:p-8 space-y-4 border border-[#E3DCD3]">
+        <div className="flex items-center justify-between border-b border-[#E3DCD3] pb-3">
           <div>
             <SectionLabel text="FOCUSED SCHEDULE" />
-            <h3 className="font-heading font-extrabold text-base sm:text-lg text-text-main flex items-center gap-2 mt-1">
-              <Calendar className="w-5 h-5 text-accent" />
-              <span>{t('parent.studyScheduleTitle')}</span>
+            <h3 className="font-heading font-extrabold text-base sm:text-lg text-[#0D0D0D] flex items-center gap-2 mt-1">
+              <Calendar className="w-5 h-5 text-[#F26522]" />
+              <span>{activeChild.name}'s Active Study Schedule</span>
             </h3>
           </div>
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-dark-banner text-white">
-            {t('parent.sessionsPlanned', { count: data?.studySchedule?.length || 3 })}
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#0D0D0D] text-white">
+            {activeChild.studySchedule.length} Sessions Scheduled
           </span>
         </div>
 
         <div className="space-y-3">
-          {(data?.studySchedule || []).map((sess) => (
+          {activeChild.studySchedule.map((sess) => (
             <div
               key={sess.id}
-              className="p-4 sm:p-5 rounded-2xl bg-bg-base border border-border-warm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm hover:border-accent/40 transition-colors"
+              className="p-4 sm:p-5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm hover:border-[#F26522]/40 transition-colors"
             >
               <div className="space-y-1">
-                <div className="font-bold text-text-main flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-accent" />
+                <div className="font-bold text-[#0D0D0D] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#F26522]" />
                   {sess.title}
                 </div>
-                <div className="text-text-muted flex items-center gap-2 text-xs">
-                  <Clock className="w-3.5 h-3.5 text-text-muted" />
+                <div className="text-[#6B6660] flex items-center gap-2 text-xs">
+                  <Clock className="w-3.5 h-3.5 text-[#6B6660]" />
                   <span>{sess.day} • {sess.time}</span>
-                  <span className="font-semibold text-text-main">({sess.duration})</span>
+                  <span className="font-semibold text-[#0D0D0D]">({sess.duration})</span>
                 </div>
               </div>
 
               <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider self-start sm:self-auto ${
                 sess.statusColor === 'amber'
-                  ? 'bg-[#FFF3EC] text-accent border border-accent/20'
-                  : 'bg-surface text-text-muted border border-border-warm'
+                  ? 'bg-[#FFF3EC] text-[#F26522] border border-[#F26522]/20'
+                  : 'bg-white text-[#6B6660] border border-[#E3DCD3]'
               }`}>
                 {sess.status}
               </span>
