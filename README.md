@@ -176,4 +176,76 @@ npm test
 
 ---
 
+## 🚀 Production Deployment Guide
+
+LearnLens is engineered as a unified single-server Node.js/Express application that serves both the API (`/api/*`) and the pre-compiled React single-page frontend from `frontend/dist`.
+
+### 1. Zero-Config Cloud Hosts (Render, Railway, Fly.io, Heroku)
+
+Because LearnLens uses a unified architecture on a single port, deploying to cloud platforms requires zero complicated proxy or microservice configuration:
+
+| Setting | Value |
+| :--- | :--- |
+| **Build Command** | `npm run build` |
+| **Start Command** | `npm start` |
+| **Node Version** | `>= 18.0.0` |
+
+#### Environment Variables for Cloud Deployments:
+```env
+PORT=5000
+NODE_ENV=production
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+---
+
+### 2. Deploying to Render (Recommended Step-by-Step)
+1. Push your repository to **GitHub** or **GitLab**.
+2. Go to [Render Dashboard](https://dashboard.render.com/) and click **New &rarr; Web Service**.
+3. Connect your repository.
+4. Fill in the service configuration:
+   - **Environment:** `Node`
+   - **Build Command:** `npm run build`
+   - **Start Command:** `npm start`
+5. Under **Environment Variables**, add the variables from `.env.example`.
+6. Click **Create Web Service**. Render will automatically build the React assets and start the unified server.
+
+---
+
+### 3. Deploying to Railway
+1. Go to [Railway.app](https://railway.app/) and click **New Project &rarr; Deploy from GitHub repo**.
+2. Railway detects Node.js and uses root `package.json`:
+   - It runs `npm run build` &rarr; installs dependencies & builds Vite frontend.
+   - It runs `npm start` &rarr; starts the Express server with dynamic `$PORT`.
+3. Under the **Variables** tab, set your Supabase and Gemini keys.
+4. Under **Settings &rarr; Networking**, click **Generate Domain** to get your public HTTPS URL!
+
+---
+
+### 4. Deploying to Ubuntu VPS / Linux Server (with PM2 & Nginx)
+```bash
+# 1. Clone repository
+git clone <your-repo-url> /var/www/learnlens
+cd /var/www/learnlens
+
+# 2. Configure environment
+cp .env.example .env
+nano .env  # Add your live Supabase & Gemini keys
+
+# 3. Install & Build
+npm run build
+
+# 4. Start with PM2 Process Manager
+npm install -g pm2
+pm2 start backend/src/server.js --name learnlens
+pm2 save
+pm2 startup
+```
+
+---
+
 *Built with ❤️ for inclusive, high-integrity education.*
