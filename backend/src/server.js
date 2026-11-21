@@ -7,6 +7,8 @@ import gapRoutes from './routes/gapRoutes.js';
 import plannerRoutes from './routes/plannerRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import teacherRoutes from './routes/teacherRoutes.js';
+import parentRoutes from './routes/parentRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 const app = express();
 
@@ -41,6 +43,8 @@ app.use('/api/gaps', gapRoutes);
 app.use('/api/planner', plannerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/teacher', teacherRoutes);
+app.use('/api/parent', parentRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler for unknown endpoints
 app.use((req, res) => {
