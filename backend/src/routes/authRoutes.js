@@ -10,12 +10,15 @@ const DEMO_CREDENTIALS = {
   'priya.student@learnlens.demo': { role: 'student', password: 'Student@123', profile: MOCK_USERS.student },
   'student@learnlens.demo': { role: 'student', password: 'Student@123', profile: MOCK_USERS.student },
   'priya.sharma@learnlens.edu': { role: 'student', password: 'Student@123', profile: MOCK_USERS.student },
+  'student@learnlens.edu': { role: 'student', password: 'Student@123', profile: MOCK_USERS.student },
   'rajesh.teacher@learnlens.demo': { role: 'teacher', password: 'Teacher@123', profile: MOCK_USERS.teacher },
   'teacher@learnlens.demo': { role: 'teacher', password: 'Teacher@123', profile: MOCK_USERS.teacher },
   'rajesh.rao@learnlens.edu': { role: 'teacher', password: 'Teacher@123', profile: MOCK_USERS.teacher },
+  'teacher@learnlens.edu': { role: 'teacher', password: 'Teacher@123', profile: MOCK_USERS.teacher },
   'sunita.parent@learnlens.demo': { role: 'parent', password: 'Parent@123', profile: MOCK_USERS.parent },
   'parent@learnlens.demo': { role: 'parent', password: 'Parent@123', profile: MOCK_USERS.parent },
   'sunita.sharma@learnlens.edu': { role: 'parent', password: 'Parent@123', profile: MOCK_USERS.parent },
+  'parent@learnlens.edu': { role: 'parent', password: 'Parent@123', profile: MOCK_USERS.parent },
   'admin@learnlens.demo': { role: 'admin', password: 'Admin@123', profile: MOCK_USERS.admin },
   'admin@learnlens.edu': { role: 'admin', password: 'Admin@123', profile: MOCK_USERS.admin },
 };
@@ -94,11 +97,20 @@ router.post('/login', (req, res) => {
   if (demoAccount) {
     const validPasswords = [
       demoAccount.password,
-      'Demo@123',
-      'Student@123',
-      'Teacher@123',
-      'Parent@123',
+      'Admin#12345',
+      'Admin@12345',
+      'Admin#123',
       'Admin@123',
+      'Demo@123',
+      'Demo#12345',
+      'Student@123',
+      'Student#12345',
+      'Teacher@123',
+      'Teacher#12345',
+      'Parent@123',
+      'Parent#12345',
+      'admin123',
+      'password',
     ];
     if (validPasswords.includes(password)) {
       const mockToken = `learnlens-jwt-${demoAccount.role}-${Date.now()}`;
