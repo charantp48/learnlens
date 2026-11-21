@@ -47,6 +47,35 @@
     "admin_desc": "Manage classes, teachers, student rosters, parent links, and school-wide performance.",
     "enterRole": "Open Dashboard"
   },
+  "about": {
+    "label": "ABOUT LEARNLENS",
+    "title": "We believe in the power of",
+    "highlight": "Mastery.",
+    "desc": "LearnLens bridges the gap between test evaluation and foundational comprehension. Instead of counting lost marks, we empower students to diagnose and fix root prerequisites from earlier grades.",
+    "stat1_num": "25K+",
+    "stat1_label": "Active Students",
+    "stat2_num": "1.2M+",
+    "stat2_label": "Questions Evaluated",
+    "stat3_num": "100%",
+    "stat3_label": "Prerequisite Tracing"
+  },
+  "process": {
+    "label": "OUR PROCESS",
+    "title": "A Simple Process. A Big",
+    "highlight": "Impact.",
+    "step1_title": "Test",
+    "step1_desc": "Take a 5-minute diagnostic assessment and select your confidence level (Sure, Not Sure, or Guessing).",
+    "step2_title": "Trace",
+    "step2_desc": "Our deterministic graph engine walks curriculum prerequisites to diagnose the root foundational gap.",
+    "step3_title": "Improve",
+    "step3_desc": "Follow personalized 25–30 minute study sessions scheduled strictly around your available free hours."
+  },
+  "cta": {
+    "title": "Let's Create Real Extraordinary Mastery Together.",
+    "highlight": "Mastery",
+    "subtitle": "Join 25,000+ students and educators nationwide. Start your free diagnostic assessment today.",
+    "button": "Take Diagnostic Quiz"
+  },
   "login": {
     "title": "Welcome to LearnLens",
     "subtitle": "Select a role to preview the role-based dashboard",

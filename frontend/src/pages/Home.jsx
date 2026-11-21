@@ -1,507 +1,472 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '../context/LanguageContext';
+import Button from '../components/common/Button';
+import Card from '../components/common/Card';
+import SectionLabel from '../components/common/SectionLabel';
+import StepList from '../components/common/StepList';
+import CtaBanner from '../components/common/CtaBanner';
 import { 
   GitFork, 
   Target, 
   Calendar, 
   Bot, 
   ArrowRight, 
-  ArrowUpRight,
+  Play, 
+  Sparkles, 
   GraduationCap, 
   Users, 
   HeartHandshake, 
   ShieldAlert,
-  Sparkles,
-  Play,
-  CheckCircle2,
-  TrendingUp,
-  Clock,
-  BookOpen,
-  Activity,
-  ChevronDown,
-  Layers,
-  Leaf
+  ArrowUpRight,
+  ChevronDown
 } from 'lucide-react';
 
 export default function Home() {
   const { t } = useTranslation();
 
-  const solutions = [
+  const processSteps = [
     {
-      title: t('features.gapFinder_title'),
-      desc: t('features.gapFinder_desc'),
-      icon: GitFork,
-      color: 'emerald',
-      bgBadge: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
-      link: '/gaps',
+      number: '01',
+      title: t('process.step1_title'),
+      description: t('process.step1_desc'),
     },
     {
-      title: t('features.confidence_title'),
-      desc: t('features.confidence_desc'),
-      icon: Target,
-      color: 'cyan',
-      bgBadge: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30',
-      link: '/quiz',
+      number: '02',
+      title: t('process.step2_title'),
+      description: t('process.step2_desc'),
     },
     {
-      title: t('features.studyPlanner_title'),
-      desc: t('features.studyPlanner_desc'),
-      icon: Calendar,
-      color: 'amber',
-      bgBadge: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
-      link: '/planner',
-    },
-    {
-      title: t('features.aiTutor_title'),
-      desc: t('features.aiTutor_desc'),
-      icon: Bot,
-      color: 'purple',
-      bgBadge: 'bg-purple-500/20 text-purple-400 border border-purple-500/30',
-      link: '/ai-tutor',
+      number: '03',
+      title: t('process.step3_title'),
+      description: t('process.step3_desc'),
     },
   ];
 
-  const roles = [
+  const roleCards = [
     {
+      roleKey: 'student',
       title: t('roles.student_title'),
       desc: t('roles.student_desc'),
       icon: GraduationCap,
       badge: 'Core Priority',
-      badgeColor: 'bg-lime-400/20 text-lime-300 border-lime-400/30',
       link: '/login?role=student',
     },
     {
+      roleKey: 'teacher',
       title: t('roles.teacher_title'),
       desc: t('roles.teacher_desc'),
       icon: Users,
       badge: 'Class Heatmaps',
-      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
       link: '/login?role=teacher',
     },
     {
+      roleKey: 'parent',
       title: t('roles.parent_title'),
       desc: t('roles.parent_desc'),
       icon: HeartHandshake,
       badge: 'Jargon-Free',
-      badgeColor: 'bg-pink-500/20 text-pink-300 border-pink-500/30',
       link: '/login?role=parent',
     },
     {
+      roleKey: 'admin',
       title: t('roles.admin_title'),
       desc: t('roles.admin_desc'),
       icon: ShieldAlert,
       badge: 'School-Wide',
-      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
       link: '/login?role=admin',
     },
   ];
 
   return (
-    <div className="space-y-24 py-4 sm:py-8">
+    <div className="space-y-24 sm:space-y-32 py-4">
       {/* =========================================================================
-          HERO SECTION (Matching Figma Hero with Farmer / Atmospheric Backdrop)
+          1. HERO SECTION (Editorial Headline + Original Orange Ribbon Visual)
       ========================================================================= */}
-      <section className="relative rounded-3xl overflow-hidden bg-gradient-to-b from-[#0a1e16] via-[#091b13] to-[#07130e] border border-emerald-500/20 p-6 sm:p-10 lg:p-14 shadow-2xl">
-        {/* Ambient Organic Glow */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-80 h-80 bg-lime-400/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          {/* Left Column: Headlines & CTA */}
+      <section className="relative pt-4 sm:pt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Left Column: Eyebrow, All-Caps Headline & Dual CTA Buttons */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Pill Eyebrow Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#11291e] border border-emerald-500/30 text-lime-400 text-xs font-semibold tracking-wider uppercase shadow-inner">
-              <Sparkles className="w-3.5 h-3.5 text-lime-400" />
-              <span>{t('hero.badge')}</span>
-            </div>
+            <SectionLabel>{t('hero.badge')}</SectionLabel>
 
-            {/* Massive Two-Tone Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.08]">
-              {t('hero.title')}{' '}
-              <span className="text-lime-400 block mt-1">
-                {t('hero.highlight')}
-              </span>
+            <h1 className="font-heading text-4xl sm:text-6xl lg:text-7xl font-extrabold text-[#0D0D0D] tracking-tight uppercase leading-[1.05]">
+              {t('hero.title')}<br />
+              FIX THE ROOT <span className="text-[#F26522]">GAP.</span>
             </h1>
 
-            {/* Sub-headline */}
-            <p className="text-sm sm:text-base text-emerald-100/75 max-w-xl leading-relaxed">
+            <p className="text-sm sm:text-base text-[#6B6660] max-w-xl leading-relaxed">
               {t('hero.description')}
             </p>
 
-            {/* CTA Buttons Pair */}
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link
-                to="/quiz"
-                className="px-6 py-3.5 rounded-full bg-lime-400 hover:bg-lime-300 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-lime-400/25 transition-all hover:scale-105 cursor-pointer"
-              >
-                <span>{t('hero.startQuiz')}</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              <Button to="/quiz" variant="primary" size="lg" showArrow>
+                {t('hero.startQuiz')}
+              </Button>
 
-              <Link
-                to="/login"
-                className="px-5 py-3.5 rounded-full bg-[#0e261d]/80 hover:bg-[#123126] text-white border border-emerald-500/30 font-semibold text-xs sm:text-sm flex items-center gap-2.5 transition-all cursor-pointer shadow-md"
-              >
-                <div className="w-6 h-6 rounded-full bg-lime-400/20 flex items-center justify-center text-lime-400">
-                  <Play className="w-3 h-3 fill-lime-400 ml-0.5" />
-                </div>
-                <span>{t('hero.viewDemo')}</span>
-              </Link>
+              <Button to="/login" variant="secondary" size="lg" icon={Play}>
+                {t('hero.viewDemo')}
+              </Button>
             </div>
           </div>
 
-          {/* Right Column: Hero Visual with Floating Live Insights Card */}
-          <div className="lg:col-span-5 relative">
-            <div className="relative rounded-3xl overflow-hidden border border-emerald-500/25 bg-gradient-to-tr from-[#081711] via-[#0d271e] to-[#123629] p-6 shadow-2xl min-h-[320px] flex flex-col justify-between">
-              {/* Background Atmospheric Visual Pattern */}
-              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#a3e635_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+          {/* Right Column: Original Visual with Dynamic Orange Light-Trails & Floating Card */}
+          <div className="lg:col-span-5 relative flex items-center justify-center">
+            {/* Visual Container */}
+            <div className="relative w-full max-w-md h-[380px] sm:h-[420px] rounded-[24px] bg-[#FBF8F4] border border-[#E3DCD3] card-shadow p-6 overflow-hidden flex flex-col justify-between">
+              {/* Original Glowing Sun Disk in Background */}
+              <div className="absolute top-12 left-1/2 -translate-x-1/2 w-56 h-56 rounded-full bg-gradient-to-b from-[#F26522] to-[#F26522]/30 opacity-90 blur-xs pointer-events-none" />
 
-              {/* Student Learner Avatar / Badge */}
+              {/* Original Dynamic Swirling Orange SVG Energy Ribbon */}
+              <svg
+                className="absolute inset-0 w-full h-full pointer-events-none"
+                viewBox="0 0 400 400"
+                fill="none"
+              >
+                <path
+                  d="M20 280C80 200 180 80 320 120C400 140 380 280 260 320C160 350 100 240 180 180C260 120 360 220 380 260"
+                  stroke="#F26522"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  className="opacity-90"
+                />
+                <path
+                  d="M40 300C100 220 200 100 340 140"
+                  stroke="#FFFFFF"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  className="opacity-60"
+                />
+              </svg>
+
+              {/* Top Row: Mini Badge & Live Indicator */}
               <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Priya"
-                    alt="Priya"
-                    className="w-12 h-12 rounded-2xl bg-[#143527] border-2 border-lime-400 p-0.5 shadow-md"
-                  />
-                  <div>
-                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <span>Priya Sharma</span>
-                      <span className="w-2 h-2 rounded-full bg-lime-400"></span>
-                    </div>
-                    <div className="text-[11px] text-emerald-300/80">Class 9-A Mathematics</div>
-                  </div>
-                </div>
-
-                <span className="text-[10px] px-2.5 py-1 rounded-full bg-lime-400/20 text-lime-300 font-bold border border-lime-400/30">
-                  Diagnostic Active
+                <span className="px-3 py-1 rounded-full bg-[#0D0D0D] text-white text-[11px] font-bold">
+                  Class 9 Mathematics
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#F26522]">
+                  <span className="w-2 h-2 rounded-full bg-[#F26522] animate-pulse" />
+                  Live Diagnostic
                 </span>
               </div>
 
-              {/* Floating Live Diagnostic Insights Card (Matching Figma "Live Farm Insights") */}
-              <div className="relative z-10 mt-6 p-4 rounded-2xl bg-[#06140f]/90 backdrop-blur-md border border-emerald-500/30 space-y-3.5 shadow-2xl">
-                <div className="flex items-center justify-between text-xs pb-2 border-b border-emerald-500/20">
-                  <div className="flex items-center gap-2 text-white font-bold">
-                    <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
-                    <span>Live Diagnostic Insights</span>
-                  </div>
-                  <Link to="/gaps" className="text-[10px] text-lime-400 hover:underline flex items-center gap-0.5 font-semibold">
-                    <span>View All</span>
-                    <ArrowUpRight className="w-3 h-3" />
+              {/* Floating Live Diagnostic Insights Card */}
+              <div className="relative z-10 p-4 rounded-[18px] bg-white/95 backdrop-blur-md border border-[#E3DCD3] shadow-md space-y-3">
+                <div className="flex items-center justify-between text-xs pb-2 border-b border-[#E3DCD3]">
+                  <span className="font-heading font-bold text-[#0D0D0D]">Live Learning Diagnostic</span>
+                  <Link to="/gaps" className="text-[10px] text-[#F26522] font-bold hover:underline flex items-center gap-0.5">
+                    View Graph <ArrowUpRight className="w-3 h-3" />
                   </Link>
                 </div>
 
-                {/* Metric 1: Concept Mastery Progress Bar */}
                 <div className="space-y-1">
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-300 font-medium">Concept Mastery</span>
-                    <span className="text-lime-300 font-bold">68% (Optimal)</span>
+                    <span className="text-[#6B6660] font-medium">Concept Mastery</span>
+                    <span className="text-[#0D0D0D] font-bold">68%</span>
                   </div>
-                  <div className="w-full bg-[#0a1e16] h-2 rounded-full overflow-hidden p-0.5 border border-emerald-500/20">
-                    <div className="bg-gradient-to-r from-emerald-400 to-lime-400 h-full rounded-full w-[68%]" />
+                  <div className="w-full bg-[#F5F0EA] h-2 rounded-full overflow-hidden p-0.5 border border-[#E3DCD3]">
+                    <div className="bg-[#F26522] h-full rounded-full w-[68%]" />
                   </div>
                 </div>
 
-                {/* Metric 2 & 3: Quick Stats */}
                 <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-                  <div className="p-2 rounded-xl bg-[#0c2219] border border-emerald-500/15">
-                    <div className="text-slate-400 text-[10px]">Class Average</div>
-                    <div className="text-white font-bold text-xs mt-0.5">62.3%</div>
+                  <div className="p-2 rounded-xl bg-[#FBF8F4] border border-[#E3DCD3]">
+                    <div className="text-[#6B6660] text-[10px]">Class Average</div>
+                    <div className="text-[#0D0D0D] font-bold text-xs mt-0.5">62.3%</div>
                   </div>
-                  <div className="p-2 rounded-xl bg-[#0c2219] border border-emerald-500/15">
-                    <div className="text-slate-400 text-[10px]">Root Bottleneck</div>
-                    <div className="text-amber-300 font-bold text-[11px] truncate mt-0.5">Factoring (Cl. 8)</div>
+                  <div className="p-2 rounded-xl bg-[#FBF8F4] border border-[#E3DCD3]">
+                    <div className="text-[#6B6660] text-[10px]">Diagnosed Gap</div>
+                    <div className="text-[#F26522] font-bold text-[11px] truncate mt-0.5">Factoring (Cl. 8)</div>
                   </div>
+                </div>
+              </div>
+
+              {/* Small Vertical Indicator (01 / 03 with arrow matching reference) */}
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 text-[10px] font-mono font-bold text-[#6B6660]">
+                <span>01</span>
+                <span className="w-3 h-px bg-[#E3DCD3]" />
+                <span>03</span>
+                <ChevronDown className="w-3 h-3 text-[#F26522] animate-bounce mt-1" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          2. ABOUT STRIP WITH 3 STATS (Matching Reference About Section)
+      ========================================================================= */}
+      <section className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Left Column: Visual Card with Silhouette & Orange Sun Orb */}
+          <div className="lg:col-span-5">
+            <Card padding="none" className="h-[280px] sm:h-[320px] overflow-hidden relative flex flex-col justify-between p-6">
+              {/* Graphic Composition */}
+              <div className="absolute inset-0 bg-[#0D0D0D]" />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-[#F26522] opacity-90" />
+              
+              {/* Abstract Architectural Diagonal Silhouette */}
+              <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 300 200" fill="none">
+                <path d="M0 200L150 50L300 200H0Z" fill="#FFFFFF" />
+              </svg>
+
+              {/* Pill Badge */}
+              <div className="relative z-10 self-start">
+                <span className="px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#F26522]" />
+                  <span>About Platform</span>
+                </span>
+              </div>
+
+              <div className="relative z-10 text-white space-y-1">
+                <div className="font-heading font-extrabold text-lg">Prerequisite Graph Engine</div>
+                <div className="text-xs text-[#A8A29E]">100% Deterministic Pure JavaScript Logic</div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Right Column: Headline, Narrative & 3 Stats Strip */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="flex items-center justify-between">
+              <SectionLabel>{t('about.label')}</SectionLabel>
+              {/* Subtle Asterisk / Starburst Motif */}
+              <div className="w-6 h-6 text-[#F26522] hidden sm:block">
+                <Sparkles className="w-6 h-6" />
+              </div>
+            </div>
+
+            <h2 className="font-heading text-3xl sm:text-4xl font-extrabold text-[#0D0D0D] tracking-tight leading-tight">
+              {t('about.title')} <span className="text-[#F26522]">{t('about.highlight')}</span>
+            </h2>
+
+            <p className="text-sm text-[#6B6660] leading-relaxed max-w-xl">
+              {t('about.desc')}
+            </p>
+
+            {/* 3 Stats Strip with Hairline Dividers */}
+            <div className="pt-4 border-t border-[#E3DCD3] grid grid-cols-3 gap-4 sm:gap-6">
+              <div>
+                <div className="font-heading text-2xl sm:text-3xl font-black text-[#0D0D0D]">
+                  {t('about.stat1_num')}
+                </div>
+                <div className="text-xs text-[#6B6660] mt-1 font-medium">
+                  {t('about.stat1_label')}
+                </div>
+              </div>
+
+              <div className="border-l border-[#E3DCD3] pl-4 sm:pl-6">
+                <div className="font-heading text-2xl sm:text-3xl font-black text-[#0D0D0D]">
+                  {t('about.stat2_num')}
+                </div>
+                <div className="text-xs text-[#6B6660] mt-1 font-medium">
+                  {t('about.stat2_label')}
+                </div>
+              </div>
+
+              <div className="border-l border-[#E3DCD3] pl-4 sm:pl-6">
+                <div className="font-heading text-2xl sm:text-3xl font-black text-[#0D0D0D]">
+                  {t('about.stat3_num')}
+                </div>
+                <div className="text-xs text-[#6B6660] mt-1 font-medium">
+                  {t('about.stat3_label')}
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Floating 4-Metric Glass Bar (Matching Figma bottom hero stats) */}
-        <div className="mt-10 sm:mt-12 p-4 sm:p-6 rounded-3xl bg-[#081a13]/85 backdrop-blur-md border border-emerald-500/20 shadow-2xl grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 divide-y sm:divide-y-0 sm:divide-x divide-emerald-500/15">
-          <div className="flex items-center gap-3.5 pt-2 sm:pt-0">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-lime-400 shrink-0">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xl sm:text-2xl font-black text-white">25K+</div>
-              <div className="text-[11px] text-slate-400">Active Students</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5 sm:pl-6 pt-2 sm:pt-0">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xl sm:text-2xl font-black text-white">1.2M+</div>
-              <div className="text-[11px] text-slate-400">Questions Evaluated</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5 sm:pl-6 pt-2 sm:pt-0">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xl sm:text-2xl font-black text-white">40%</div>
-              <div className="text-[11px] text-slate-400">Avg Mastery Increase</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5 sm:pl-6 pt-2 sm:pt-0">
-            <div className="w-10 h-10 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xl sm:text-2xl font-black text-white">30%</div>
-              <div className="text-[11px] text-slate-400">Study Time Saved</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll Indicator Mouse Pill */}
-        <div className="flex flex-col items-center justify-center pt-8 text-[11px] text-emerald-300/60 gap-1.5">
-          <div className="w-5 h-8 rounded-full border-2 border-emerald-500/30 flex justify-center p-1">
-            <div className="w-1 h-2 rounded-full bg-lime-400 animate-bounce" />
-          </div>
-          <span className="tracking-widest uppercase text-[10px]">Scroll to explore</span>
-        </div>
       </section>
 
-
       {/* =========================================================================
-          "WHAT WE DO" / SOLUTIONS SECTION (Matching Figma 4-Card Solutions)
+          3. FEATURES SECTION AS 3 ROUNDED CARDS (Matching Reference Services Grid)
       ========================================================================= */}
       <section className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-2">
-            <span className="text-xs font-bold tracking-widest text-lime-400 uppercase">
-              WHAT WE DO
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-              Intelligent Diagnostics for Every Student
+            <SectionLabel>OUR CAPABILITIES</SectionLabel>
+            <h2 className="font-heading text-3xl sm:text-4xl font-extrabold text-[#0D0D0D] tracking-tight">
+              From diagnostic assessment to adaptive planning —{' '}
+              <span className="text-[#F26522]">we do it all.</span>
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-emerald-100/70 max-w-md leading-relaxed">
-            From root-cause gap tracing to adaptive study schedules, we provide end-to-end learning tools that help every student master foundational concepts.
-          </p>
+
+          <Button to="/quiz" variant="secondary" size="sm" showArrow className="self-start md:self-auto">
+            View All Capabilities
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {solutions.map((item, idx) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={idx}
-                className="p-6 rounded-3xl bg-[#091d15]/75 hover:bg-[#0c241b] border border-emerald-500/15 hover:border-lime-500/40 transition-all duration-300 flex flex-col justify-between group shadow-xl"
-              >
-                <div className="space-y-4">
-                  {/* Colored Icon Badge */}
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${item.bgBadge}`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-
-                  <h3 className="text-base font-bold text-white group-hover:text-lime-300 transition-colors">
-                    {item.title}
-                  </h3>
-
-                  <p className="text-xs text-slate-300/80 leading-relaxed">
-                    {item.desc}
-                  </p>
-                </div>
-
-                <div className="pt-6">
-                  <Link
-                    to={item.link}
-                    className="w-10 h-10 rounded-full bg-[#102a20] group-hover:bg-lime-400 text-slate-300 group-hover:text-slate-950 flex items-center justify-center transition-all cursor-pointer shadow-md"
-                  >
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1: Prerequisite Gap Tracing */}
+          <Card variant="surface" hoverLift padding="lg" className="flex flex-col justify-between group">
+            <div className="space-y-4">
+              <div className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center font-bold">
+                <GitFork className="w-5 h-5 text-[#F26522]" />
               </div>
-            );
-          })}
-        </div>
-      </section>
 
+              <h3 className="font-heading text-xl font-bold text-[#0D0D0D] group-hover:text-[#F26522] transition-colors">
+                {t('features.gapFinder_title')}
+              </h3>
 
-      {/* =========================================================================
-          "OUR TECHNOLOGY" SECTION (Matching Figma Tech Dashboard Showcase)
-      ========================================================================= */}
-      <section className="p-6 sm:p-10 rounded-3xl bg-[#081a13]/85 border border-emerald-500/20 shadow-2xl space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          {/* Left Column: Tech Overview */}
-          <div className="lg:col-span-5 space-y-6">
-            <span className="text-xs font-bold tracking-widest text-lime-400 uppercase">
-              OUR TECHNOLOGY
-            </span>
-
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
-              Diagnostics. DAG. AI.{' '}
-              <span className="text-lime-400 block mt-1">Better Together.</span>
-            </h2>
-
-            <p className="text-xs sm:text-sm text-emerald-100/70 leading-relaxed">
-              We traverse curriculum dependency graphs to diagnose root-cause knowledge gaps and generate personalized learning roadmaps you can trust.
-            </p>
-
-            <div className="space-y-3 pt-2 text-xs text-slate-200">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
-                <span>Real-time prerequisite graph traversal (Pure JavaScript)</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
-                <span>Confidence-weighted uncertainty scoring (Sure / Guess)</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
-                <span>Strict 25–30 minute adaptive sessions fitted to free hours</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
-                <span>Responsible Gemini AI with verified offline fallback</span>
-              </div>
+              <p className="text-xs sm:text-sm text-[#6B6660] leading-relaxed">
+                {t('features.gapFinder_desc')}
+              </p>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-8 flex items-center justify-between">
+              <span className="text-xs font-bold text-[#0D0D0D]">Traverse Curriculum DAG</span>
               <Link
-                to="/ai-tutor"
-                className="px-6 py-3 rounded-full bg-lime-400 hover:bg-lime-300 text-slate-950 font-bold text-xs inline-flex items-center gap-2 shadow-lg shadow-lime-400/25 transition-all hover:scale-105 cursor-pointer"
+                to="/gaps"
+                className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white group-hover:bg-[#F26522] flex items-center justify-center transition-colors shadow-xs"
               >
-                <span>Explore AI Assistant</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
+          </Card>
+
+          {/* Card 2: Confidence-Weighted Diagnostics */}
+          <Card variant="surface" hoverLift padding="lg" className="flex flex-col justify-between group">
+            <div className="space-y-4">
+              <div className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center font-bold">
+                <Target className="w-5 h-5 text-[#F26522]" />
+              </div>
+
+              <h3 className="font-heading text-xl font-bold text-[#0D0D0D] group-hover:text-[#F26522] transition-colors">
+                {t('features.confidence_title')}
+              </h3>
+
+              <p className="text-xs sm:text-sm text-[#6B6660] leading-relaxed">
+                {t('features.confidence_desc')}
+              </p>
+            </div>
+
+            <div className="pt-8 flex items-center justify-between">
+              <span className="text-xs font-bold text-[#0D0D0D]">Sure / Not Sure / Guess</span>
+              <Link
+                to="/quiz"
+                className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white group-hover:bg-[#F26522] flex items-center justify-center transition-colors shadow-xs"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </Card>
+
+          {/* Card 3: Adaptive Study Planner */}
+          <Card variant="surface" hoverLift padding="lg" className="flex flex-col justify-between group">
+            <div className="space-y-4">
+              <div className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center font-bold">
+                <Calendar className="w-5 h-5 text-[#F26522]" />
+              </div>
+
+              <h3 className="font-heading text-xl font-bold text-[#0D0D0D] group-hover:text-[#F26522] transition-colors">
+                {t('features.studyPlanner_title')}
+              </h3>
+
+              <p className="text-xs sm:text-sm text-[#6B6660] leading-relaxed">
+                {t('features.studyPlanner_desc')}
+              </p>
+            </div>
+
+            <div className="pt-8 flex items-center justify-between">
+              <span className="text-xs font-bold text-[#0D0D0D]">25–30 Min Sessions</span>
+              <Link
+                to="/planner"
+                className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white group-hover:bg-[#F26522] flex items-center justify-center transition-colors shadow-xs"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          4. 3-STEP PROCESS ("Test", "Trace", "Improve") (Matching Reference Process)
+      ========================================================================= */}
+      <section className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          {/* Left Column: Original Torus / Energy Orb Graphic */}
+          <div className="lg:col-span-5 flex items-center justify-center">
+            <div className="relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center">
+              {/* Outer Glow */}
+              <div className="absolute inset-0 bg-[#F26522]/15 rounded-full blur-2xl pointer-events-none" />
+
+              {/* Original Geometric Ring SVG */}
+              <svg className="w-full h-full" viewBox="0 0 200 200" fill="none">
+                {/* Metallic Dark Ring */}
+                <circle cx="100" cy="100" r="70" stroke="#0D0D0D" strokeWidth="18" strokeLinecap="round" />
+                <circle cx="100" cy="100" r="70" stroke="#333333" strokeWidth="6" />
+                
+                {/* Swirling Orange Energy Arc */}
+                <path
+                  d="M50 150C70 180 130 180 160 140C190 100 170 40 120 30"
+                  stroke="#F26522"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                <circle cx="120" cy="30" r="5" fill="#FFFFFF" />
+              </svg>
+
+              {/* Center Label */}
+              <div className="absolute flex flex-col items-center justify-center text-center">
+                <span className="font-heading font-black text-2xl text-[#0D0D0D]">3 STEPS</span>
+                <span className="text-[10px] font-bold tracking-widest text-[#F26522] uppercase">To Mastery</span>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column: High-Fidelity Dark Mode Dashboard Mockup (Matching Figma Farm Overview) */}
-          <div className="lg:col-span-7">
-            <div className="rounded-3xl border border-emerald-500/30 bg-[#05110c] p-5 sm:p-6 shadow-2xl space-y-4">
-              {/* Dashboard Top Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-emerald-500/15">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-lime-400/20 text-lime-400 flex items-center justify-center">
-                    <Layers className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-bold text-white">Diagnostic Learning Overview</span>
-                </div>
+          {/* Right Column: Process Headline & Vertical StepList */}
+          <div className="lg:col-span-7 space-y-6">
+            <SectionLabel>{t('process.label')}</SectionLabel>
 
-                <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#0d261c] text-emerald-300 border border-emerald-500/25">
-                    Class 9-A
-                  </span>
-                  <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" />
-                </div>
-              </div>
+            <h2 className="font-heading text-3xl sm:text-4xl font-extrabold text-[#0D0D0D] tracking-tight">
+              {t('process.title')} <span className="text-[#F26522]">{t('process.highlight')}</span>
+            </h2>
 
-              {/* 4 Mini Metric Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                <div className="p-3 rounded-2xl bg-[#091f16] border border-emerald-500/15">
-                  <div className="text-[10px] text-slate-400">Total Topics</div>
-                  <div className="text-base font-bold text-white mt-0.5">10 Topics</div>
-                </div>
-                <div className="p-3 rounded-2xl bg-[#091f16] border border-emerald-500/15">
-                  <div className="text-[10px] text-slate-400">Active Gaps</div>
-                  <div className="text-base font-bold text-amber-400 mt-0.5">1 Root Gap</div>
-                </div>
-                <div className="p-3 rounded-2xl bg-[#091f16] border border-emerald-500/15">
-                  <div className="text-[10px] text-slate-400">Study Pace</div>
-                  <div className="text-base font-bold text-cyan-400 mt-0.5">3.6 sess/wk</div>
-                </div>
-                <div className="p-3 rounded-2xl bg-[#091f16] border border-emerald-500/15">
-                  <div className="text-[10px] text-slate-400">Field Health</div>
-                  <div className="text-base font-bold text-lime-400 mt-0.5">85% Mastered</div>
-                </div>
-              </div>
+            <p className="text-sm text-[#6B6660] max-w-lg leading-relaxed">
+              Three focused stages engineered to turn classroom struggles into lasting academic confidence.
+            </p>
 
-              {/* Interactive Prerequisite DAG Graph Preview (Matching Figma visual map) */}
-              <div className="p-4 rounded-2xl bg-[#081811] border border-emerald-500/20 space-y-3">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-white flex items-center gap-1.5">
-                    <GitFork className="w-3.5 h-3.5 text-lime-400" />
-                    <span>Curriculum Prerequisite Tracing Engine (DAG)</span>
-                  </span>
-                  <span className="text-[10px] text-amber-400 font-medium">Root Cause Diagnosed</span>
-                </div>
-
-                {/* Nodes representation */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-xl bg-[#05110c] border border-emerald-500/15 text-xs">
-                  <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 w-full sm:w-auto text-center sm:text-left">
-                    <div className="text-[9px] uppercase font-bold text-amber-400">Class 8 Prerequisite</div>
-                    <div className="font-bold">Algebraic Factoring</div>
-                    <div className="text-[10px] text-amber-200/70">45% Mastery (Weak Link)</div>
-                  </div>
-
-                  <ArrowRight className="w-4 h-4 text-slate-500 shrink-0 rotate-90 sm:rotate-0" />
-
-                  <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 w-full sm:w-auto text-center sm:text-left">
-                    <div className="text-[9px] uppercase font-bold text-rose-400">Class 9 Target Topic</div>
-                    <div className="font-bold">Quadratic Equations</div>
-                    <div className="text-[10px] text-rose-200/70">33% Score (Blocked)</div>
-                  </div>
-
-                  <ArrowRight className="w-4 h-4 text-slate-500 shrink-0 rotate-90 sm:rotate-0" />
-
-                  <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 w-full sm:w-auto text-center sm:text-left">
-                    <div className="text-[9px] uppercase font-bold text-emerald-400">Class 9 Downstream</div>
-                    <div className="font-bold">Polynomial Roots</div>
-                    <div className="text-[10px] text-emerald-200/70">Ready after unblocking</div>
-                  </div>
-                </div>
-
-                <div className="text-[11px] text-slate-400 leading-relaxed italic">
-                  💡 <strong>System Finding:</strong> Solving middle-term splitting unblocks 66% of quadratic equation errors before exam day.
-                </div>
-              </div>
+            <div className="pt-2">
+              <StepList steps={processSteps} />
             </div>
           </div>
         </div>
       </section>
 
-
       {/* =========================================================================
-          FOUR ROLE EXPERIENCES (Student, Teacher, Parent, Admin)
+          5. ROLE DASHBOARDS ACCESS (Student, Teacher, Parent, Admin)
       ========================================================================= */}
       <section className="space-y-8">
-        <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <span className="text-xs font-bold tracking-widest text-lime-400 uppercase">
-            ONE DATABASE • FOUR PERSPECTIVES
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-            {t('roles.title')}
-          </h2>
-          <p className="text-xs sm:text-sm text-emerald-100/70">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <SectionLabel>CONNECTED COMMUNITY</SectionLabel>
+            <h2 className="font-heading text-3xl sm:text-4xl font-extrabold text-[#0D0D0D] tracking-tight">
+              {t('roles.title')}
+            </h2>
+          </div>
+          <p className="text-xs sm:text-sm text-[#6B6660] max-w-md">
             {t('roles.subtitle')}
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {roles.map((r, idx) => {
+          {roleCards.map((r, idx) => {
             const Icon = r.icon;
             return (
-              <div
-                key={idx}
-                className="p-6 rounded-3xl bg-[#091d15]/75 hover:bg-[#0c241b] border border-emerald-500/15 hover:border-lime-500/40 transition-all flex flex-col justify-between group shadow-xl"
-              >
-                <div className="space-y-4">
+              <Card key={idx} variant="surface" hoverLift padding="md" className="flex flex-col justify-between group">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-lime-400">
-                      <Icon className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center font-bold">
+                      <Icon className="w-5 h-5 text-[#F26522]" />
                     </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${r.badgeColor}`}>
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D]">
                       {r.badge}
                     </span>
                   </div>
 
-                  <h3 className="text-base font-bold text-white group-hover:text-lime-300 transition-colors">
+                  <h3 className="font-heading text-base font-bold text-[#0D0D0D] group-hover:text-[#F26522] transition-colors">
                     {r.title}
                   </h3>
 
-                  <p className="text-xs text-slate-300/80 leading-relaxed">
+                  <p className="text-xs text-[#6B6660] leading-relaxed">
                     {r.desc}
                   </p>
                 </div>
@@ -509,64 +474,29 @@ export default function Home() {
                 <div className="pt-6">
                   <Link
                     to={r.link}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-lime-400 hover:text-lime-300 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0D0D0D] group-hover:text-[#F26522] transition-colors"
                   >
                     <span>{t('roles.enterRole')}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
       </section>
 
-
       {/* =========================================================================
-          BOTTOM CONVERSION BANNER (Matching Figma "Together, let's build..." Banner)
+          6. CALL TO ACTION BANNER (Matching Reference Dark Banner)
       ========================================================================= */}
-      <section className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-[#071711] via-[#0d2a1e] to-[#071711] border border-emerald-500/25 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
-        <div className="space-y-4 max-w-xl text-center md:text-left">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight">
-            Together, let's build an inclusive and smarter classroom.
-          </h2>
-          <p className="text-xs sm:text-sm text-emerald-100/75 leading-relaxed">
-            Join LearnLens and experience personalized education that fixes foundational gaps instead of merely counting lost marks.
-          </p>
-
-          <div className="flex items-center justify-center md:justify-start gap-3 pt-2">
-            <div className="flex -space-x-2">
-              <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Priya"
-                alt="Student"
-                className="w-8 h-8 rounded-full border-2 border-[#0d2a1e] bg-slate-800"
-              />
-              <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Rajesh"
-                alt="Teacher"
-                className="w-8 h-8 rounded-full border-2 border-[#0d2a1e] bg-slate-800"
-              />
-              <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sunita"
-                alt="Parent"
-                className="w-8 h-8 rounded-full border-2 border-[#0d2a1e] bg-slate-800"
-              />
-            </div>
-            <span className="text-[11px] text-emerald-200/80 font-medium">
-              Trusted by students, teachers & parents
-            </span>
-          </div>
-        </div>
-
-        <div className="shrink-0">
-          <Link
-            to="/quiz"
-            className="px-8 py-4 rounded-full bg-lime-400 hover:bg-lime-300 text-slate-950 font-bold text-sm inline-flex items-center gap-2 shadow-xl shadow-lime-400/25 transition-all hover:scale-105 cursor-pointer whitespace-nowrap"
-          >
-            <span>Start Free Diagnostic</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
+      <section>
+        <CtaBanner
+          title={t('cta.title')}
+          accentWord={t('cta.highlight')}
+          subtitle={t('cta.subtitle')}
+          buttonText={t('cta.button')}
+          buttonTo="/quiz"
+        />
       </section>
     </div>
   );
