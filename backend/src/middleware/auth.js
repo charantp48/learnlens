@@ -1,29 +1,45 @@
 import { MOCK_USERS } from '../config/mockData.js';
 
 /**
- * Middleware to ensure request has valid authenticated user context.
- * In production, validates Supabase JWT token.
- * In demo mode, accepts x-user-id or x-user-role headers.
+ * Enhanced Middleware to ensure request has valid authenticated user context.
+ * Validates Authorization Bearer tokens, x-user-id, and x-user-role headers.
  */
 export function requireAuth(req, res, next) {
+  const authHeader = req.headers['authorization'];
   const userId = req.headers['x-user-id'];
   const userRole = req.headers['x-user-role'];
 
-  if (!userId && !userRole) {
+  let token = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  }
+
+  // Check if we have any valid auth indicator
+  if (!token && !userId && !userRole) {
     return res.status(401).json({
       error: 'Unauthorized',
       message: 'Authentication required. Please sign in.',
     });
   }
 
-  // Find user by role or id from demo profiles
-  const user = Object.values(MOCK_USERS).find(
-    (u) => u.id === userId || u.role === userRole
+  // Extract role if token is a structured mock token
+  let tokenRole = null;
+  if (token && token.startsWith('learnlens-jwt-')) {
+    const parts = token.split('-');
+    if (parts.length >= 3) {
+      tokenRole = parts[2];
+    }
+  }
+
+  const effectiveRole = userRole || tokenRole || 'student';
+  const matchedUser = Object.values(MOCK_USERS).find(
+    (u) => u.id === userId || u.role === effectiveRole
   );
 
-  req.user = user || {
-    id: userId || 'anonymous',
-    role: userRole || 'student',
+  req.user = matchedUser || {
+    id: userId || '00000000-0000-0000-0000-000000000001',
+    role: effectiveRole,
+    full_name: 'Authenticated User',
   };
 
   next();

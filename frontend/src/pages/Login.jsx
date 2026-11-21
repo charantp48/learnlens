@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -11,157 +11,289 @@ import {
   Users, 
   HeartHandshake, 
   ShieldAlert, 
+  Mail, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  ArrowRight, 
+  AlertCircle,
+  Loader2,
   CheckCircle2,
-  ArrowRight
+  Sparkles
 } from 'lucide-react';
 
 export default function Login() {
   const { t } = useTranslation();
-  const { loginDemo, currentUser, getDashboardPath } = useAuth();
+  const { loginWithCredentials, loginDemo, currentUser, getDashboardPath } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const preselectedRole = searchParams.get('role');
 
+  // Form State
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [touched, setTouched] = useState({ email: false, password: false });
+
+  // Expired session detection
+  const isExpired = searchParams.get('expired') === 'true';
+
+  // Demo mode check (enabled by default; set VITE_DEMO_MODE=false to hide)
+  const isDemoMode = import.meta.env.VITE_DEMO_MODE !== 'false';
+
+  // If already logged in, offer immediate redirect
+  useEffect(() => {
+    if (currentUser && !isExpired) {
+      // User is already signed in
+    }
+  }, [currentUser, isExpired]);
+
+  // Demo account profiles
   const demoAccounts = [
     {
       role: 'student',
-      title: t('roles.student_title'),
-      name: 'Priya Sharma (Class 9A)',
-      desc: 'Takes quizzes, views prerequisite gap tree, generates custom study schedule.',
+      title: 'Student',
+      email: 'priya.student@learnlens.demo',
+      password: 'Student@123',
+      name: 'Priya Sharma (Class 9-A)',
       icon: GraduationCap,
-      actionText: t('login.studentBtn'),
     },
     {
       role: 'teacher',
-      title: t('roles.teacher_title'),
-      name: 'Mr. Rajesh Rao (Maths Faculty)',
-      desc: 'Classroom topic heatmaps, per-student gap tracking, quiz assignments & feedback.',
+      title: 'Teacher',
+      email: 'rajesh.teacher@learnlens.demo',
+      password: 'Teacher@123',
+      name: 'Mr. Rajesh Rao (Maths)',
       icon: Users,
-      actionText: t('login.teacherBtn'),
     },
     {
       role: 'parent',
-      title: t('roles.parent_title'),
+      title: 'Parent',
+      email: 'sunita.parent@learnlens.demo',
+      password: 'Parent@123',
       name: 'Sunita Sharma (Parent of Priya)',
-      desc: 'Non-technical progress overview, weekly study planner monitoring, teacher notes.',
       icon: HeartHandshake,
-      actionText: t('login.parentBtn'),
     },
     {
       role: 'admin',
-      title: t('roles.admin_title'),
+      title: 'Admin',
+      email: 'admin@learnlens.demo',
+      password: 'Admin@123',
       name: 'Dr. Vikram Malhotra (Principal)',
-      desc: 'School-wide subject health, roster and class management, parent-student linkage.',
       icon: ShieldAlert,
-      actionText: t('login.adminBtn'),
     },
   ];
 
-  const handleSelectRole = (role) => {
-    loginDemo(role);
-    const destination = getDashboardPath(role);
-    navigate(destination);
+  // Validation
+  const isValidEmail = (str) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str.trim());
+  const emailError = touched.email && (!email.trim() ? 'Email is required' : !isValidEmail(email) ? 'Please enter a valid email address' : '');
+  const passwordError = touched.password && (!password ? 'Password is required' : password.length < 6 ? 'Password must be at least 6 characters' : '');
+
+  // Handle Form Submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setTouched({ email: true, password: true });
+
+    if (!isValidEmail(email) || password.length < 6) {
+      setError('Please resolve validation errors before continuing.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const user = await loginWithCredentials(email, password);
+      const destination = getDashboardPath(user.role);
+      navigate(destination, { replace: true });
+    } catch (err) {
+      setError(err.message || 'Login failed. Please verify your email and password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Quick Demo Account Click
+  const handleQuickDemo = async (account) => {
+    setEmail(account.email);
+    setPassword(account.password);
+    setError('');
+    setLoading(true);
+
+    try {
+      const user = loginDemo(account.role);
+      const destination = getDashboardPath(user.role);
+      setTimeout(() => {
+        navigate(destination, { replace: true });
+      }, 400);
+    } catch (err) {
+      setError('Could not sign in with demo account.');
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-6 sm:py-10 space-y-8">
-      {/* Brand Header with Logo */}
+    <div className="max-w-lg mx-auto py-8 sm:py-14 px-4 space-y-8">
+      {/* Animated Welcome Header */}
       <div className="text-center space-y-3">
-        <div className="flex justify-center mb-2">
+        <div className="inline-flex transform hover:scale-105 transition-transform duration-300">
           <Logo size="lg" showText={true} />
         </div>
-        <SectionLabel className="justify-center">ROLE ACCESS</SectionLabel>
-        <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0D0D0D] tracking-tight">
-          Select Your Role to <span className="text-[#F26522]">Sign In</span>
-        </h1>
-        <p className="text-[#6B6660] text-sm max-w-md mx-auto leading-relaxed">
-          {t('login.subtitle')}
+        <p className="font-heading text-sm sm:text-base text-[#6B6660] font-semibold">
+          {t('tagline') || 'Smart, Inclusive, Personalized Education'}
         </p>
+        <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-[#0D0D0D] tracking-tight pt-1">
+          Sign In to Your Account
+        </h1>
       </div>
 
-      {/* Active Session Notification */}
-      {currentUser && (
-        <Card padding="sm" className="bg-[#FBF8F4] border-[#E3DCD3] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-[#F26522] shrink-0" />
-            <span className="text-[#6B6660]">
-              Currently signed in as <strong className="text-[#0D0D0D]">{currentUser.full_name}</strong> ({currentUser.role}).
-            </span>
-          </div>
-          <Button
-            onClick={() => navigate(getDashboardPath(currentUser.role))}
-            variant="dark"
-            size="sm"
-            showArrow
-          >
-            Go to Active Dashboard
-          </Button>
-        </Card>
+      {/* Expired Session Notice */}
+      {isExpired && (
+        <div className="p-4 rounded-2xl bg-[#FFF3EC] border border-[#F26522]/30 flex items-center gap-3 text-xs text-[#0D0D0D]">
+          <AlertCircle className="w-5 h-5 text-[#F26522] shrink-0" />
+          <span>Your session has expired. Please sign in again to continue your work.</span>
+        </div>
       )}
 
-      {/* Demo Roles Grid */}
-      <div className="space-y-4">
-        {demoAccounts.map((account) => {
-          const Icon = account.icon;
-          const isCurrent = currentUser?.role === account.role;
-          const isPreselected = preselectedRole === account.role;
+      {/* Error Banner */}
+      {error && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-xs text-rose-800">
+          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <strong className="font-bold">Authentication Issue</strong>
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
 
-          return (
-            <Card
-              key={account.role}
-              padding="md"
-              hoverLift
-              className={`transition-all ${
-                isCurrent
-                  ? 'border-[#F26522] ring-2 ring-[#F26522]/30 bg-white'
-                  : isPreselected
-                  ? 'border-[#0D0D0D] bg-white'
-                  : ''
-              }`}
+      {/* Main Interactive Login Card */}
+      <Card variant="surface" className="p-6 sm:p-8 space-y-6 border border-[#E3DCD3] shadow-md">
+        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+          {/* Email Field */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#0D0D0D]">
+              Email Address
+            </label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-[#6B6660] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError('');
+                }}
+                onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
+                placeholder="name@learnlens.demo"
+                autoComplete="email"
+                className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-[#F5F0EA] border text-xs sm:text-sm text-[#0D0D0D] placeholder:text-[#6B6660] focus:outline-none transition-colors ${
+                  emailError
+                    ? 'border-rose-400 focus:border-rose-500'
+                    : 'border-[#E3DCD3] focus:border-[#F26522]'
+                }`}
+                required
+              />
+            </div>
+            {emailError && (
+              <p className="text-[11px] text-rose-600 pl-1 font-medium">{emailError}</p>
+            )}
+          </div>
+
+          {/* Password Field with Show/Hide Toggle */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#0D0D0D]">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-[#6B6660] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError('');
+                }}
+                onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                className={`w-full pl-10 pr-11 py-3 rounded-2xl bg-[#F5F0EA] border text-xs sm:text-sm text-[#0D0D0D] placeholder:text-[#6B6660] focus:outline-none transition-colors ${
+                  passwordError
+                    ? 'border-rose-400 focus:border-rose-500'
+                    : 'border-[#E3DCD3] focus:border-[#F26522]'
+                }`}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B6660] hover:text-[#0D0D0D] transition-colors p-1"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {passwordError && (
+              <p className="text-[11px] text-rose-600 pl-1 font-medium">{passwordError}</p>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <div className="pt-2">
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              disabled={loading}
+              className="w-full justify-center"
+              icon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center shrink-0 shadow-xs">
-                    <Icon className="w-5 h-5 text-[#F26522]" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B6660]">
-                        {account.title}
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F5F0EA] border border-[#E3DCD3] text-[#0D0D0D] font-bold">
-                        Demo Account
-                      </span>
-                      {isCurrent && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F26522]/15 text-[#F26522] font-bold">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-heading text-lg font-bold text-[#0D0D0D]">
-                      {account.name}
-                    </h3>
-                    <p className="text-xs text-[#6B6660] leading-relaxed max-w-md">
-                      {account.desc}
-                    </p>
-                  </div>
-                </div>
+              {loading ? 'Signing In...' : 'Sign In'}
+            </Button>
+          </div>
+        </form>
 
-                <div className="sm:self-center shrink-0">
-                  <Button
-                    onClick={() => handleSelectRole(account.role)}
-                    variant={isCurrent ? 'dark' : 'primary'}
-                    size="sm"
-                    showArrow
+        {/* Demo Mode Quick Buttons */}
+        {isDemoMode && (
+          <div className="pt-6 border-t border-[#E3DCD3] space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B6660] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#F26522]" />
+                <span>Demo Accounts (1-Click Fill)</span>
+              </span>
+              <span className="text-[10px] text-[#6B6660] font-mono">Demo Mode Active</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+              {demoAccounts.map((account) => {
+                const Icon = account.icon;
+                return (
+                  <button
+                    key={account.role}
+                    type="button"
+                    onClick={() => handleQuickDemo(account)}
+                    className="p-2.5 sm:p-3 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] hover:border-[#F26522] hover:bg-white transition-all text-left group cursor-pointer"
                   >
-                    {account.actionText}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center shrink-0">
+                        <Icon className="w-3.5 h-3.5 text-[#F26522]" />
+                      </div>
+                      <div className="truncate">
+                        <div className="font-heading font-bold text-xs text-[#0D0D0D] group-hover:text-[#F26522] transition-colors truncate">
+                          {account.title}
+                        </div>
+                        <div className="text-[10px] text-[#6B6660] truncate">
+                          {account.role}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
