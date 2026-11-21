@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '../context/LanguageContext';
 import { 
   Users, 
@@ -14,7 +14,18 @@ import {
   ToggleLeft,
   ToggleRight,
   Search,
-  Filter
+  Filter,
+  Upload,
+  Download,
+  FileSpreadsheet,
+  KeyRound,
+  Copy,
+  Check,
+  Edit,
+  X,
+  Shield,
+  Activity,
+  History
 } from 'lucide-react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
@@ -24,24 +35,44 @@ export default function AdminDashboard() {
   const { t, tName } = useTranslation();
 
   const [metrics, setMetrics] = useState({
-    counts: { students: 4, teachers: 2, parents: 2, classes: 2, totalUsers: 9 },
+    counts: {
+      real: { students: 2, teachers: 1, parents: 1, admins: 0, total: 4 },
+      all: { students: 4, teachers: 2, parents: 2, total: 9 },
+      classes: 2,
+    },
     users: [],
     classes: [],
+    recentActivity: [],
   });
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [feedback, setFeedback] = useState(null);
+  const [copiedKey, setCopiedKey] = useState('');
 
-  // Form states
-  const [newUser, setNewUser] = useState({
+  // Password Reveal Modal / Banner state
+  const [latestCredentials, setLatestCredentials] = useState(null); // { title: '', users: [ { name, email, role, temporaryPassword } ] }
+
+  // 1. Single User Form State
+  const [singleUser, setSingleUser] = useState({
     name: '',
     email: '',
     role: 'student',
-    password: '',
     className: 'Class 11-A',
+    linkedChild: '',
+    subject: 'Mathematics',
   });
 
+  // 2. CSV Upload & Preview State
+  const fileInputRef = useRef(null);
+  const [csvFile, setCsvFile] = useState(null);
+  const [csvPreview, setCsvPreview] = useState(null); // { totalRows, validCount, errorCount, previewRows }
+  const [csvLoading, setCsvLoading] = useState(false);
+
+  // 3. Edit User Modal State
+  const [editModalUser, setEditModalUser] = useState(null);
+
+  // 4. Create Class State
   const [newClass, setNewClass] = useState({
     name: '',
     section: 'A',
@@ -49,17 +80,19 @@ export default function AdminDashboard() {
     teacher: '',
   });
 
+  // 5. Assignment State
   const [assignment, setAssignment] = useState({
     classId: '',
     userId: '',
   });
 
+  // 6. Link Parent State
   const [parentLink, setParentLink] = useState({
     parentId: '',
     studentId: '',
   });
 
-  // Fetch admin metrics from server
+  // Fetch admin metrics & data
   const fetchMetrics = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/admin/metrics');
@@ -89,10 +122,200 @@ export default function AdminDashboard() {
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });
-    setTimeout(() => setFeedback(null), 5000);
+    setTimeout(() => setFeedback(null), 6000);
   };
 
-  // 1. Toggle user status (Enable / Disable)
+  const copyToClipboard = (text, keyId) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(keyId);
+    setTimeout(() => setCopiedKey(''), 2500);
+  };
+
+  // 1. Create ONE real user
+  const handleCreateSingleUser = async (e) => {
+    e.preventDefault();
+    if (!singleUser.name || !singleUser.email) {
+      showFeedback('error', 'Name and email are required.');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/admin/users/create-single', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(singleUser),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showFeedback('success', `Created account for ${data.user.name}.`);
+        setLatestCredentials({
+          title: `Account Created: ${data.user.name}`,
+          users: [
+            {
+              name: data.user.name,
+              email: data.user.email,
+              role: data.user.role,
+              className: data.user.className,
+              temporaryPassword: data.temporaryPassword,
+            },
+          ],
+        });
+        setSingleUser({
+          name: '',
+          email: '',
+          role: 'student',
+          className: 'Class 11-A',
+          linkedChild: '',
+          subject: 'Mathematics',
+        });
+        fetchMetrics();
+      } else {
+        showFeedback('error', data.message || 'Failed to create user');
+      }
+    } catch (err) {
+      showFeedback('error', 'Network error creating user');
+    }
+  };
+
+  // 2. CSV File Parse & Preview
+  const handleCSVFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCsvFile(file);
+    const reader = new FileReader();
+
+    reader.onload = async (evt) => {
+      try {
+        const text = evt.target.result;
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+        if (lines.length < 2) {
+          showFeedback('error', 'CSV file is empty or missing data rows.');
+          return;
+        }
+
+        const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
+        const rows = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map((c) => c.trim());
+          if (cols.length === 0 || !cols.some((c) => c.length > 0)) continue;
+
+          const rowObj = {};
+          headers.forEach((h, idx) => {
+            rowObj[h] = cols[idx] || '';
+          });
+          rows.push(rowObj);
+        }
+
+        setCsvLoading(true);
+
+        const res = await fetch('http://localhost:5000/api/admin/users/csv-preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows }),
+        });
+
+        const previewData = await res.json();
+        if (res.ok) {
+          setCsvPreview(previewData);
+        } else {
+          showFeedback('error', previewData.message || 'Error validating CSV rows');
+        }
+      } catch (err) {
+        showFeedback('error', 'Failed to read or parse CSV file.');
+      } finally {
+        setCsvLoading(false);
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
+  // 3. Confirm and Import Valid CSV Rows
+  const handleImportCSV = async () => {
+    if (!csvPreview || csvPreview.validCount === 0) return;
+
+    setCsvLoading(true);
+    const validRows = csvPreview.previewRows.filter((r) => r.isValid);
+
+    try {
+      const res = await fetch('http://localhost:5000/api/admin/users/csv-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ validRows }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showFeedback('success', `Imported ${data.importedCount} users successfully!`);
+        setLatestCredentials({
+          title: `Batch Import Results (${data.importedCount} Users Created)`,
+          users: data.credentials,
+        });
+        setCsvPreview(null);
+        setCsvFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        fetchMetrics();
+      } else {
+        showFeedback('error', data.message || 'Error importing CSV users');
+      }
+    } catch (err) {
+      showFeedback('error', 'Network error during CSV import');
+    } finally {
+      setCsvLoading(false);
+    }
+  };
+
+  // Download Temporary Passwords CSV
+  const handleDownloadCredentialsCSV = () => {
+    if (!latestCredentials?.users?.length) return;
+    const header = 'Name,Email,Role,Class,Temporary_Password\n';
+    const lines = latestCredentials.users.map(
+      (u) => `"${u.name}","${u.email}","${u.role}","${u.className || ''}","${u.temporaryPassword}"`
+    );
+    const blob = new Blob([header + lines.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'learnlens_temporary_passwords.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Reset User Password (generates new temporary password)
+  const handleResetPassword = async (user) => {
+    if (!window.confirm(`Generate a new temporary password for ${user.name}?`)) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/admin/users/${user.id}/reset-password`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setLatestCredentials({
+          title: `Password Reset: ${user.name}`,
+          users: [
+            {
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              className: user.className,
+              temporaryPassword: data.temporaryPassword,
+            },
+          ],
+        });
+        showFeedback('success', `New temporary password generated for ${user.name}.`);
+        fetchMetrics();
+      } else {
+        showFeedback('error', data.message || 'Failed to reset password');
+      }
+    } catch (err) {
+      showFeedback('error', 'Network error resetting password');
+    }
+  };
+
+  // Toggle user status (Enable / Disable)
   const handleToggleStatus = async (userId) => {
     try {
       const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/toggle-status`, {
@@ -109,127 +332,43 @@ export default function AdminDashboard() {
         showFeedback('error', data.message || 'Failed to toggle status');
       }
     } catch (err) {
-      // Local fallback
-      setMetrics((prev) => ({
-        ...prev,
-        users: prev.users.map((u) =>
-          u.id === userId
-            ? { ...u, status: u.status === 'active' ? 'disabled' : 'active' }
-            : u
-        ),
-      }));
-      showFeedback('success', 'User status updated');
+      showFeedback('error', 'Error toggling user status');
     }
   };
 
-  // 2. Create User
-  const handleCreateUser = async (e) => {
+  // Edit User Details
+  const handleSaveEditUser = async (e) => {
     e.preventDefault();
-    if (!newUser.name || !newUser.email) {
-      showFeedback('error', 'Name and email are required');
-      return;
-    }
+    if (!editModalUser) return;
 
     try {
-      const res = await fetch('http://localhost:5000/api/admin/users', {
-        method: 'POST',
+      const res = await fetch(`http://localhost:5000/api/admin/users/${editModalUser.id}/edit`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser),
+        body: JSON.stringify({
+          name: editModalUser.name,
+          email: editModalUser.email,
+          className: editModalUser.className,
+          linkedChild: editModalUser.linkedChild,
+          status: editModalUser.status,
+        }),
       });
+
       const data = await res.json();
       if (res.ok) {
-        showFeedback('success', t('admin.successUserCreated') || 'User created successfully!');
-        setNewUser({ name: '', email: '', role: 'student', password: '', className: 'Class 11-A' });
+        showFeedback('success', `User ${data.user.name} updated successfully.`);
+        setEditModalUser(null);
         fetchMetrics();
       } else {
-        showFeedback('error', data.message || 'Failed to create user');
+        showFeedback('error', data.message || 'Failed to update user');
       }
     } catch (err) {
-      showFeedback('error', 'Network error creating user');
-    }
-  };
-
-  // 3. Create Class
-  const handleCreateClass = async (e) => {
-    e.preventDefault();
-    if (!newClass.name) {
-      showFeedback('error', 'Class name is required');
-      return;
-    }
-
-    try {
-      const res = await fetch('http://localhost:5000/api/admin/classes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newClass),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showFeedback('success', t('admin.successClassCreated') || 'Class created successfully!');
-        setNewClass({ name: '', section: 'A', subject: 'Mathematics', teacher: '' });
-        fetchMetrics();
-      } else {
-        showFeedback('error', data.message || 'Failed to create class');
-      }
-    } catch (err) {
-      showFeedback('error', 'Network error creating class');
-    }
-  };
-
-  // 4. Assign Teacher or Student to Class
-  const handleAssign = async (e) => {
-    e.preventDefault();
-    if (!assignment.classId || !assignment.userId) {
-      showFeedback('error', 'Select both a class and a user');
-      return;
-    }
-
-    try {
-      const res = await fetch('http://localhost:5000/api/admin/assign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(assignment),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showFeedback('success', t('admin.successAssigned') || 'Assignment saved successfully!');
-        fetchMetrics();
-      } else {
-        showFeedback('error', data.message || 'Failed to assign to class');
-      }
-    } catch (err) {
-      showFeedback('error', 'Network error saving assignment');
-    }
-  };
-
-  // 5. Link Parent to Child
-  const handleLinkParent = async (e) => {
-    e.preventDefault();
-    if (!parentLink.parentId || !parentLink.studentId) {
-      showFeedback('error', 'Select both a parent and a student');
-      return;
-    }
-
-    try {
-      const res = await fetch('http://localhost:5000/api/admin/link-parent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parentLink),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showFeedback('success', t('admin.successParentLinked') || 'Parent linked to student successfully!');
-        fetchMetrics();
-      } else {
-        showFeedback('error', data.message || 'Failed to link parent');
-      }
-    } catch (err) {
-      showFeedback('error', 'Network error linking parent');
+      showFeedback('error', 'Network error updating user');
     }
   };
 
   // Filtered users for table
-  const filteredUsers = metrics.users.filter((user) => {
+  const filteredUsers = (metrics.users || []).filter((user) => {
     const matchesFilter = activeFilter === 'all' || user.role === activeFilter;
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -238,9 +377,9 @@ export default function AdminDashboard() {
     return matchesFilter && matchesSearch;
   });
 
-  const studentsList = metrics.users.filter((u) => u.role === 'student');
-  const teachersList = metrics.users.filter((u) => u.role === 'teacher');
-  const parentsList = metrics.users.filter((u) => u.role === 'parent');
+  const studentsList = (metrics.users || []).filter((u) => u.role === 'student');
+  const teachersList = (metrics.users || []).filter((u) => u.role === 'teacher');
+  const parentsList = (metrics.users || []).filter((u) => u.role === 'parent');
 
   if (loading) {
     return (
@@ -253,19 +392,30 @@ export default function AdminDashboard() {
     );
   }
 
+  const realCounts = metrics.counts?.real || { students: 0, teachers: 0, parents: 0, total: 0 };
+
   return (
     <div className="min-h-screen bg-[#F5F0EA] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header (ONE SINGLE PAGE - strictly NO Home button) */}
-        <div>
-          <SectionLabel text={t('admin.consoleBadge') || 'Administrator Console'} />
-          <h1 className="text-3xl font-extrabold text-[#0D0D0D] tracking-tight mt-1">
-            {t('admin.title') || 'School Administration Console'}
-          </h1>
-          <p className="text-sm text-[#736B63] mt-1 max-w-2xl">
-            {t('admin.subtitle') || 'Manage users, classes, assignments, and permissions on one single page.'}
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <SectionLabel text={t('admin.consoleBadge') || 'Administrator Console'} />
+            <h1 className="text-3xl font-extrabold text-[#0D0D0D] tracking-tight mt-1">
+              {t('admin.title') || 'School Administration Console'}
+            </h1>
+            <p className="text-sm text-[#736B63] mt-1 max-w-2xl">
+              Onboard real students, teachers, and parents with secure temporary passwords and automated audit tracking.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Real Accounts Mode Active</span>
+            </span>
+          </div>
         </div>
 
         {/* Feedback Alert Toast */}
@@ -286,7 +436,87 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 1. Counts of Students, Teachers, Parents, and Cohorts */}
+        {/* TEMPORARY PASSWORDS REVEAL MODAL / BANNER (Shown once on screen with CSV download) */}
+        {latestCredentials && (
+          <Card className="p-6 bg-amber-50/70 border-2 border-amber-300 shadow-md space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-amber-200 pb-3">
+              <div className="flex items-center gap-2 text-amber-900 font-bold text-base">
+                <KeyRound className="w-5 h-5 text-amber-600 shrink-0" />
+                <span>{latestCredentials.title}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleDownloadCredentialsCSV}
+                  icon={<Download className="w-4 h-4" />}
+                >
+                  Download Passwords CSV
+                </Button>
+                <button
+                  onClick={() => setLatestCredentials(null)}
+                  className="p-1.5 rounded-lg text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer"
+                  title="Dismiss Credentials Notice"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <p className="text-xs text-amber-800 leading-relaxed">
+              <strong>Notice:</strong> These temporary passwords are shown <strong>once</strong>. Share them with users securely. Every user has been flagged with <code>must_change_password = true</code> and will be required to set their permanent password upon their first login.
+            </p>
+
+            <div className="overflow-x-auto max-h-60 overflow-y-auto">
+              <table className="w-full text-left text-xs bg-white rounded-xl border border-amber-200">
+                <thead>
+                  <tr className="border-b border-amber-200 bg-amber-100/50 text-amber-900 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-2.5 px-3">Full Name</th>
+                    <th className="py-2.5 px-3">Email Address</th>
+                    <th className="py-2.5 px-3">Role</th>
+                    <th className="py-2.5 px-3">Class / Info</th>
+                    <th className="py-2.5 px-3">Temporary Password</th>
+                    <th className="py-2.5 px-3 text-right">Copy</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-100">
+                  {latestCredentials.users.map((u, i) => (
+                    <tr key={i} className="hover:bg-amber-50/50">
+                      <td className="py-2 px-3 font-semibold text-[#0D0D0D]">{u.name}</td>
+                      <td className="py-2 px-3 font-mono text-[11px] text-[#6B6660]">{u.email}</td>
+                      <td className="py-2 px-3 capitalize font-medium">{u.role}</td>
+                      <td className="py-2 px-3 text-[#6B6660]">{u.className || '—'}</td>
+                      <td className="py-2 px-3 font-mono font-bold text-[#F26522] tracking-wider text-xs">
+                        {u.temporaryPassword}
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(u.temporaryPassword, `cred-${i}`)}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 transition-colors cursor-pointer"
+                        >
+                          {copiedKey === `cred-${i}` ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              <span>Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+
+        {/* 1. Real Totals (Demo accounts strictly excluded) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="p-5 flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
@@ -294,9 +524,10 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
-                {t('admin.studentsCount') || 'Students'}
+                {t('admin.studentsCount') || 'Students'} (Real)
               </p>
-              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.counts.students}</p>
+              <p className="text-2xl font-black text-[#0D0D0D]">{realCounts.students}</p>
+              <p className="text-[10px] text-[#6B6660] mt-0.5">+2 demo students excluded</p>
             </div>
           </Card>
 
@@ -306,9 +537,10 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
-                {t('admin.teachersCount') || 'Teachers'}
+                {t('admin.teachersCount') || 'Teachers'} (Real)
               </p>
-              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.counts.teachers}</p>
+              <p className="text-2xl font-black text-[#0D0D0D]">{realCounts.teachers}</p>
+              <p className="text-[10px] text-[#6B6660] mt-0.5">+1 demo teacher excluded</p>
             </div>
           </Card>
 
@@ -318,9 +550,10 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
-                {t('admin.parentsCount') || 'Parents'}
+                {t('admin.parentsCount') || 'Parents'} (Real)
               </p>
-              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.counts.parents}</p>
+              <p className="text-2xl font-black text-[#0D0D0D]">{realCounts.parents}</p>
+              <p className="text-[10px] text-[#6B6660] mt-0.5">+1 demo parent excluded</p>
             </div>
           </Card>
 
@@ -332,12 +565,278 @@ export default function AdminDashboard() {
               <p className="text-xs font-semibold uppercase tracking-wider text-[#736B63]">
                 {t('admin.classesCount') || 'Cohorts'}
               </p>
-              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.counts.classes}</p>
+              <p className="text-2xl font-black text-[#0D0D0D]">{metrics.classes?.length || 2}</p>
+              <p className="text-[10px] text-[#6B6660] mt-0.5">Active curriculum groups</p>
             </div>
           </Card>
         </div>
 
-        {/* 2. User Table with Role Filters and Status Toggle */}
+        {/* 2. Account Onboarding Section (Single User Form & Batch CSV Upload) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Form 1: Add ONE Real Person */}
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-[#E3DCD3]">
+              <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522]">
+                <UserPlus className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0D0D0D]">
+                  Add Individual Person
+                </h3>
+                <p className="text-[11px] text-[#736B63]">Creates real account with random temporary password</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateSingleUser} className="space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                    Role *
+                  </label>
+                  <select
+                    value={singleUser.role}
+                    onChange={(e) => setSingleUser({ ...singleUser, role: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                  >
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="parent">Parent</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ramesh Kumar"
+                    value={singleUser.name}
+                    onChange={(e) => setSingleUser({ ...singleUser, name: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. ramesh.kumar@school.edu"
+                  value={singleUser.email}
+                  onChange={(e) => setSingleUser({ ...singleUser, email: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                />
+              </div>
+
+              {/* Role specific assignment */}
+              {singleUser.role === 'student' && (
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                    Assign Class
+                  </label>
+                  <select
+                    value={singleUser.className}
+                    onChange={(e) => setSingleUser({ ...singleUser, className: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                  >
+                    {metrics.classes.map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name} ({c.subject})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {singleUser.role === 'teacher' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                      Teaching Class
+                    </label>
+                    <select
+                      value={singleUser.className}
+                      onChange={(e) => setSingleUser({ ...singleUser, className: e.target.value })}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                    >
+                      {metrics.classes.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                      Subject
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Mathematics"
+                      value={singleUser.subject}
+                      onChange={(e) => setSingleUser({ ...singleUser, subject: e.target.value })}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {singleUser.role === 'parent' && (
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                    Link to Student (Child)
+                  </label>
+                  <select
+                    value={singleUser.linkedChild}
+                    onChange={(e) => setSingleUser({ ...singleUser, linkedChild: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                  >
+                    <option value="">Select registered student...</option>
+                    {studentsList.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {tName(s.name)} ({s.className || 'Class 11-A'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <p className="text-[11px] text-[#736B63]">
+                💡 The server automatically generates a secure temporary password. User will be forced to set their permanent password at first login.
+              </p>
+
+              <Button type="submit" variant="primary" size="sm" className="w-full mt-2">
+                Generate Account & Password
+              </Button>
+            </form>
+          </Card>
+
+          {/* Form 2: Add MANY via CSV Upload with Live Pre-Validation */}
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E3DCD3]">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522]">
+                  <FileSpreadsheet className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-[#0D0D0D]">
+                    Batch CSV Onboarding
+                  </h3>
+                  <p className="text-[11px] text-[#736B63]">Upload up to 500 rows with instant row preview</p>
+                </div>
+              </div>
+
+              {/* Download CSV Template */}
+              <a
+                href="http://localhost:5000/api/admin/users/csv-template"
+                download="learnlens_users_template.csv"
+              >
+                <Button variant="ghost" size="sm" icon={<Download className="w-3.5 h-3.5" />}>
+                  Template
+                </Button>
+              </a>
+            </div>
+
+            {/* Upload Area */}
+            <div className="p-4 rounded-2xl border-2 border-dashed border-[#E3DCD3] bg-[#F5F0EA]/60 hover:bg-[#F5F0EA] transition-colors text-center space-y-2">
+              <Upload className="w-6 h-6 text-[#736B63] mx-auto" />
+              <div>
+                <label className="text-xs font-bold text-[#0D0D0D] cursor-pointer hover:text-[#F26522]">
+                  <span>Click to select CSV file</span>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={handleCSVFileChange}
+                  />
+                </label>
+                <p className="text-[10px] text-[#736B63]">Columns: role, full_name, email, class_name, linked_student_email</p>
+              </div>
+              {csvFile && (
+                <span className="inline-block text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
+                  Loaded: {csvFile.name}
+                </span>
+              )}
+            </div>
+
+            {/* CSV PREVIEW TABLE (Before Importing) */}
+            {csvPreview && (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#0D0D0D]">
+                    Validation Preview: {csvPreview.totalRows} rows parsed
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      ✓ {csvPreview.validCount} Valid
+                    </span>
+                    {csvPreview.errorCount > 0 && (
+                      <span className="text-rose-700 font-semibold bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                        ✗ {csvPreview.errorCount} Errors
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="max-h-52 overflow-y-auto overflow-x-auto border border-[#E3DCD3] rounded-xl bg-white">
+                  <table className="w-full text-left text-[11px]">
+                    <thead>
+                      <tr className="border-b border-[#E3DCD3] bg-[#FBF8F4] text-[#736B63] uppercase tracking-wider font-semibold">
+                        <th className="py-2 px-2.5">Row</th>
+                        <th className="py-2 px-2.5">Role</th>
+                        <th className="py-2 px-2.5">Name</th>
+                        <th className="py-2 px-2.5">Email</th>
+                        <th className="py-2 px-2.5">Status</th>
+                        <th className="py-2 px-2.5">Validation Details</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E3DCD3]">
+                      {csvPreview.previewRows.map((r) => (
+                        <tr key={r.rowNumber} className={r.isValid ? 'hover:bg-emerald-50/30' : 'bg-rose-50/40'}>
+                          <td className="py-2 px-2.5 font-mono">{r.rowNumber}</td>
+                          <td className="py-2 px-2.5 font-semibold capitalize">{r.role}</td>
+                          <td className="py-2 px-2.5 font-medium">{r.full_name}</td>
+                          <td className="py-2 px-2.5 font-mono text-[10px] text-[#6B6660]">{r.email}</td>
+                          <td className="py-2 px-2.5">
+                            {r.isValid ? (
+                              <span className="text-emerald-700 font-bold text-[10px]">Valid</span>
+                            ) : (
+                              <span className="text-rose-700 font-bold text-[10px]">Invalid</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-2.5 text-[10px] text-rose-700 font-medium">
+                            {r.isValid ? <span className="text-emerald-600">Ready to import</span> : r.errors.join('; ')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={csvLoading || csvPreview.validCount === 0}
+                  onClick={handleImportCSV}
+                  className="w-full"
+                >
+                  {csvLoading ? 'Importing...' : `Import ${csvPreview.validCount} Valid Accounts`}
+                </Button>
+              </div>
+            )}
+          </Card>
+
+        </div>
+
+        {/* 3. User Accounts Directory Table with Role Filters & Status Toggle */}
         <Card className="p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#E3DCD3] pb-5">
             <div>
@@ -345,7 +844,7 @@ export default function AdminDashboard() {
                 {t('admin.userTableTitle') || 'User Directory'}
               </h2>
               <p className="text-xs text-[#736B63]">
-                {t('admin.userTableSubtitle') || 'View and manage all registered accounts across roles.'}
+                Manage real accounts and demo personas. Demo accounts are flagged and excluded from real rankings.
               </p>
             </div>
 
@@ -394,14 +893,15 @@ export default function AdminDashboard() {
                   <th className="py-3 px-3">{t('admin.colEmail') || 'Email'}</th>
                   <th className="py-3 px-3">{t('admin.colRole') || 'Role'}</th>
                   <th className="py-3 px-3">{t('admin.colClass') || 'Class / Details'}</th>
+                  <th className="py-3 px-3">Type</th>
                   <th className="py-3 px-3">{t('admin.colStatus') || 'Status'}</th>
-                  <th className="py-3 px-3 text-right">{t('admin.colActions') || 'Actions'}</th>
+                  <th className="py-3 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E3DCD3]">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-[#736B63]">
+                    <td colSpan={7} className="py-8 text-center text-[#736B63]">
                       No users match the selected criteria.
                     </td>
                   </tr>
@@ -431,6 +931,17 @@ export default function AdminDashboard() {
                           {u.className || (u.linkedChild ? tName(u.linkedChild) : '—')}
                         </td>
                         <td className="py-3 px-3">
+                          {u.is_demo ? (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                              Demo
+                            </span>
+                          ) : (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              Real
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${
                               isActive
@@ -448,10 +959,34 @@ export default function AdminDashboard() {
                               : t('admin.statusDisabled') || 'Disabled'}
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-right">
+                        <td className="py-3 px-3 text-right space-x-1.5">
+                          {/* Edit button */}
                           <button
+                            type="button"
+                            onClick={() => setEditModalUser({ ...u })}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border border-[#E3DCD3] text-[#0D0D0D] hover:bg-[#F5F0EA] transition-colors cursor-pointer"
+                            title="Edit User Details"
+                          >
+                            <Edit className="w-3 h-3" />
+                            <span>Edit</span>
+                          </button>
+
+                          {/* Reset Password button */}
+                          <button
+                            type="button"
+                            onClick={() => handleResetPassword(u)}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border border-amber-200 text-amber-800 hover:bg-amber-50 transition-colors cursor-pointer"
+                            title="Reset Password"
+                          >
+                            <KeyRound className="w-3 h-3 text-amber-600" />
+                            <span>Reset</span>
+                          </button>
+
+                          {/* Toggle Status */}
+                          <button
+                            type="button"
                             onClick={() => handleToggleStatus(u.id)}
-                            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
                               isActive
                                 ? 'border-amber-200 text-amber-700 hover:bg-amber-50'
                                 : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
@@ -479,89 +1014,9 @@ export default function AdminDashboard() {
           </div>
         </Card>
 
-        {/* 3. Forms Section (All 4 forms on this one single page) */}
+        {/* 4. Cohorts, Assignments, and Links Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* Form 1: Create User */}
-          <Card className="p-6 space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-[#E3DCD3]">
-              <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522]">
-                <UserPlus className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-[#0D0D0D]">
-                  {t('admin.createUserTitle') || 'Create User'}
-                </h3>
-                <p className="text-[11px] text-[#736B63]">Register a student, teacher, parent, or admin</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleCreateUser} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
-                  {t('admin.fullName') || 'Full Name'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Ramesh Kumar"
-                  value={newUser.name}
-                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
-                  {t('admin.emailAddress') || 'Email Address'}
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. ramesh@learnlens.edu"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
-                    {t('admin.role') || 'Role'}
-                  </label>
-                  <select
-                    value={newUser.role}
-                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
-                  >
-                    <option value="student">Student</option>
-                    <option value="teacher">Teacher</option>
-                    <option value="parent">Parent</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
-                    {t('admin.password') || 'Password'}
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Temporary password"
-                    value={newUser.password}
-                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" variant="primary" size="sm" className="w-full mt-2">
-                {t('admin.submitCreateUser') || 'Create User'}
-              </Button>
-            </form>
-          </Card>
-
           {/* Form 2: Create Class */}
           <Card className="p-6 space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-[#E3DCD3]">
@@ -576,7 +1031,27 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <form onSubmit={handleCreateClass} className="space-y-3">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newClass.name) return;
+                try {
+                  const res = await fetch('http://localhost:5000/api/admin/classes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newClass),
+                  });
+                  if (res.ok) {
+                    showFeedback('success', 'Class created successfully!');
+                    setNewClass({ name: '', section: 'A', subject: 'Mathematics', teacher: '' });
+                    fetchMetrics();
+                  }
+                } catch (err) {
+                  showFeedback('error', 'Network error creating class');
+                }
+              }}
+              className="space-y-3"
+            >
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
@@ -657,7 +1132,26 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <form onSubmit={handleAssign} className="space-y-3">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!assignment.classId || !assignment.userId) return;
+                try {
+                  const res = await fetch('http://localhost:5000/api/admin/assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(assignment),
+                  });
+                  if (res.ok) {
+                    showFeedback('success', 'Assignment saved successfully!');
+                    fetchMetrics();
+                  }
+                } catch (err) {
+                  showFeedback('error', 'Network error saving assignment');
+                }
+              }}
+              className="space-y-3"
+            >
               <div>
                 <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
                   {t('admin.selectClass') || 'Select Class'}
@@ -709,64 +1203,127 @@ export default function AdminDashboard() {
             </form>
           </Card>
 
-          {/* Form 4: Link Parent to Child */}
+        </div>
+
+        {/* 5. EDIT USER MODAL */}
+        {editModalUser && (
+          <div className="fixed inset-0 z-50 bg-[#0D0D0D]/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <Card className="max-w-md w-full p-6 space-y-4 bg-white border border-[#E3DCD3] shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#E3DCD3] pb-3">
+                <div className="flex items-center gap-2">
+                  <Edit className="w-4 h-4 text-[#F26522]" />
+                  <h3 className="font-bold text-sm text-[#0D0D0D]">Edit Account: {editModalUser.name}</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditModalUser(null)}
+                  className="p-1 rounded-lg text-[#736B63] hover:bg-[#F5F0EA] transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditUser} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editModalUser.name}
+                    onChange={(e) => setEditModalUser({ ...editModalUser, name: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    value={editModalUser.email}
+                    onChange={(e) => setEditModalUser({ ...editModalUser, email: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">Class / Cohort</label>
+                  <select
+                    value={editModalUser.className || ''}
+                    onChange={(e) => setEditModalUser({ ...editModalUser, className: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                  >
+                    <option value="">None / Unassigned</option>
+                    {metrics.classes.map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {editModalUser.role === 'parent' && (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">Linked Student (Child)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Priya Sharma"
+                      value={editModalUser.linkedChild || ''}
+                      onChange={(e) => setEditModalUser({ ...editModalUser, linkedChild: e.target.value })}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E3DCD3]">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setEditModalUser(null)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="primary" size="sm">
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
+
+        {/* 6. Recent Administrative Activity Log */}
+        {metrics.recentActivity?.length > 0 && (
           <Card className="p-6 space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-[#E3DCD3]">
-              <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#F26522]">
-                <LinkIcon className="w-4 h-4" />
+            <div className="flex items-center justify-between border-b border-[#E3DCD3] pb-3">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-[#F26522]" />
+                <h3 className="font-bold text-sm text-[#0D0D0D]">Recent Administrative Activity Log</h3>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-[#0D0D0D]">
-                  {t('admin.linkParentTitle') || 'Link Parent to Child'}
-                </h3>
-                <p className="text-[11px] text-[#736B63]">Establish guardianship link for parent portal</p>
-              </div>
+              <span className="text-[11px] text-[#736B63]">
+                {metrics.recentActivity.length} recent audit records
+              </span>
             </div>
 
-            <form onSubmit={handleLinkParent} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
-                  {t('admin.selectParent') || 'Select Parent'}
-                </label>
-                <select
-                  value={parentLink.parentId}
-                  onChange={(e) => setParentLink({ ...parentLink, parentId: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+            <div className="space-y-2 max-h-56 overflow-y-auto">
+              {metrics.recentActivity.map((log) => (
+                <div
+                  key={log.id}
+                  className="p-3 rounded-xl bg-[#F5F0EA] border border-[#E3DCD3] flex items-center justify-between text-xs"
                 >
-                  <option value="">Select parent...</option>
-                  {parentsList.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {tName(p.name)} ({p.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
-                  {t('admin.selectStudent') || 'Select Student (Child)'}
-                </label>
-                <select
-                  value={parentLink.studentId}
-                  onChange={(e) => setParentLink({ ...parentLink, studentId: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3DCD3] bg-[#FBF8F4] text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
-                >
-                  <option value="">Select student...</option>
-                  {studentsList.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {tName(s.name)} ({s.className || 'Unassigned'})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <Button type="submit" variant="dark" size="sm" className="w-full mt-2">
-                {t('admin.submitLinkParent') || 'Link Parent'}
-              </Button>
-            </form>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold font-mono text-[11px] px-2 py-0.5 rounded-full bg-white border border-[#E3DCD3] text-[#F26522]">
+                      {log.action}
+                    </span>
+                    <span className="text-[#0D0D0D] font-medium">
+                      {log.details?.name || log.details?.email || log.details?.message || log.target_id}
+                    </span>
+                    <span className="text-[#736B63] text-[11px]">by {log.actor_email}</span>
+                  </div>
+                  <span className="text-[10px] text-[#736B63] font-mono shrink-0">
+                    {new Date(log.created_at).toLocaleTimeString()}
+                  </span>
+                </div>
+              ))}
+            </div>
           </Card>
-
-        </div>
+        )}
 
       </div>
     </div>

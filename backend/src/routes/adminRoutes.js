@@ -4,7 +4,10 @@ import { supabase } from '../config/supabase.js';
 
 const router = express.Router();
 
-// School administration in-memory state
+/**
+ * In-memory state for school administration
+ * Preserves demo accounts and supports dynamic real accounts
+ */
 let classesList = [
   { id: 'c1', name: 'Class 11-A', section: 'A', subject: 'Mathematics & Science', teacher: 'Mr. Rajesh Rao', studentsCount: 3 },
   { id: 'c2', name: 'Class 9-B', section: 'B', subject: 'Mathematics', teacher: 'Ms. Sunita Patil', studentsCount: 1 },
@@ -19,6 +22,8 @@ let usersList = [
     className: 'Class 11-A',
     parentName: 'Sunita Sharma',
     status: 'active',
+    is_demo: true,
+    must_change_password: false,
     createdAt: '2026-09-01T08:00:00.000Z',
   },
   {
@@ -29,6 +34,8 @@ let usersList = [
     className: 'Class 11-A',
     parentName: 'Amit Verma',
     status: 'active',
+    is_demo: true,
+    must_change_password: false,
     createdAt: '2026-09-01T08:00:00.000Z',
   },
   {
@@ -39,6 +46,8 @@ let usersList = [
     className: 'Class 11-A',
     parentName: 'Subhash Sen',
     status: 'active',
+    is_demo: false,
+    must_change_password: false,
     createdAt: '2026-09-01T08:00:00.000Z',
   },
   {
@@ -49,6 +58,8 @@ let usersList = [
     className: 'Class 9-B',
     parentName: 'Sunita Sharma',
     status: 'active',
+    is_demo: false,
+    must_change_password: false,
     createdAt: '2026-09-01T08:00:00.000Z',
   },
   {
@@ -58,6 +69,8 @@ let usersList = [
     role: 'teacher',
     className: 'Class 11-A (Mathematics)',
     status: 'active',
+    is_demo: true,
+    must_change_password: false,
     createdAt: '2026-08-15T08:00:00.000Z',
   },
   {
@@ -67,6 +80,8 @@ let usersList = [
     role: 'teacher',
     className: 'Class 9-B (Mathematics)',
     status: 'active',
+    is_demo: false,
+    must_change_password: false,
     createdAt: '2026-08-15T08:00:00.000Z',
   },
   {
@@ -76,6 +91,8 @@ let usersList = [
     role: 'parent',
     linkedChild: 'Priya Sharma, Arjun Sharma',
     status: 'active',
+    is_demo: true,
+    must_change_password: false,
     createdAt: '2026-09-02T08:00:00.000Z',
   },
   {
@@ -85,6 +102,8 @@ let usersList = [
     role: 'parent',
     linkedChild: 'Rahul Verma',
     status: 'active',
+    is_demo: false,
+    must_change_password: false,
     createdAt: '2026-09-02T08:00:00.000Z',
   },
   {
@@ -94,33 +113,103 @@ let usersList = [
     role: 'admin',
     className: 'Central Administration',
     status: 'active',
+    is_demo: true,
+    must_change_password: false,
     createdAt: '2026-08-01T08:00:00.000Z',
   },
 ];
 
+// In-memory credentials store for real created users
+export const dynamicCredentials = new Map();
+
+// In-memory audit activity log
+let activityLog = [
+  {
+    id: 'act-1',
+    actor_id: '00000000-0000-0000-0000-000000000004',
+    actor_email: 'admin@learnlens.edu',
+    actor_role: 'admin',
+    action: 'system_initialized',
+    target_type: 'system',
+    target_id: 'learnlens-main',
+    details: { message: 'LearnLens single-server initialized with real account management' },
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+  },
+];
+
+export function logActivity(actor, action, targetType, targetId, details = {}) {
+  const entry = {
+    id: `act-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
+    actor_id: actor?.id || '00000000-0000-0000-0000-000000000004',
+    actor_email: actor?.email || 'admin@learnlens.edu',
+    actor_role: actor?.role || 'admin',
+    action,
+    target_type: targetType,
+    target_id: targetId,
+    details,
+    created_at: new Date().toISOString(),
+  };
+  activityLog.unshift(entry);
+  if (activityLog.length > 250) activityLog.pop();
+  return entry;
+}
+
+// Generate secure, user-friendly temporary password (e.g. Lens#8X2mP9)
+export function generateTemporaryPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let randomPart = '';
+  for (let i = 0; i < 6; i++) {
+    randomPart += chars.charAt(crypto.randomInt(0, chars.length));
+  }
+  return `Lens#${randomPart}`;
+}
+
+export function getAllUsers() {
+  return usersList;
+}
+
 /**
  * 1. GET /api/admin/metrics
- * Returns counts of students, teachers, parents, full user roster, and classes
+ * Returns counts (real totals excluding demo accounts, plus total),
+ * full user roster, classes, and recent activity log
  */
 router.get('/metrics', async (req, res) => {
   try {
-    const studentCount = usersList.filter((u) => u.role === 'student').length;
-    const teacherCount = usersList.filter((u) => u.role === 'teacher').length;
-    const parentCount = usersList.filter((u) => u.role === 'parent').length;
-    const adminCount = usersList.filter((u) => u.role === 'admin').length;
+    const isDemoMode = process.env.DEMO_MODE !== 'false' && process.env.VITE_DEMO_MODE !== 'false';
+
+    // Real counts EXCLUDE demo accounts (is_demo = true)
+    const realStudents = usersList.filter((u) => u.role === 'student' && !u.is_demo).length;
+    const realTeachers = usersList.filter((u) => u.role === 'teacher' && !u.is_demo).length;
+    const realParents = usersList.filter((u) => u.role === 'parent' && !u.is_demo).length;
+    const realAdmins = usersList.filter((u) => u.role === 'admin' && !u.is_demo).length;
+
+    // Total counts including demo
+    const totalStudents = usersList.filter((u) => u.role === 'student').length;
+    const totalTeachers = usersList.filter((u) => u.role === 'teacher').length;
+    const totalParents = usersList.filter((u) => u.role === 'parent').length;
 
     res.json({
       status: 'ok',
+      isDemoMode,
       counts: {
-        students: studentCount,
-        teachers: teacherCount,
-        parents: parentCount,
-        admins: adminCount,
-        totalUsers: usersList.length,
+        real: {
+          students: realStudents,
+          teachers: realTeachers,
+          parents: realParents,
+          admins: realAdmins,
+          total: realStudents + realTeachers + realParents + realAdmins,
+        },
+        all: {
+          students: totalStudents,
+          teachers: totalTeachers,
+          parents: totalParents,
+          total: usersList.length,
+        },
         classes: classesList.length,
       },
       users: usersList,
       classes: classesList,
+      recentActivity: activityLog.slice(0, 20),
     });
   } catch (err) {
     res.status(500).json({ error: 'AdminMetricsError', message: err.message });
@@ -128,37 +217,47 @@ router.get('/metrics', async (req, res) => {
 });
 
 /**
- * 2. POST /api/admin/users
- * Create a new user (student, teacher, parent, admin)
+ * 2. POST /api/admin/users/create-single
+ * Create ONE real user (Student, Teacher, Parent, Admin)
+ * Server generates temporary password and sets must_change_password = true
  */
-router.post('/users', async (req, res) => {
+router.post('/users/create-single', async (req, res) => {
   try {
-    const { name, email, role, password, className, linkedChild } = req.body;
+    const name = req.body.name || req.body.full_name;
+    const email = req.body.email;
+    const role = req.body.role || 'student';
+    const className = req.body.className || req.body.class_name;
+    const linkedChild = req.body.linkedChild || req.body.linked_student_email;
+    const rollNumber = req.body.rollNumber || req.body.roll_number;
+    const subject = req.body.subject;
 
-    if (!name || !email || !role) {
-      return res.status(400).json({
-        error: 'ValidationError',
-        message: 'Name, email, and role are required fields.',
-      });
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'ValidationError', message: 'Full name is required.' });
+    }
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'ValidationError', message: 'Email address is required.' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ error: 'ValidationError', message: 'Please provide a valid email format.' });
     }
 
     const validRoles = ['student', 'teacher', 'parent', 'admin'];
     if (!validRoles.includes(role)) {
-      return res.status(400).json({
-        error: 'ValidationError',
-        message: `Role must be one of: ${validRoles.join(', ')}`,
-      });
+      return res.status(400).json({ error: 'ValidationError', message: `Role must be one of: ${validRoles.join(', ')}` });
     }
 
-    const existing = usersList.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const existing = usersList.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
     if (existing) {
       return res.status(409).json({
         error: 'DuplicateUser',
-        message: `A user with email ${email} already exists.`,
+        message: `A user with email ${email.trim()} already exists in the system.`,
       });
     }
 
-    // Generate valid UUID
+    // Generate secure temporary password
+    const temporaryPassword = generateTemporaryPassword();
     const id = crypto.randomUUID();
 
     const newUser = {
@@ -166,32 +265,365 @@ router.post('/users', async (req, res) => {
       name: name.trim(),
       email: email.trim().toLowerCase(),
       role,
-      className: className || (role === 'student' ? 'Class 11-A' : role === 'teacher' ? 'Class 11-A' : ''),
+      className: className || (role === 'student' ? 'Class 11-A' : ''),
       linkedChild: linkedChild || '',
+      roll_number: rollNumber || '',
       status: 'active',
+      is_demo: false, // REAL account created by admin
+      must_change_password: true, // MUST change password at first login
       createdAt: new Date().toISOString(),
     };
 
     usersList.unshift(newUser);
 
-    // If assigned to a class, update student count
-    if (role === 'student' && newUser.className) {
+    // Save temporary password in credentials map for first-login verification
+    dynamicCredentials.set(newUser.email, {
+      password: temporaryPassword,
+      must_change_password: true,
+      role: newUser.role,
+      user: newUser,
+    });
+
+    // Update class counts if assigned
+    if (newUser.role === 'student' && newUser.className) {
       const cls = classesList.find((c) => c.name === newUser.className);
       if (cls) cls.studentsCount += 1;
+    } else if (newUser.role === 'teacher' && newUser.className) {
+      const cls = classesList.find((c) => c.name === newUser.className);
+      if (cls) cls.teacher = newUser.name;
     }
+
+    // Log in activity log
+    logActivity(
+      req.user,
+      'user_created',
+      'user',
+      newUser.id,
+      { name: newUser.name, email: newUser.email, role: newUser.role, className: newUser.className }
+    );
 
     res.status(201).json({
       status: 'ok',
-      message: `User ${newUser.name} (${newUser.role}) created successfully.`,
-      user: newUser,
+      message: `Account for ${newUser.name} created successfully.`,
+      user: { ...newUser, tempPassword: temporaryPassword },
+      temporaryPassword,
     });
   } catch (err) {
-    res.status(500).json({ error: 'CreateUserError', message: err.message });
+    res.status(500).json({ error: 'CreateSingleUserError', message: err.message });
   }
 });
 
 /**
- * 3. PATCH /api/admin/users/:id/toggle-status
+ * 3. GET /api/admin/users/csv-template
+ * Returns standard CSV template
+ */
+router.get('/users/csv-template', (req, res) => {
+  const template = `role,full_name,email,class_name,linked_student_email
+student,Rohan Das,rohan.das@school.edu,Class 11-A,
+student,Meera Nair,meera.nair@school.edu,Class 11-A,
+teacher,Kavita Krishnan,kavita.k@school.edu,Class 11-A,
+parent,Suresh Das,suresh.das@gmail.com,,rohan.das@school.edu
+parent,Ramesh Nair,ramesh.nair@gmail.com,,meera.nair@school.edu`;
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="learnlens_users_template.csv"');
+  res.send(template);
+});
+
+/**
+ * 4. POST /api/admin/users/csv-preview
+ * Validate CSV rows and return row-by-row error preview before importing
+ * Allows at most 500 rows per upload
+ */
+router.post('/users/csv-preview', (req, res) => {
+  try {
+    const { rows } = req.body; // Array of row objects: { role, full_name, email, class_name, linked_student_email }
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: 'ValidationError', message: 'No CSV rows provided.' });
+    }
+
+    if (rows.length > 500) {
+      return res.status(400).json({
+        error: 'ValidationError',
+        message: `CSV exceeds maximum limit of 500 rows. Found ${rows.length} rows. Please split into smaller files.`,
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const validRoles = ['student', 'teacher', 'parent', 'admin'];
+    const seenEmailsInBatch = new Set();
+
+    const previewRows = rows.map((row, index) => {
+      const rowNum = index + 1;
+      const errors = [];
+
+      const role = (row.role || '').trim().toLowerCase();
+      const fullName = (row.full_name || '').trim();
+      const email = (row.email || '').trim().toLowerCase();
+      const className = (row.class_name || '').trim();
+      const linkedStudentEmail = (row.linked_student_email || '').trim().toLowerCase();
+
+      // Validate Role
+      if (!role) {
+        errors.push('Role is required');
+      } else if (!validRoles.includes(role)) {
+        errors.push(`Invalid role "${role}". Must be student, teacher, parent, or admin`);
+      }
+
+      // Validate Name
+      if (!fullName) {
+        errors.push('Full name is required');
+      }
+
+      // Validate Email
+      if (!email) {
+        errors.push('Email is required');
+      } else if (!emailRegex.test(email)) {
+        errors.push('Invalid email format');
+      } else if (seenEmailsInBatch.has(email)) {
+        errors.push('Duplicate email within this CSV file');
+      } else {
+        seenEmailsInBatch.add(email);
+        const existsInDb = usersList.some((u) => u.email.toLowerCase() === email);
+        if (existsInDb) {
+          errors.push('Email already registered in system');
+        }
+      }
+
+      // Validate Class
+      if (role === 'student' && className) {
+        const classExists = classesList.some((c) => c.name.toLowerCase() === className.toLowerCase());
+        if (!classExists) {
+          errors.push(`Class "${className}" does not exist in active cohorts`);
+        }
+      }
+
+      // Validate Parent's linked student
+      if (role === 'parent' && linkedStudentEmail) {
+        const studentInDb = usersList.some(
+          (u) => u.role === 'student' && u.email.toLowerCase() === linkedStudentEmail
+        );
+        const studentInBatch = rows.some(
+          (r, rIdx) =>
+            rIdx < index &&
+            (r.role || '').trim().toLowerCase() === 'student' &&
+            (r.email || '').trim().toLowerCase() === linkedStudentEmail
+        );
+
+        if (!studentInDb && !studentInBatch) {
+          errors.push(`Linked student "${linkedStudentEmail}" not found in system or earlier rows`);
+        }
+      }
+
+      return {
+        rowNumber: rowNum,
+        role: role || 'student',
+        full_name: fullName,
+        email,
+        class_name: className,
+        linked_student_email: linkedStudentEmail,
+        isValid: errors.length === 0,
+        errors,
+      };
+    });
+
+    const validCount = previewRows.filter((r) => r.isValid).length;
+    const errorCount = previewRows.length - validCount;
+
+    res.json({
+      status: 'ok',
+      totalRows: previewRows.length,
+      total: previewRows.length,
+      validCount,
+      valid_count: validCount,
+      errorCount,
+      error_count: errorCount,
+      previewRows,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'CSVPreviewError', message: err.message });
+  }
+});
+
+/**
+ * 5. POST /api/admin/users/csv-import
+ * Imports valid rows from pre-validated batch.
+ * Generates temporary passwords and returns them once for download.
+ */
+router.post('/users/csv-import', (req, res) => {
+  try {
+    const { validRows } = req.body;
+
+    if (!Array.isArray(validRows) || validRows.length === 0) {
+      return res.status(400).json({ error: 'ValidationError', message: 'No valid rows to import.' });
+    }
+
+    const createdCredentials = [];
+
+    for (const row of validRows) {
+      const email = row.email.trim().toLowerCase();
+      // Ensure no duplicate insertion
+      if (usersList.some((u) => u.email.toLowerCase() === email)) {
+        continue;
+      }
+
+      const tempPassword = generateTemporaryPassword();
+      const id = crypto.randomUUID();
+
+      // Find parent's linked student name if provided
+      let linkedChildName = '';
+      if (row.role === 'parent' && row.linked_student_email) {
+        const st = usersList.find((u) => u.email.toLowerCase() === row.linked_student_email.toLowerCase());
+        if (st) linkedChildName = st.name;
+      }
+
+      const newUser = {
+        id,
+        name: row.full_name.trim(),
+        email,
+        role: row.role,
+        className: row.class_name || (row.role === 'student' ? 'Class 11-A' : ''),
+        linkedChild: linkedChildName,
+        status: 'active',
+        is_demo: false,
+        must_change_password: true,
+        createdAt: new Date().toISOString(),
+      };
+
+      usersList.unshift(newUser);
+
+      // Save credential
+      dynamicCredentials.set(newUser.email, {
+        password: tempPassword,
+        must_change_password: true,
+        role: newUser.role,
+        user: newUser,
+      });
+
+      // Update class count
+      if (newUser.role === 'student' && newUser.className) {
+        const cls = classesList.find((c) => c.name.toLowerCase() === newUser.className.toLowerCase());
+        if (cls) cls.studentsCount += 1;
+      }
+
+      createdCredentials.push({
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        className: newUser.className,
+        temporaryPassword: tempPassword,
+      });
+    }
+
+    logActivity(req.user, 'batch_users_imported', 'batch', `batch-${Date.now()}`, {
+      importedCount: createdCredentials.length,
+    });
+
+    res.status(201).json({
+      status: 'ok',
+      message: `Successfully imported ${createdCredentials.length} users.`,
+      importedCount: createdCredentials.length,
+      credentials: createdCredentials,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'CSVImportError', message: err.message });
+  }
+});
+
+/**
+ * 6. POST /api/admin/users/:id/reset-password
+ * Admin resets a user's password (generates new temporary password)
+ */
+router.post('/users/:id/reset-password', (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = usersList.find((u) => u.id === id);
+
+    if (!user) {
+      return res.status(404).json({ error: 'NotFound', message: 'User not found.' });
+    }
+
+    const newTempPassword = generateTemporaryPassword();
+    user.must_change_password = true;
+
+    // Update credential store
+    dynamicCredentials.set(user.email.toLowerCase(), {
+      password: newTempPassword,
+      must_change_password: true,
+      role: user.role,
+      user,
+    });
+
+    logActivity(req.user, 'password_reset', 'user', user.id, {
+      name: user.name,
+      email: user.email,
+    });
+
+    res.json({
+      status: 'ok',
+      message: `Password reset for ${user.name}.`,
+      temporaryPassword: newTempPassword,
+      tempPassword: newTempPassword,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'ResetPasswordError', message: err.message });
+  }
+});
+
+/**
+ * 7. PATCH /api/admin/users/:id/edit
+ * Edit user details (name, email, class, linked child)
+ */
+router.patch('/users/:id/edit', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, className, linkedChild, status } = req.body;
+
+    const user = usersList.find((u) => u.id === id);
+    if (!user) {
+      return res.status(404).json({ error: 'NotFound', message: 'User not found.' });
+    }
+
+    if (name) user.name = name.trim();
+    if (className !== undefined) user.className = className;
+    if (linkedChild !== undefined) user.linkedChild = linkedChild;
+    if (status && ['active', 'disabled'].includes(status)) user.status = status;
+
+    if (email && email.trim().toLowerCase() !== user.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return res.status(400).json({ error: 'ValidationError', message: 'Invalid email format.' });
+      }
+      const existing = usersList.find((u) => u.id !== id && u.email.toLowerCase() === email.trim().toLowerCase());
+      if (existing) {
+        return res.status(409).json({ error: 'DuplicateEmail', message: 'Email already in use.' });
+      }
+      // Migrate credentials key
+      const oldEmail = user.email;
+      user.email = email.trim().toLowerCase();
+      if (dynamicCredentials.has(oldEmail)) {
+        const cred = dynamicCredentials.get(oldEmail);
+        dynamicCredentials.delete(oldEmail);
+        dynamicCredentials.set(user.email, cred);
+      }
+    }
+
+    logActivity(req.user, 'user_edited', 'user', user.id, { name: user.name, email: user.email });
+
+    res.json({
+      status: 'ok',
+      message: `User ${user.name} updated successfully.`,
+      user,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'EditUserError', message: err.message });
+  }
+});
+
+/**
+ * 8. PATCH /api/admin/users/:id/toggle-status
  * Enable or disable a user account
  */
 router.patch('/users/:id/toggle-status', (req, res) => {
@@ -205,6 +637,11 @@ router.patch('/users/:id/toggle-status', (req, res) => {
 
     user.status = user.status === 'active' ? 'disabled' : 'active';
 
+    logActivity(req.user, `user_${user.status}`, 'user', user.id, {
+      name: user.name,
+      status: user.status,
+    });
+
     res.json({
       status: 'ok',
       message: `User ${user.name} is now ${user.status}.`,
@@ -216,7 +653,7 @@ router.patch('/users/:id/toggle-status', (req, res) => {
 });
 
 /**
- * 4. POST /api/admin/classes
+ * 9. POST /api/admin/classes
  * Create a new class / cohort
  */
 router.post('/classes', (req, res) => {
@@ -238,6 +675,11 @@ router.post('/classes', (req, res) => {
 
     classesList.push(newClass);
 
+    logActivity(req.user, 'class_created', 'class', newClass.id, {
+      name: newClass.name,
+      subject: newClass.subject,
+    });
+
     res.status(201).json({
       status: 'ok',
       message: `Class ${newClass.name} created successfully.`,
@@ -249,7 +691,7 @@ router.post('/classes', (req, res) => {
 });
 
 /**
- * 5. POST /api/admin/assign
+ * 10. POST /api/admin/assign
  * Assign teacher or student to a class
  */
 router.post('/assign', (req, res) => {
@@ -274,6 +716,12 @@ router.post('/assign', (req, res) => {
       targetClass.studentsCount += 1;
     }
 
+    logActivity(req.user, 'class_assigned', 'class', targetClass.id, {
+      userName: targetUser.name,
+      role: targetUser.role,
+      className: targetClass.name,
+    });
+
     res.json({
       status: 'ok',
       message: `Successfully assigned ${targetUser.name} to ${targetClass.name}.`,
@@ -286,7 +734,7 @@ router.post('/assign', (req, res) => {
 });
 
 /**
- * 6. POST /api/admin/link-parent
+ * 11. POST /api/admin/link-parent
  * Link a parent to a child
  */
 router.post('/link-parent', (req, res) => {
@@ -303,7 +751,6 @@ router.post('/link-parent', (req, res) => {
       });
     }
 
-    // Update parent's linked child text
     if (parent.linkedChild && parent.linkedChild.length > 0) {
       if (!parent.linkedChild.includes(student.name)) {
         parent.linkedChild += `, ${student.name}`;
@@ -312,8 +759,12 @@ router.post('/link-parent', (req, res) => {
       parent.linkedChild = student.name;
     }
 
-    // Update student's parent text
     student.parentName = parent.name;
+
+    logActivity(req.user, 'parent_linked', 'link', `${parent.id}-${student.id}`, {
+      parentName: parent.name,
+      studentName: student.name,
+    });
 
     res.json({
       status: 'ok',
@@ -324,6 +775,18 @@ router.post('/link-parent', (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'LinkParentError', message: err.message });
   }
+});
+
+/**
+ * 12. GET /api/admin/activity-log
+ * Returns activity log entries
+ */
+router.get('/activity-log', (req, res) => {
+  res.json({
+    status: 'ok',
+    totalEntries: activityLog.length,
+    activityLog,
+  });
 });
 
 export default router;

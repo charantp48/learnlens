@@ -1,30 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useTranslation } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import Card from '../components/common/Card';
-import Button from '../components/common/Button';
-import SectionLabel from '../components/common/SectionLabel';
-import Logo from '../components/common/Logo';
+import { useTranslation } from '../context/LanguageContext';
 import { 
-  GraduationCap, 
-  Users, 
-  HeartHandshake, 
-  ShieldAlert, 
-  Mail, 
-  Lock, 
   Eye, 
   EyeOff, 
-  ArrowRight, 
-  AlertCircle,
+  LogIn, 
+  AlertCircle, 
+  CheckCircle2, 
+  ArrowRight,
+  GraduationCap,
+  Users,
+  HeartHandshake,
+  ShieldAlert,
   Loader2,
-  CheckCircle2,
-  Sparkles
+  Lock,
+  KeyRound
 } from 'lucide-react';
+import Card from '../components/common/Card';
+import Button from '../components/common/Button';
+import Logo from '../components/common/Logo';
 
 export default function Login() {
-  const { t, tName } = useTranslation();
   const { loginWithCredentials, loginDemo, currentUser, getDashboardPath } = useAuth();
+  const { t, tName } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -36,18 +35,20 @@ export default function Login() {
   const [error, setError] = useState('');
   const [touched, setTouched] = useState({ email: false, password: false });
 
+  // Forced Password Change State (for newly created real accounts)
+  const [forcePasswordChange, setForcePasswordChange] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [tempPasswordUsed, setTempPasswordUsed] = useState('');
+  const [pendingUser, setPendingUser] = useState(null);
+  const [changePasswordError, setChangePasswordError] = useState('');
+  const [changePasswordSuccess, setChangePasswordSuccess] = useState(false);
+
   // Expired session detection
   const isExpired = searchParams.get('expired') === 'true';
 
   // Demo mode check (enabled by default; set VITE_DEMO_MODE=false to hide)
   const isDemoMode = import.meta.env.VITE_DEMO_MODE !== 'false';
-
-  // If already logged in, offer immediate redirect
-  useEffect(() => {
-    if (currentUser && !isExpired) {
-      // User is already signed in
-    }
-  }, [currentUser, isExpired]);
 
   // Demo account profiles
   const demoAccounts = [
@@ -109,10 +110,75 @@ export default function Login() {
 
     try {
       const user = await loginWithCredentials(email, password);
+
+      // Check if user must change their temporary password at first login
+      if (user.must_change_password) {
+        setPendingUser(user);
+        setTempPasswordUsed(password);
+        setForcePasswordChange(true);
+        setLoading(false);
+        return;
+      }
+
       const destination = getDashboardPath(user.role);
       navigate(destination, { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed. Please verify your email and password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Forced Password Change at First Login
+  const handleSaveNewPassword = async (e) => {
+    e.preventDefault();
+    setChangePasswordError('');
+
+    if (newPassword.length < 6) {
+      setChangePasswordError('New password must be at least 6 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setChangePasswordError('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    if (newPassword === tempPasswordUsed) {
+      setChangePasswordError('New password must be different from your temporary password.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: pendingUser.email,
+          currentPassword: tempPasswordUsed,
+          newPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to update password');
+      }
+
+      setChangePasswordSuccess(true);
+      // Update local storage
+      const savedUser = JSON.parse(localStorage.getItem('learnlens_user') || '{}');
+      savedUser.must_change_password = false;
+      localStorage.setItem('learnlens_user', JSON.stringify(savedUser));
+
+      setTimeout(() => {
+        const destination = getDashboardPath(pendingUser.role);
+        navigate(destination, { replace: true });
+      }, 800);
+    } catch (err) {
+      setChangePasswordError(err.message || 'Error updating password.');
     } finally {
       setLoading(false);
     }
@@ -148,12 +214,12 @@ export default function Login() {
           {t('tagline') || 'Smart, Inclusive, Personalized Education'}
         </p>
         <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-[#0D0D0D] tracking-tight pt-1">
-          Sign In to Your Account
+          {forcePasswordChange ? 'Set Your Permanent Password' : 'Sign In to Your Account'}
         </h1>
       </div>
 
       {/* Expired Session Notice */}
-      {isExpired && (
+      {isExpired && !forcePasswordChange && (
         <div className="p-4 rounded-2xl bg-[#FFF3EC] border border-[#F26522]/30 flex items-center gap-3 text-xs text-[#0D0D0D]">
           <AlertCircle className="w-5 h-5 text-[#F26522] shrink-0" />
           <span>Your session has expired. Please sign in again to continue your work.</span>
@@ -161,7 +227,7 @@ export default function Login() {
       )}
 
       {/* Error Banner */}
-      {error && (
+      {error && !forcePasswordChange && (
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-xs text-rose-800">
           <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
           <div className="space-y-1">
@@ -171,133 +237,200 @@ export default function Login() {
         </div>
       )}
 
-      {/* Main Interactive Login Card */}
-      <Card variant="surface" className="p-6 sm:p-8 space-y-6 border border-[#E3DCD3] shadow-md">
-        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-          {/* Email Field */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#0D0D0D]">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-[#6B6660] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+      {/* FORCED PASSWORD CHANGE VIEW (At First Login) */}
+      {forcePasswordChange ? (
+        <Card variant="surface" className="p-6 sm:p-8 space-y-6 border border-[#E3DCD3] shadow-md">
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
+            <div className="flex items-center gap-2 font-bold">
+              <KeyRound className="w-4 h-4 text-amber-600" />
+              <span>First-Time Sign In Notice</span>
+            </div>
+            <p>
+              Welcome, <strong>{pendingUser?.full_name}</strong>! For your account security, you must replace your temporary password with a permanent one before entering your portal.
+            </p>
+          </div>
+
+          {changePasswordError && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 font-medium">
+              {changePasswordError}
+            </div>
+          )}
+
+          {changePasswordSuccess ? (
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              <span>Password updated successfully! Loading your dashboard...</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSaveNewPassword} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#0D0D0D]">
+                  New Permanent Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="w-full px-4 py-3 rounded-2xl border border-[#E3DCD3] bg-[#FBF8F4] text-sm text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#0D0D0D]">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter your new password"
+                  className="w-full px-4 py-3 rounded-2xl border border-[#E3DCD3] bg-[#FBF8F4] text-sm text-[#0D0D0D] focus:outline-hidden focus:border-[#F26522]"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                disabled={loading}
+                className="w-full justify-center"
+                icon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+              >
+                {loading ? 'Setting Password...' : 'Save Password & Enter Portal'}
+              </Button>
+            </form>
+          )}
+        </Card>
+      ) : (
+        /* STANDARD LOGIN CARD */
+        <Card variant="surface" className="p-6 sm:p-8 space-y-6 border border-[#E3DCD3] shadow-md">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            {/* Email Field */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#0D0D0D]">
+                Email Address
+              </label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (error) setError('');
-                }}
-                onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
-                placeholder="name@learnlens.demo"
-                autoComplete="email"
-                className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-[#F5F0EA] border text-xs sm:text-sm text-[#0D0D0D] placeholder:text-[#6B6660] focus:outline-none transition-colors ${
-                  emailError
-                    ? 'border-rose-400 focus:border-rose-500'
-                    : 'border-[#E3DCD3] focus:border-[#F26522]'
-                }`}
                 required
+                autoComplete="email"
+                placeholder="e.g. your.name@school.edu"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
+                className={`w-full px-4 py-3 rounded-2xl border text-sm text-[#0D0D0D] transition-colors focus:outline-hidden ${
+                  emailError
+                    ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500'
+                    : 'border-[#E3DCD3] bg-[#FBF8F4] focus:border-[#F26522]'
+                }`}
               />
+              {emailError && (
+                <p className="text-[11px] text-rose-600 font-medium">{emailError}</p>
+              )}
             </div>
-            {emailError && (
-              <p className="text-[11px] text-rose-600 pl-1 font-medium">{emailError}</p>
-            )}
-          </div>
 
-          {/* Password Field with Show/Hide Toggle */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#0D0D0D]">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-[#6B6660] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            {/* Password Field */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#0D0D0D]">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-xs font-medium text-[#6B6660] hover:text-[#0D0D0D] flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  {showPassword ? (
+                    <>
+                      <EyeOff className="w-3.5 h-3.5" />
+                      <span>Hide</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Show</span>
+                    </>
+                  )}
+                </button>
+              </div>
               <input
                 type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (error) setError('');
-                }}
-                onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                className={`w-full pl-10 pr-11 py-3 rounded-2xl bg-[#F5F0EA] border text-xs sm:text-sm text-[#0D0D0D] placeholder:text-[#6B6660] focus:outline-none transition-colors ${
-                  passwordError
-                    ? 'border-rose-400 focus:border-rose-500'
-                    : 'border-[#E3DCD3] focus:border-[#F26522]'
-                }`}
                 required
+                autoComplete="current-password"
+                placeholder="Enter your account password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
+                className={`w-full px-4 py-3 rounded-2xl border text-sm text-[#0D0D0D] transition-colors focus:outline-hidden ${
+                  passwordError
+                    ? 'border-rose-400 bg-rose-50/30 focus:border-rose-500'
+                    : 'border-[#E3DCD3] bg-[#FBF8F4] focus:border-[#F26522]'
+                }`}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B6660] hover:text-[#0D0D0D] transition-colors p-1"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+              {passwordError && (
+                <p className="text-[11px] text-rose-600 font-medium">{passwordError}</p>
+              )}
             </div>
-            {passwordError && (
-              <p className="text-[11px] text-rose-600 pl-1 font-medium">{passwordError}</p>
-            )}
-          </div>
 
-          {/* Submit Button */}
-          <div className="pt-2">
+            {/* Submit Button */}
             <Button
               type="submit"
               variant="primary"
               size="lg"
               disabled={loading}
-              className="w-full justify-center"
+              className="w-full justify-center shadow-md cursor-pointer"
               icon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? 'Authenticating...' : 'Sign In'}
             </Button>
-          </div>
-        </form>
+          </form>
 
-        {/* Demo Mode Quick Buttons */}
-        {isDemoMode && (
-          <div className="pt-6 border-t border-[#E3DCD3] space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B6660] flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#F26522]" />
-                <span>Demo Accounts (1-Click Fill)</span>
-              </span>
-              <span className="text-[10px] text-[#6B6660] font-mono">Demo Mode Active</span>
-            </div>
+          {/* Quick Demo Accounts Selection */}
+          {isDemoMode && (
+            <div className="pt-4 border-t border-[#E3DCD3] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B6660]">
+                  Demo Quick Fill
+                </span>
+                <span className="text-[10px] text-[#6B6660] bg-[#F5F0EA] px-2 py-0.5 rounded-full border border-[#E3DCD3]">
+                  1-Click Test Access
+                </span>
+              </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-              {demoAccounts.map((account) => {
-                const Icon = account.icon;
-                return (
-                  <button
-                    key={account.role}
-                    type="button"
-                    onClick={() => handleQuickDemo(account)}
-                    className="p-2.5 sm:p-3 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] hover:border-[#F26522] hover:bg-white transition-all text-left group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center shrink-0">
-                        <Icon className="w-3.5 h-3.5 text-[#F26522]" />
-                      </div>
-                      <div className="truncate">
-                        <div className="font-heading font-bold text-xs text-[#0D0D0D] group-hover:text-[#F26522] transition-colors truncate">
-                          {tName(account.title)}: {tName(account.name)}
+              <div className="grid grid-cols-2 gap-2">
+                {demoAccounts.map((account) => {
+                  const Icon = account.icon;
+                  return (
+                    <button
+                      key={account.role}
+                      type="button"
+                      onClick={() => handleQuickDemo(account)}
+                      className="p-2.5 sm:p-3 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] hover:border-[#F26522] hover:bg-white transition-all text-left group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center shrink-0">
+                          <Icon className="w-3.5 h-3.5 text-[#F26522]" />
                         </div>
-                        <div className="text-[10px] text-[#6B6660] truncate">
-                          {tName(account.detail)}
+                        <div className="truncate">
+                          <div className="font-heading font-bold text-xs text-[#0D0D0D] group-hover:text-[#F26522] transition-colors truncate">
+                            {tName(account.title)}: {tName(account.name)}
+                          </div>
+                          <div className="text-[10px] text-[#6B6660] truncate">
+                            {tName(account.detail)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
-      </Card>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

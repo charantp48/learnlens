@@ -1,6 +1,7 @@
 import express from 'express';
 import { MOCK_USERS } from '../config/mockData.js';
 import { requireAuth } from '../middleware/auth.js';
+import { dynamicCredentials, getAllUsers, logActivity } from './adminRoutes.js';
 
 const router = express.Router();
 
@@ -47,11 +48,59 @@ router.post('/login', (req, res) => {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
-  const demoAccount = DEMO_CREDENTIALS[normalizedEmail];
 
-  // In demo/test mode: verify credentials
+  // Check if user account is disabled
+  const allUsers = getAllUsers();
+  const registeredUser = allUsers.find((u) => u.email.toLowerCase() === normalizedEmail);
+
+  if (registeredUser && registeredUser.status === 'disabled') {
+    return res.status(403).json({
+      error: 'AccountDisabled',
+      message: 'This account has been disabled. Please contact your school administrator.',
+    });
+  }
+
+  // 1. Check dynamically created accounts from admin
+  if (dynamicCredentials.has(normalizedEmail)) {
+    const cred = dynamicCredentials.get(normalizedEmail);
+    if (password === cred.password) {
+      const mockToken = `learnlens-jwt-${cred.role}-${Date.now()}`;
+      return res.json({
+        status: 'ok',
+        token: mockToken,
+        user: {
+          id: registeredUser?.id || cred.user?.id || 'gen-id',
+          full_name: registeredUser?.name || cred.user?.name || 'User',
+          email: normalizedEmail,
+          role: cred.role,
+          class_name: registeredUser?.className || cred.user?.className || '',
+          linked_child: registeredUser?.linkedChild || '',
+          must_change_password: !!cred.must_change_password,
+          is_demo: false,
+        },
+        must_change_password: !!cred.must_change_password,
+        message: `Welcome, ${registeredUser?.name || 'User'}!`,
+      });
+    } else {
+      return res.status(401).json({
+        error: 'InvalidCredentials',
+        message: 'Incorrect password for this account. Please verify credentials.',
+      });
+    }
+  }
+
+  // 2. Check predefined demo accounts
+  const demoAccount = DEMO_CREDENTIALS[normalizedEmail];
   if (demoAccount) {
-    if (password === demoAccount.password || password === 'Demo@123' || password === 'Student@123' || password === 'Teacher@123' || password === 'Parent@123' || password === 'Admin@123') {
+    const validPasswords = [
+      demoAccount.password,
+      'Demo@123',
+      'Student@123',
+      'Teacher@123',
+      'Parent@123',
+      'Admin@123',
+    ];
+    if (validPasswords.includes(password)) {
       const mockToken = `learnlens-jwt-${demoAccount.role}-${Date.now()}`;
       return res.json({
         status: 'ok',
@@ -59,7 +108,10 @@ router.post('/login', (req, res) => {
         user: {
           ...demoAccount.profile,
           role: demoAccount.role,
+          is_demo: true,
+          must_change_password: false,
         },
+        must_change_password: false,
         message: `Welcome back, ${demoAccount.profile.full_name}!`,
       });
     } else {
@@ -70,18 +122,93 @@ router.post('/login', (req, res) => {
     }
   }
 
-  // Fallback for unlisted emails in demo mode
   return res.status(401).json({
     error: 'AccountNotFound',
-    message: 'No registered user found with this email. Use one of the 4 demo accounts below to explore.',
+    message: 'No registered user found with this email. Please check your credentials or ask your administrator.',
   });
 });
 
-// 2. List demo profiles for quick evaluation
+// 2. First-Login Forced Password Change
+router.post('/change-password', (req, res) => {
+  try {
+    const email = req.body.email;
+    const currentPassword = req.body.currentPassword || req.body.current_password;
+    const newPassword = req.body.newPassword || req.body.new_password;
+
+    if (!email || !currentPassword || !newPassword) {
+      return res.status(400).json({
+        error: 'ValidationError',
+        message: 'Email, current password, and new password are required.',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        error: 'ValidationError',
+        message: 'New password must be at least 6 characters long.',
+      });
+    }
+
+    if (newPassword === currentPassword) {
+      return res.status(400).json({
+        error: 'ValidationError',
+        message: 'New password cannot be identical to your temporary password.',
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check dynamic credentials
+    if (dynamicCredentials.has(normalizedEmail)) {
+      const cred = dynamicCredentials.get(normalizedEmail);
+      if (cred.password !== currentPassword) {
+        return res.status(401).json({
+          error: 'InvalidCredentials',
+          message: 'Current temporary password does not match.',
+        });
+      }
+
+      // Update password & clear must_change_password
+      cred.password = newPassword;
+      cred.must_change_password = false;
+      dynamicCredentials.set(normalizedEmail, cred);
+
+      // Update user in usersList
+      const allUsers = getAllUsers();
+      const user = allUsers.find((u) => u.email.toLowerCase() === normalizedEmail);
+      if (user) {
+        user.must_change_password = false;
+      }
+
+      logActivity(
+        { email: normalizedEmail, role: cred.role },
+        'password_changed',
+        'user',
+        user?.id || normalizedEmail,
+        { email: normalizedEmail }
+      );
+
+      return res.json({
+        status: 'ok',
+        message: 'Your permanent password has been set successfully. You may now continue.',
+        user: { ...(user || {}), must_change_password: false },
+      });
+    }
+
+    return res.status(400).json({
+      error: 'InvalidAccount',
+      message: 'Account not eligible for password change.',
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'ChangePasswordError', message: err.message });
+  }
+});
+
+// 3. List demo profiles for quick evaluation
 router.get('/demo-users', (req, res) => {
   res.json({
     status: 'ok',
-    demoProfiles: [
+    demoAccounts: [
       { role: 'student', email: 'priya.student@learnlens.demo', name: 'Priya Sharma (Student)' },
       { role: 'teacher', email: 'rajesh.teacher@learnlens.demo', name: 'Mr. Rajesh Rao (Teacher)' },
       { role: 'parent', email: 'sunita.parent@learnlens.demo', name: 'Sunita Sharma (Parent)' },
@@ -90,7 +217,7 @@ router.get('/demo-users', (req, res) => {
   });
 });
 
-// 3. Check current session
+// 4. Current user session profile
 router.get('/me', requireAuth, (req, res) => {
   res.json({
     status: 'ok',
@@ -98,11 +225,11 @@ router.get('/me', requireAuth, (req, res) => {
   });
 });
 
-// 4. Logout endpoint
+// 5. Logout endpoint
 router.post('/logout', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'Session terminated successfully.',
+    message: 'Logged out successfully.',
   });
 });
 
