@@ -16,21 +16,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import QuizContainer from './modules/Quiz/QuizContainer';
 import LearningGapView from './modules/LearningGap/LearningGapView';
 import StudyPlannerView from './modules/StudyPlanner/StudyPlannerView';
-
-// Placeholder for remaining phase (AI Tutor)
-function PhasePlaceholder({ title, phaseNumber }) {
-  return (
-    <div className="p-8 rounded-2xl bg-slate-800/40 border border-slate-700/60 text-center space-y-3">
-      <div className="inline-block px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-xs font-semibold">
-        Scheduled for Phase {phaseNumber}
-      </div>
-      <h2 className="text-2xl font-bold text-white">{title}</h2>
-      <p className="text-slate-400 text-sm max-w-md mx-auto">
-        This module is scaffolded in the project structure and will be connected in its dedicated phase.
-      </p>
-    </div>
-  );
-}
+import AIChatView from './modules/AIChat/AIChatView';
 
 export default function App() {
   return (
@@ -40,7 +26,7 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
 
-        {/* Student Routes (Protected) */}
+        {/* Student Journey Routes (Protected) */}
         <Route
           path="student"
           element={
@@ -77,7 +63,7 @@ export default function App() {
           path="ai-tutor"
           element={
             <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
-              <PhasePlaceholder title="Responsible AI Learning Assistant" phaseNumber={7} />
+              <AIChatView />
             </ProtectedRoute>
           }
         />

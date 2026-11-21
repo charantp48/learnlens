@@ -5,6 +5,7 @@ import authRoutes from './routes/authRoutes.js';
 import quizRoutes from './routes/quizRoutes.js';
 import gapRoutes from './routes/gapRoutes.js';
 import plannerRoutes from './routes/plannerRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 const app = express();
 
@@ -27,14 +28,17 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
     supabaseConfigured: !!config.supabase.url,
+    geminiConfigured: !!config.gemini.apiKey && config.gemini.apiKey !== 'your-gemini-api-key',
+    geminiModel: config.gemini.model,
   });
 });
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/gaps', gapRoutes);
 app.use('/api/planner', plannerRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 handler for unknown endpoints
 app.use((req, res) => {
