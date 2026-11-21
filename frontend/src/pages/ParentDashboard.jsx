@@ -243,7 +243,7 @@ export default function ParentDashboard() {
                       : 'bg-white text-[#6B6660] border border-[#E3DCD3] hover:text-[#0D0D0D]'
                   }`}
                 >
-                  {tName(child.name.split(' ')[0])} ({child.grade.split('-')[0]})
+                  {tName((child.name || 'Child').split(' ')[0])} ({((child.grade || 'Class 11').split('-')[0])})
                 </button>
               ))}
             </div>
@@ -269,7 +269,7 @@ export default function ParentDashboard() {
       <div className="space-y-3">
         <SectionLabel text="SUBJECT BREAKDOWN" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {activeChild.subjectResults.map((sub, idx) => (
+          {(activeChild?.subjectResults || []).map((sub, idx) => (
             <Card key={idx} variant="surface" className="p-4 space-y-2 border border-[#E3DCD3]">
               <div className="flex items-center justify-between text-xs font-semibold text-[#6B6660]">
                 <span>{sub.subject}</span>
@@ -295,7 +295,7 @@ export default function ParentDashboard() {
             <SectionLabel text="PLAIN-LANGUAGE SUMMARY" />
             <h2 className="font-heading font-extrabold text-lg sm:text-xl text-[#0D0D0D] flex items-center gap-2 mt-1">
               <Lightbulb className="w-5 h-5 text-[#F26522]" />
-              <span>How {activeChild.name} is Progressing</span>
+              <span>How {activeChild?.name || 'Student'} is Progressing</span>
             </h2>
           </div>
           <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FFF3EC] text-[#F26522] border border-[#F26522]/20">
@@ -303,7 +303,7 @@ export default function ParentDashboard() {
           </span>
         </div>
         <p className="p-4 sm:p-5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] text-sm text-[#0D0D0D] leading-relaxed">
-          {activeChild.jargonFreeSummary}
+          {activeChild?.jargonFreeSummary || `${activeChild?.name || 'Your child'} is making steady progress across all subjects. LearnLens has scheduled short practice sessions to help solidify key concepts.`}
         </p>
       </Card>
 
@@ -317,7 +317,7 @@ export default function ParentDashboard() {
         </div>
 
         <div className="space-y-3">
-          {activeChild.weakTopics.map((w, idx) => (
+          {(activeChild?.weakTopics || []).map((w, idx) => (
             <div key={idx} className="p-4 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="font-heading font-bold text-sm text-[#0D0D0D]">{w.topic}</span>
@@ -340,7 +340,7 @@ export default function ParentDashboard() {
             <SectionLabel text="PROGRESS AT A GLANCE" />
             <h3 className="font-heading font-extrabold text-base sm:text-lg text-[#0D0D0D] flex items-center gap-2 mt-1">
               <TrendingUp className="w-5 h-5 text-[#F26522]" />
-              <span>{activeChild.name}'s Topic Mastery Chart</span>
+              <span>{activeChild?.name || 'Student'}'s Topic Mastery Chart</span>
             </h3>
           </div>
           <span className="text-xs text-[#6B6660] font-medium">
@@ -350,7 +350,7 @@ export default function ParentDashboard() {
 
         <div className="h-48 sm:h-56 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={activeChild.topicScores} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
+            <BarChart data={activeChild?.topicScores || []} margin={{ top: 10, right: 10, left: -25, bottom: 20 }}>
               <XAxis dataKey="topic" tick={{ fill: '#6B6660', fontSize: 11, fontFamily: 'Inter' }} interval={0} stroke="#E3DCD3" />
               <YAxis tick={{ fill: '#6B6660', fontSize: 11, fontFamily: 'Inter' }} domain={[0, 100]} stroke="#E3DCD3" />
               <Tooltip
@@ -366,7 +366,7 @@ export default function ParentDashboard() {
               />
               <ReferenceLine y={60} stroke="#F26522" strokeDasharray="4 4" />
               <Bar dataKey="score" radius={[6, 6, 0, 0]}>
-                {activeChild.topicScores.map((entry, index) => (
+                {(activeChild?.topicScores || []).map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={entry.score < 60 ? '#F26522' : '#0D0D0D'}
@@ -414,18 +414,18 @@ export default function ParentDashboard() {
         </div>
 
         <div className="p-4 sm:p-5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] text-xs sm:text-sm text-[#0D0D0D] italic leading-relaxed">
-          "{childClarification?.comment || activeChild.teacherFeedback?.message}"
+          "{childClarification?.comment || activeChild?.teacherFeedback?.message || 'Keep encouraging daily practice at home!'}"
         </div>
 
         {/* If teacher recommended specific focus topics */}
         {((childClarification?.topics && childClarification.topics.length > 0) ||
-          (activeChild.teacherFeedback?.topics && activeChild.teacherFeedback.topics.length > 0)) && (
+          (activeChild?.teacherFeedback?.topics && activeChild.teacherFeedback.topics.length > 0)) && (
           <div className="space-y-1.5 pt-1">
             <div className="text-[11px] font-bold text-[#6B6660] uppercase tracking-wider">
               Teacher's Recommended Focus Topics:
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
-              {(childClarification?.topics || activeChild.teacherFeedback?.topics || []).map((top, idx) => (
+              {(childClarification?.topics || activeChild?.teacherFeedback?.topics || []).map((top, idx) => (
                 <span
                   key={idx}
                   className="text-xs font-semibold px-3 py-1 rounded-full bg-[#0D0D0D] text-white"
@@ -478,16 +478,16 @@ export default function ParentDashboard() {
             <SectionLabel text="FOCUSED SCHEDULE" />
             <h3 className="font-heading font-extrabold text-base sm:text-lg text-[#0D0D0D] flex items-center gap-2 mt-1">
               <Calendar className="w-5 h-5 text-[#F26522]" />
-              <span>{activeChild.name}'s Active Study Schedule</span>
+              <span>{activeChild?.name || 'Student'}'s Active Study Schedule</span>
             </h3>
           </div>
           <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#0D0D0D] text-white">
-            {activeChild.studySchedule.length} Sessions Scheduled
+            {(activeChild?.studySchedule || []).length} Sessions Scheduled
           </span>
         </div>
 
         <div className="space-y-3">
-          {activeChild.studySchedule.map((sess) => (
+          {(activeChild?.studySchedule || []).map((sess) => (
             <div
               key={sess.id}
               className="p-4 sm:p-5 rounded-2xl bg-[#F5F0EA] border border-[#E3DCD3] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm hover:border-[#F26522]/40 transition-colors"

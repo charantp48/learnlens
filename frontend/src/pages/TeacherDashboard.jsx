@@ -151,7 +151,7 @@ export default function TeacherDashboard() {
   // Filter students
   const filteredStudents = (analytics?.students || []).filter((s) => {
     const matchClass = filterClass === 'All' || s.class === filterClass;
-    const matchLevel = filterLevel === 'All' || s.level.includes(filterLevel);
+    const matchLevel = filterLevel === 'All' || (s.level || '').includes(filterLevel);
     const matchSubject = filterSubject === 'All' || s.subject === filterSubject;
     return matchClass && matchLevel && matchSubject;
   });
@@ -413,11 +413,11 @@ export default function TeacherDashboard() {
                   </td>
                   {/* Linked parent's NAME ONLY (no phone or email) */}
                   <td className="py-3.5 px-4 font-medium text-[#0D0D0D]">
-                    {tName(s.parentName)}
+                    {tName(s.parentName || 'Parent')}
                   </td>
                   <td className="py-3.5 px-4">
                     <span className="text-xs font-semibold text-[#0D0D0D] block">{s.subject}</span>
-                    <span className="text-[10px] text-[#6B6660]">{s.level.split(':')[0]}</span>
+                    <span className="text-[10px] text-[#6B6660]">{(s.level || 'Level 1').split(':')[0]}</span>
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-[#F26522]">
                     {s.overallPercentage !== undefined ? `${s.overallPercentage}%` : s.diagnosticScore}
@@ -626,10 +626,10 @@ export default function TeacherDashboard() {
                 Student Diagnostic Report
               </span>
               <h2 className="font-heading font-extrabold text-2xl text-[#0D0D0D]">
-                {tName(activeStudent.name)} ({activeStudent.class})
+                {tName(activeStudent?.name || 'Student')} ({activeStudent?.class || 'Class 11-A'})
               </h2>
               <div className="text-xs text-[#6B6660]">
-                Linked Parent: <strong className="text-[#0D0D0D]">{tName(activeStudent.parentName)}</strong> • Track: {activeStudent.level}
+                Linked Parent: <strong className="text-[#0D0D0D]">{tName(activeStudent?.parentName || 'Parent')}</strong> • Track: {activeStudent?.level || 'Diagnostic Track'}
               </div>
             </div>
 
@@ -676,7 +676,7 @@ export default function TeacherDashboard() {
                     <span>Teacher Clarification & Guidance</span>
                   </label>
                   <span className="text-[11px] text-[#6B6660]">
-                    Visible to Student & {tName(activeStudent.parentName)}
+                    Visible to Student & {tName(activeStudent?.parentName || 'Parent')}
                   </span>
                 </div>
                 <p className="text-[11px] text-[#6B6660]">
@@ -717,21 +717,21 @@ export default function TeacherDashboard() {
                 </div>
                 <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 bg-[#F5F0EA] rounded-2xl border border-[#E3DCD3]">
                   {/* Weak topics first */}
-                  {activeStudent.weakTopic && activeStudent.weakTopic !== 'None' && (
+                  {activeStudent?.weakTopic && activeStudent.weakTopic !== 'None' && (
                     <button
                       type="button"
-                      onClick={() => toggleTopic(activeStudent.weakTopic)}
+                      onClick={() => toggleTopic(activeStudent?.weakTopic)}
                       className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                        selectedTopics.includes(activeStudent.weakTopic)
+                        selectedTopics.includes(activeStudent?.weakTopic)
                           ? 'bg-[#F26522] text-white'
                           : 'bg-white border border-[#F26522]/40 text-[#F26522]'
                       }`}
                     >
-                      <span>⚠ {activeStudent.weakTopic}</span>
+                      <span>⚠ {activeStudent?.weakTopic}</span>
                       <span className="text-[9px] uppercase px-1 rounded-full bg-white/20">Weak</span>
                     </button>
                   )}
-                  {CURRICULUM_TOPICS.filter((t) => t !== activeStudent.weakTopic).map((topic) => {
+                  {CURRICULUM_TOPICS.filter((t) => t !== activeStudent?.weakTopic).map((topic) => {
                     const isSelected = selectedTopics.includes(topic);
                     return (
                       <button
