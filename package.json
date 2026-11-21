@@ -1,0 +1,13 @@
+{
+  "name": "learnlens",
+  "version": "1.0.0",
+  "description": "LearnLens - Smart & Inclusive Education Platform",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "start": "node backend/src/server.js",
+    "dev": "node backend/src/server.js",
+    "test": "npm --prefix backend test"
+  }
+}

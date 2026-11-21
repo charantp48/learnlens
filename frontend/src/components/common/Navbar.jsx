@@ -3,18 +3,14 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import LanguageToggle from './LanguageToggle';
+import Logo from './Logo';
 import Button from './Button';
 import { 
   Menu, 
   X, 
-  BookOpen, 
-  GitFork, 
-  Calendar, 
-  Sparkles, 
-  LogIn,
+  LogIn, 
   LogOut,
-  LayoutDashboard,
-  Layers
+  Home as HomeIcon
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -26,119 +22,75 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/login');
     setMobileMenuOpen(false);
   };
 
-  // Nav links
-  const studentNavLinks = [
-    { to: '/student', label: t('nav.studentDashboard') || 'Dashboard' },
-    { to: '/quiz', label: t('nav.quiz') },
-    { to: '/gaps', label: t('nav.gaps') },
-    { to: '/planner', label: t('nav.planner') },
-    { to: '/ai-tutor', label: t('nav.aiTutor') },
-  ];
-
-  const defaultNavLinks = [
-    { to: '/', label: t('nav.home') },
-    { to: '/quiz', label: t('nav.quiz') },
-    { to: '/gaps', label: t('nav.gaps') },
-    { to: '/planner', label: t('nav.planner') },
-    { to: '/ai-tutor', label: t('nav.aiTutor') },
-  ];
-
-  const activeLinks = currentUser?.role === 'student' ? studentNavLinks : defaultNavLinks;
+  const role = currentUser?.role;
+  const isStudent = role === 'student';
+  const isTeacher = role === 'teacher';
+  const isParent = role === 'parent';
+  const isAdmin = role === 'admin';
 
   return (
-    <header className="sticky top-0 z-50 bg-[#F5F0EA]/90 backdrop-blur-md border-b border-[#E3DCD3]">
+    <header className="sticky top-0 z-50 bg-[#F5F0EA]/95 backdrop-blur-md border-b border-[#E3DCD3]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo & Brand at Left */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-[#0D0D0D] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-              <span className="font-heading font-black text-white text-base">
-                L<span className="text-[#F26522]">.</span>
-              </span>
-            </div>
-            <div>
-              <span className="font-heading text-lg font-extrabold text-[#0D0D0D] tracking-tight block">
-                {t('app_name')}
-              </span>
-            </div>
+          <Link to="/" className="flex items-center gap-2 group">
+            <Logo size="md" showText={true} />
           </Link>
 
-          {/* Centered Navigation Links with Orange Underline on Active */}
-          <nav className="hidden lg:flex items-center space-x-8">
-            {activeLinks.map((item) => {
-              const isActive = location.pathname === item.to;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`text-sm font-semibold transition-colors py-2 relative ${
-                    isActive
-                      ? 'text-[#0D0D0D]'
-                      : 'text-[#6B6660] hover:text-[#0D0D0D]'
-                  }`}
-                >
-                  <span>{item.label}</span>
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F26522] rounded-full" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Right Section: Language Switcher & Action Pill */}
+          {/* Right Section: Home button (for non-admin roles), Language Switcher, Action Pill */}
           <div className="hidden md:flex items-center gap-4">
             <LanguageToggle />
 
             {isAuthenticated ? (
               <div className="flex items-center gap-3 pl-2 border-l border-[#E3DCD3]">
-                <Link
-                  to={getDashboardPath(currentUser.role)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FBF8F4] hover:bg-white border border-[#E3DCD3] transition-colors shadow-xs"
-                >
-                  <img
-                    src={currentUser.avatar_url}
-                    alt={currentUser.full_name}
-                    className="w-6 h-6 rounded-full bg-[#E3DCD3]"
-                  />
-                  <div className="text-left text-xs">
-                    <div className="font-bold text-[#0D0D0D] leading-tight truncate max-w-[90px]">
-                      {currentUser.full_name.split(' ')[0]}
-                    </div>
-                    <div className="text-[10px] text-[#F26522] font-semibold capitalize">
-                      {currentUser.role}
-                    </div>
-                  </div>
+                {/* Home button appears for student, teacher, and parent, and NOT for admin */}
+                {!isAdmin && (
+                  <Link to="/">
+                    <Button variant="ghost" size="sm" icon={<HomeIcon className="w-4 h-4" />}>
+                      {t('nav.home') || 'Home'}
+                    </Button>
+                  </Link>
+                )}
+
+                {/* Dashboard Shortcut */}
+                <Link to={getDashboardPath(role)}>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[#FBF8F4] border border-[#E3DCD3] text-[#0D0D0D] hover:border-[#F26522] transition-colors">
+                    {currentUser?.full_name || 'My Portal'}
+                  </span>
                 </Link>
 
-                <button
+                {/* Logout Button */}
+                <Button
+                  variant="dark"
+                  size="sm"
                   onClick={handleLogout}
-                  className="p-2 rounded-full text-[#6B6660] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                  title="Sign Out"
+                  icon={<LogOut className="w-4 h-4" />}
                 >
-                  <LogOut className="w-4 h-4" />
-                </button>
+                  {t('nav.logout') || 'Sign Out'}
+                </Button>
               </div>
             ) : (
-              <Button to="/login" variant="primary" size="sm" showArrow>
-                {t('nav.login')}
-              </Button>
+              <Link to="/login">
+                <Button variant="primary" size="sm" icon={<LogIn className="w-4 h-4" />}>
+                  {t('nav.login') || 'Sign In'}
+                </Button>
+              </Link>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
+          {/* Mobile Menu Hamburger */}
+          <div className="flex items-center gap-2 md:hidden">
             <LanguageToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-full bg-[#FBF8F4] border border-[#E3DCD3] text-[#0D0D0D] hover:bg-[#E3DCD3]/40 focus:outline-none cursor-pointer"
-              aria-label="Toggle menu"
+              className="p-2 rounded-xl text-[#0D0D0D] hover:bg-[#FBF8F4] transition-colors border border-[#E3DCD3]"
+              aria-label="Toggle Navigation Menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5 text-[#0D0D0D]" />}
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
@@ -146,62 +98,49 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-[#E3DCD3] bg-[#F5F0EA] px-4 pt-3 pb-5 space-y-2">
-          {isAuthenticated && (
-            <div className="flex items-center justify-between p-3 mb-2 rounded-[16px] bg-[#FBF8F4] border border-[#E3DCD3]">
-              <div className="flex items-center gap-2.5">
-                <img
-                  src={currentUser.avatar_url}
-                  alt={currentUser.full_name}
-                  className="w-8 h-8 rounded-full bg-[#E3DCD3]"
-                />
-                <div>
-                  <div className="text-xs font-bold text-[#0D0D0D]">{currentUser.full_name}</div>
-                  <div className="text-[10px] text-[#F26522] capitalize font-semibold">{currentUser.role} Dashboard</div>
-                </div>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-xs font-bold cursor-pointer"
-              >
-                Sign Out
-              </button>
-            </div>
-          )}
-
-          {activeLinks.map((item) => {
-            const isActive = location.pathname === item.to;
-            return (
+        <div className="md:hidden border-b border-[#E3DCD3] bg-[#FBF8F4] px-4 pt-4 pb-6 space-y-4">
+          <div className="space-y-2">
+            {!isAdmin && isAuthenticated && (
               <Link
-                key={item.to}
-                to={item.to}
+                to="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center justify-between px-4 py-2.5 rounded-full text-sm font-semibold transition-colors ${
-                  isActive
-                    ? 'bg-[#FBF8F4] text-[#0D0D0D] border border-[#E3DCD3]'
-                    : 'text-[#6B6660] hover:text-[#0D0D0D] hover:bg-[#FBF8F4]'
-                }`}
+                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-[#0D0D0D] bg-[#F5F0EA] border border-[#E3DCD3]"
               >
-                <span>{item.label}</span>
-                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#F26522]" />}
+                <HomeIcon className="w-4 h-4 text-[#F26522]" />
+                <span>{t('nav.home') || 'Home'}</span>
               </Link>
-            );
-          })}
+            )}
 
-          {!isAuthenticated && (
-            <div className="pt-2">
-              <Button
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                variant="primary"
-                size="md"
-                showArrow
-                className="w-full"
-              >
-                {t('nav.login')}
-              </Button>
-            </div>
-          )}
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to={getDashboardPath(role)}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-[#0D0D0D] bg-[#F5F0EA] border border-[#E3DCD3]"
+                >
+                  <span>Portal: {currentUser?.full_name}</span>
+                </Link>
+                <div className="pt-2">
+                  <Button
+                    variant="dark"
+                    className="w-full justify-center"
+                    onClick={handleLogout}
+                    icon={<LogOut className="w-4 h-4" />}
+                  >
+                    {t('nav.logout') || 'Sign Out'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="pt-2">
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="primary" className="w-full justify-center" icon={<LogIn className="w-4 h-4" />}>
+                    {t('nav.login') || 'Sign In'}
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </header>

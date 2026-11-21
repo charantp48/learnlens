@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import SectionLabel from '../components/common/SectionLabel';
+import Logo from '../components/common/Logo';
 import { 
   GraduationCap, 
   Users, 
@@ -64,11 +65,14 @@ export default function Login() {
 
   return (
     <div className="max-w-3xl mx-auto py-6 sm:py-10 space-y-8">
-      {/* Header */}
+      {/* Brand Header with Logo */}
       <div className="text-center space-y-3">
-        <SectionLabel className="justify-center">ONE-CLICK DEMO ACCESS</SectionLabel>
+        <div className="flex justify-center mb-2">
+          <Logo size="lg" showText={true} />
+        </div>
+        <SectionLabel className="justify-center">ROLE ACCESS</SectionLabel>
         <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0D0D0D] tracking-tight">
-          Select a Role to <span className="text-[#F26522]">Explore</span>
+          Select Your Role to <span className="text-[#F26522]">Sign In</span>
         </h1>
         <p className="text-[#6B6660] text-sm max-w-md mx-auto leading-relaxed">
           {t('login.subtitle')}
