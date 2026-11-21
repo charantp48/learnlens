@@ -186,7 +186,7 @@ function validateEnvironment() {
   }
 }
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   validateEnvironment();
 
   const server = app.listen(config.port, () => {
